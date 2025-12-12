@@ -1,51 +1,10 @@
-import type { McpServerInstance } from '../types';
 import { z } from 'zod';
-import { getAgentContent } from '../agents';
+import { createAdvancedAnalysisPrompt } from './factory';
 
-export function registerAdvancedArchitectureAnalysisPrompt(server: McpServerInstance) {
-  server.prompt(
-    'advanced_architecture_analysis',
-    'Perform a comprehensive architecture analysis using all specialized agents with web research on best practices',
-    {
-      context: z
-        .string()
-        .optional()
-        .describe('Description of the codebase or specific concerns to analyze'),
-    },
-    async (args: { context?: string }) => {
-      const { context } = args;
-
-      const architectureAgents = [
-        'structure-expert',
-        'solid-expert',
-        'patterns-expert',
-        'coupling-expert',
-        'state-expert',
-        'types-expert',
-        'modularity-expert',
-        'debt-expert',
-      ];
-
-      const expertAgents = ['nextjs-expert', 'react-expert'];
-
-      const [architectureSkills, expertSkills] = await Promise.all([
-        Promise.all(
-          architectureAgents.map((a) => getAgentContent('architecture', a, 'skill'))
-        ),
-        Promise.all(expertAgents.map((a) => getAgentContent('experts', a, 'skill'))),
-      ]);
-
-      const allAgents = [...architectureAgents, ...expertAgents];
-      const allSkills = [...architectureSkills, ...expertSkills];
-
-      const combinedSkills = allAgents
-        .map((name, i) => `## ${name}\n${allSkills[i] || 'Not available'}`)
-        .join('\n\n---\n\n');
-
-      const outputTemplate = `
+const OUTPUT_TEMPLATE = `
 # Plan d'Optimisation Architecture - Codebase
 
-**Agents consultés** : ${allAgents.join(', ')}
+**Agents consultés** : {AGENTS}
 **Date** : [DATE]
 **Score maintenabilité estimé** : [SCORE]/100
 
@@ -76,7 +35,39 @@ export function registerAdvancedArchitectureAnalysisPrompt(server: McpServerInst
 - [ ] Types \`any\` : [nombre] → objectif 0
 `;
 
-      const instructions = `You are a senior software architect with expertise from 10 specialized agents.
+export const registerAdvancedArchitectureAnalysisPrompt = createAdvancedAnalysisPrompt({
+  name: 'advanced_architecture_analysis',
+  description:
+    'Perform a comprehensive architecture analysis using all specialized agents with web research on best practices',
+  schema: {
+    context: z
+      .string()
+      .optional()
+      .describe('Description of the codebase or specific concerns to analyze'),
+  },
+  agents: [
+    {
+      category: 'architecture',
+      slugs: [
+        'structure-expert',
+        'solid-expert',
+        'patterns-expert',
+        'coupling-expert',
+        'state-expert',
+        'types-expert',
+        'modularity-expert',
+        'debt-expert',
+      ],
+    },
+    {
+      category: 'experts',
+      slugs: ['nextjs-expert', 'react-expert'],
+    },
+  ],
+  buildInstructions: (skills, args: { context?: string }) => {
+    const template = OUTPUT_TEMPLATE.replace('{AGENTS}', skills.allAgents.join(', '));
+
+    return `You are a senior software architect with expertise from 10 specialized agents.
 
 **CRITICAL INSTRUCTIONS:**
 1. Each agent MUST perform web searches on official best practices before evaluating
@@ -91,31 +82,18 @@ export function registerAdvancedArchitectureAnalysisPrompt(server: McpServerInst
 
 ## Agent Expertise:
 
-${combinedSkills}
+${skills.formattedSkills}
 
 ---
 
 ## Output Format:
 
 \`\`\`markdown
-${outputTemplate}
+${template}
 \`\`\`
 
-${context ? `\n**Analysis Context:**\n${context}` : ''}
+${args.context ? `\n**Analysis Context:**\n${args.context}` : ''}
 
 Begin the comprehensive architecture analysis now.`;
-
-      return {
-        messages: [
-          {
-            role: 'user' as const,
-            content: {
-              type: 'text' as const,
-              text: instructions,
-            },
-          },
-        ],
-      };
-    }
-  );
-}
+  },
+});

@@ -1,9 +1,9 @@
 ---
 title: Introduction
-description: Collection d'agents optimisés pour Claude Code avec Opus
+description: Collection d'agents optimisés pour Claude Code avec Opus 4.5 et Sonnet
 ---
 
-# Claude Code Agents Library
+# Horus - Claude Code Agents Library
 
 Bienvenue dans la librairie d'agents optimisés pour Claude Code.
 
@@ -16,14 +16,43 @@ Cette collection comprend **29 agents** répartis en 4 catégories :
 - **Tailwind Responsive** - 8 agents pour le design responsive
 - **Experts** - 6 agents spécialisés (Next.js, React, Clerk, etc.)
 
-## Comment utiliser
+## Comment utiliser les agents
 
-Chaque agent est documenté avec :
+Chaque agent est documenté avec 3 fichiers :
 
-1. **SKILL** - Description des compétences et capacités
-2. **REFERENCE** - Documentation technique de référence
-3. **WORKFLOWS** - Flux de travail et cas d'utilisation
+- **SKILL.md** - Description des compétences et capacités de l'agent
+- **REFERENCE.md** - Documentation technique de référence
+- **WORKFLOWS.md** - Flux de travail et cas d'utilisation
 
-## Démarrage rapide
+---
 
-Explorez les différentes catégories dans la sidebar pour découvrir les agents disponibles.
+### Méthode recommandée : MCP
+
+Pour une intégration native et optimale avec les LLMs comme **Opus 4.5** ou **Sonnet** dans Claude Code, utilisez le serveur MCP.
+
+Consultez la [documentation MCP](/docs/mcp) pour configurer l'intégration.
+
+---
+
+### Méthode manuelle : Téléchargement
+
+1. Naviguez vers la catégorie souhaitée dans la sidebar (Architecture, SEO, Tailwind Responsive, Experts)
+2. Sélectionnez l'agent souhaité
+3. Cliquez sur la page portant le **même nom que l'agent** (ex: `react-expert`)
+4. Cliquez sur le bouton **Télécharger** pour télécharger le dossier contenant les 3 fichiers :
+   - `SKILL.md`
+   - `REFERENCE.md`
+   - `WORKFLOWS.md`
+5. Extrayez le dossier dans `.claude/agents/` de votre codebase :
+
+```
+votre-projet/
+└── .claude/
+    └── agents/
+        └── react-expert/
+            ├── SKILL.md
+            ├── REFERENCE.md
+            └── WORKFLOWS.md
+```
+
+Claude Code détectera automatiquement les agents disponibles dans ce dossier.

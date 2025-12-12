@@ -1,0 +1,176 @@
+---
+title: MCP
+description: Utiliser le serveur MCP Horus pour accéder aux agents depuis Claude Code
+---
+
+# Serveur MCP
+
+Horus expose un serveur **MCP (Model Context Protocol)** permettant d'accéder aux agents directement depuis Claude Code ou tout client compatible MCP.
+
+## Configuration
+
+Ajoutez Horus à votre configuration MCP dans `~/.claude/settings.json` ou `.mcp.json` :
+
+```json
+{
+  "mcpServers": {
+    "horus": {
+      "url": "https://horus-code.com/api/mcp"
+    }
+  }
+}
+```
+
+## Tools disponibles
+
+### `list_agents`
+
+Liste tous les agents disponibles par catégorie.
+
+**Paramètres :** aucun
+
+**Retourne :** Liste des agents avec leur slug, nom, description et catégorie.
+
+---
+
+### `get_agent`
+
+Récupère le contenu complet d'un agent.
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `category` | string | Catégorie de l'agent (`architecture`, `seo`, `tailwind-responsive`, `experts`) |
+| `agent` | string | Slug de l'agent |
+| `content` | string | Type de contenu (`skill`, `reference`, `workflows`, `all`) |
+
+**Retourne :** Contenu markdown de l'agent demandé.
+
+---
+
+## Prompts disponibles
+
+### Prompts basiques
+
+#### `activate_agent`
+
+Active un agent unique en chargeant son SKILL comme contexte système.
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `category` | string | Catégorie de l'agent |
+| `agent` | string | Slug de l'agent |
+| `task` | string (optionnel) | Tâche à exécuter |
+
+---
+
+#### `multi_agent`
+
+Combine plusieurs agents pour une tâche complexe nécessitant diverses expertises.
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `agents` | string | Liste d'agents séparés par des virgules (ex: `react-expert,nextjs-expert`) |
+| `task` | string (optionnel) | Tâche à exécuter |
+
+---
+
+### Audits pré-configurés
+
+#### `architecture_audit`
+
+Audit d'architecture combinant 4 agents : `patterns-expert`, `solid-expert`, `coupling-expert`, `structure-expert`.
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `context` | string (optionnel) | Description du codebase ou préoccupations |
+
+---
+
+#### `seo_analysis`
+
+Analyse SEO combinant 3 agents : `seo-metadata-expert`, `seo-performance-expert`, `seo-schema-expert`.
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `url` | string (optionnel) | URL à analyser |
+| `framework` | string (optionnel) | Framework utilisé |
+
+---
+
+#### `tailwind_responsive_audit`
+
+Audit responsive combinant 4 agents : `tw-mobile-first-expert`, `tw-breakpoints-expert`, `tw-layout-expert`, `tw-accessibility-expert`.
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `context` | string (optionnel) | Description des composants à auditer |
+
+---
+
+### Analyses avancées
+
+Ces prompts effectuent une analyse complète avec recherche web des best practices officielles et génèrent un fichier de plan d'optimisation.
+
+#### `advanced_architecture_analysis`
+
+Analyse d'architecture complète avec **10 agents** : `structure-expert`, `solid-expert`, `patterns-expert`, `coupling-expert`, `state-expert`, `types-expert`, `modularity-expert`, `debt-expert`, `nextjs-expert`, `react-expert`.
+
+**Génère :** `ARCHI_OPTI_PLAN.md`
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `context` | string (optionnel) | Description du codebase |
+
+**Types d'issues :** `[STRUCT]` · `[SOLID]` · `[PATTERN]` · `[COUPLING]` · `[STATE]` · `[TYPE]` · `[MODULE]` · `[DEBT]`
+
+---
+
+#### `advanced_seo_analysis`
+
+Analyse SEO complète avec **7 agents** : `seo-metadata-expert`, `seo-schema-expert`, `seo-crawl-expert`, `seo-performance-expert`, `seo-content-expert`, `seo-rendering-expert`, `seo-image-expert`.
+
+**Génère :** `SEO_OPTI_PLAN.md`
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `url` | string (optionnel) | URL à analyser |
+| `framework` | string (optionnel) | Framework utilisé |
+| `context` | string (optionnel) | Contexte additionnel |
+
+**Types d'issues :** `[META]` · `[SCHEMA]` · `[CWV]` · `[CRAWL]` · `[SEM]` · `[IMG]` · `[URL]` · `[RENDER]`
+
+---
+
+#### `advanced_tailwind_responsive_analysis`
+
+Analyse responsive complète avec **8 agents** : `tw-mobile-first-expert`, `tw-breakpoints-expert`, `tw-layout-expert`, `tw-spacing-expert`, `tw-typography-expert`, `tw-images-expert`, `tw-container-queries-expert`, `tw-accessibility-expert`.
+
+**Génère :** `RESPONSIVE_OPTI_PLAN.md`
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `tailwindVersion` | `v3` \| `v4` (optionnel) | Version de TailwindCSS |
+| `context` | string (optionnel) | Contexte additionnel |
+
+**Types d'issues :** `[MOBILE]` · `[BREAKPOINT]` · `[LAYOUT]` · `[SPACING]` · `[TYPO]` · `[IMAGE]` · `[CONTAINER]` · `[A11Y]` · `[PERF]` · `[OVERFLOW]`
+
+---
+
+## Exemple d'utilisation
+
+Dans Claude Code, une fois le serveur MCP configuré :
+
+```
+> Utilise le prompt advanced_architecture_analysis pour analyser ce projet
+```
+
+Claude Code chargera automatiquement les 10 agents et générera le fichier `ARCHI_OPTI_PLAN.md` avec les recommandations priorisées.

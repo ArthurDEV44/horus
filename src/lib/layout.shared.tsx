@@ -4,7 +4,8 @@ export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
       title: (
-        <span className="font-semibold">
+        <span className="flex items-center gap-2 font-semibold">
+          <span className="w-4 h-4 bg-[#22d3ee] rounded-sm shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
           Horus
         </span>
       ),
@@ -15,22 +16,6 @@ export function baseOptions(): BaseLayoutProps {
         text: 'Documentation',
         url: '/docs',
         active: 'nested-url',
-      },
-      {
-        text: 'Architecture',
-        url: '/docs/architecture',
-      },
-      {
-        text: 'SEO',
-        url: '/docs/seo',
-      },
-      {
-        text: 'Tailwind',
-        url: '/docs/tailwind-responsive',
-      },
-      {
-        text: 'Experts',
-        url: '/docs/experts',
       },
     ],
   };

@@ -1,4 +1,10 @@
-import type { McpServerInstance } from '../types';
+import {
+  type McpServerInstance,
+  type McpMessage,
+  userMessage,
+  assistantMessage,
+  promptResult,
+} from '../types';
 import { z } from 'zod';
 import { getAgentContent, listAgents, type Category } from '../agents';
 
@@ -41,17 +47,11 @@ export function registerMultiAgentPrompt(server: McpServerInstance) {
       }
 
       if (matchedAgents.length === 0) {
-        return {
-          messages: [
-            {
-              role: 'user' as const,
-              content: {
-                type: 'text' as const,
-                text: `Error: No valid agents found. Requested: ${agentSlugs.join(', ')}. Use list_agents tool to see available agents.`,
-              },
-            },
-          ],
-        };
+        return promptResult([
+          userMessage(
+            `Error: No valid agents found. Requested: ${agentSlugs.join(', ')}. Use list_agents tool to see available agents.`
+          ),
+        ]);
       }
 
       const notFound = agentSlugs.filter(
@@ -68,37 +68,18 @@ export function registerMultiAgentPrompt(server: McpServerInstance) {
         systemMessage += `\n\n⚠️ Note: The following agents were not found: ${notFound.join(', ')}`;
       }
 
-      const messages: Array<{
-        role: 'user' | 'assistant';
-        content: { type: 'text'; text: string };
-      }> = [
-        {
-          role: 'user',
-          content: {
-            type: 'text',
-            text: systemMessage,
-          },
-        },
-        {
-          role: 'assistant',
-          content: {
-            type: 'text',
-            text: `I am now operating with combined expertise from: ${matchedAgents.map((a) => a.slug).join(', ')}. I have loaded all specialized knowledge and capabilities. How can I help you?`,
-          },
-        },
+      const messages: McpMessage[] = [
+        userMessage(systemMessage),
+        assistantMessage(
+          `I am now operating with combined expertise from: ${matchedAgents.map((a) => a.slug).join(', ')}. I have loaded all specialized knowledge and capabilities. How can I help you?`
+        ),
       ];
 
       if (task) {
-        messages.push({
-          role: 'user',
-          content: {
-            type: 'text',
-            text: task,
-          },
-        });
+        messages.push(userMessage(task));
       }
 
-      return { messages };
+      return promptResult(messages);
     }
   );
 }

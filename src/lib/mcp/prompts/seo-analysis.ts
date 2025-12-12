@@ -1,4 +1,4 @@
-import type { McpServerInstance } from '../types';
+import { type McpServerInstance, userMessage, promptResult } from '../types';
 import { z } from 'zod';
 import { getAgentContent } from '../agents';
 
@@ -32,17 +32,11 @@ export function registerSeoAnalysisPrompt(server: McpServerInstance) {
       if (url) context += `URL: ${url}\n`;
       if (framework) context += `Framework: ${framework}\n`;
 
-      return {
-        messages: [
-          {
-            role: 'user' as const,
-            content: {
-              type: 'text' as const,
-              text: `You are an SEO specialist with expertise in the following areas:\n\n${combinedSkills}\n\n---\n\nPerform a comprehensive SEO analysis.${context ? `\n\nContext:\n${context}` : ''}`,
-            },
-          },
-        ],
-      };
+      return promptResult([
+        userMessage(
+          `You are an SEO specialist with expertise in the following areas:\n\n${combinedSkills}\n\n---\n\nPerform a comprehensive SEO analysis.${context ? `\n\nContext:\n${context}` : ''}`
+        ),
+      ]);
     }
   );
 }

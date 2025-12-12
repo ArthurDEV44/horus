@@ -1,12 +1,10 @@
 {
-  "title": "Documentation",
   "pages": [
-    "index",
-    "---Catégories---",
+    "mcp",
+    "---Agents Claude Code---",
     "architecture",
     "seo",
     "tailwind-responsive",
     "experts"
-  ],
-  "defaultOpen": true
+  ]
 }

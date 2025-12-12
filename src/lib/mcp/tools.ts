@@ -1,4 +1,4 @@
-import type { McpServerInstance } from './types';
+import { type McpServerInstance, toolResult } from './types';
 import { z } from 'zod';
 import {
   CATEGORIES,
@@ -19,14 +19,7 @@ export function registerTools(server: McpServerInstance) {
     'List all agent categories with their descriptions and agent counts',
     async () => {
       const categories = await listCategories();
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify(categories, null, 2),
-          },
-        ],
-      };
+      return toolResult(JSON.stringify(categories, null, 2));
     }
   );
 
@@ -43,14 +36,7 @@ export function registerTools(server: McpServerInstance) {
     async (args: { category?: Category }) => {
       const { category } = args;
       const agents = await listAgents(category);
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify(agents, null, 2),
-          },
-        ],
-      };
+      return toolResult(JSON.stringify(agents, null, 2));
     }
   );
 
@@ -66,19 +52,9 @@ export function registerTools(server: McpServerInstance) {
       const { category, agent } = args;
       const content = await getAgentContent(category, agent, 'skill');
       if (!content) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: `Agent "${agent}" not found in category "${category}"`,
-            },
-          ],
-          isError: true,
-        };
+        return toolResult(`Agent "${agent}" not found in category "${category}"`, true);
       }
-      return {
-        content: [{ type: 'text' as const, text: content }],
-      };
+      return toolResult(content);
     }
   );
 
@@ -94,19 +70,9 @@ export function registerTools(server: McpServerInstance) {
       const { category, agent } = args;
       const content = await getAgentContent(category, agent, 'reference');
       if (!content) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: `Agent "${agent}" not found in category "${category}"`,
-            },
-          ],
-          isError: true,
-        };
+        return toolResult(`Agent "${agent}" not found in category "${category}"`, true);
       }
-      return {
-        content: [{ type: 'text' as const, text: content }],
-      };
+      return toolResult(content);
     }
   );
 
@@ -122,19 +88,9 @@ export function registerTools(server: McpServerInstance) {
       const { category, agent } = args;
       const content = await getAgentContent(category, agent, 'workflows');
       if (!content) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: `Agent "${agent}" not found in category "${category}"`,
-            },
-          ],
-          isError: true,
-        };
+        return toolResult(`Agent "${agent}" not found in category "${category}"`, true);
       }
-      return {
-        content: [{ type: 'text' as const, text: content }],
-      };
+      return toolResult(content);
     }
   );
 
@@ -148,17 +104,11 @@ export function registerTools(server: McpServerInstance) {
     async (args: { query: string }) => {
       const { query } = args;
       const results = await searchAgents(query);
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text:
-              results.length > 0
-                ? JSON.stringify(results, null, 2)
-                : `No agents found matching "${query}"`,
-          },
-        ],
-      };
+      return toolResult(
+        results.length > 0
+          ? JSON.stringify(results, null, 2)
+          : `No agents found matching "${query}"`
+      );
     }
   );
 }

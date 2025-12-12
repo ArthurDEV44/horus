@@ -1,105 +1,120 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Terminal, Github, Sparkles, Cpu } from 'lucide-react';
-import Button from '../ui/Button';
-import BackgroundGrid from './BackgroundGrid';
+import { Terminal, Github, Bot, Plug, RefreshCw } from 'lucide-react';
+import { Button } from '../ui/Button';
+import CosmicBackground from './CosmicBackground';
+import { useHydrated } from '@/hooks';
 
-const Hero: React.FC = () => {
+const Hero = () => {
+  const hydrated = useHydrated();
+
   return (
-    <section className="relative flex flex-col items-center justify-center min-h-screen pt-20 px-4 sm:px-6 overflow-hidden">
+    <section className="relative flex flex-col items-center justify-center min-h-screen pt-20 px-4 sm:px-6 overflow-hidden bg-tech-black">
 
-      {/* Ambient Background Effects */}
-      <BackgroundGrid />
+      {/* Vortex Cosmique en arrière-plan */}
+      <CosmicBackground />
 
-      {/* Subtle top glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-tech-accent/10 blur-[120px] rounded-full pointer-events-none" />
+      {/* Conteneur Principal - Flou renforcé pour la lisibilité */}
+      <div className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto space-y-10">
 
-      {/* Content Wrapper */}
-      <div className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto space-y-8">
-
-        {/* Badge / Announcement */}
+        {/* Badge / Annonce - Thème Horus */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={hydrated ? { opacity: 0, y: -20 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="group relative inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm hover:bg-white/[0.05] transition-colors cursor-default"
+          className="group relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/40 border border-white/10 backdrop-blur-md hover:bg-white/5 hover:border-tech-accent/30 transition-all cursor-default overflow-hidden"
         >
-          <span className="flex h-2 w-2 rounded-full bg-tech-accent animate-pulse-slow shadow-[0_0_8px_rgba(34,211,238,0.6)]"></span>
-          <span className="text-xs font-medium text-neutral-300 tracking-wide uppercase">
-            Opus Engine v3.5 Online
+          {/* Effet de brillance sur le badge */}
+          <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/5 to-transparent" />
+
+          <span className="flex h-1.5 w-1.5 rounded-full bg-tech-accent animate-pulse shadow-[0_0_12px_rgba(34,211,238,0.8)]"></span>
+          <span className="text-[11px] font-semibold text-neutral-300 tracking-[0.2em] uppercase">
+            Protocole Horus v1.0 Actif
           </span>
-          <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/10 group-hover:ring-white/20 transition-all" />
         </motion.div>
 
-        {/* Main Headline */}
+        {/* Titre Principal - Massif, Cinématique, Contraste Élevé */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={hydrated ? { opacity: 0, scale: 0.9 } : false}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="relative"
         >
-          <h1 className="text-5xl sm:text-7xl md:text-8xl font-bold tracking-tight text-white mb-2 leading-[1.1]">
-            <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-neutral-400">
-              Engineering
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tighter text-white mb-2 leading-[1.05] mix-blend-lighten">
+            <span className="block text-transparent bg-clip-text bg-linear-to-b from-white via-white to-neutral-400 drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+              L&apos;IA c&apos;est bien,
             </span>
-            <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500">
-              Intelligence.
+            <span className="block text-transparent bg-clip-text bg-linear-to-b from-neutral-200 via-neutral-400 to-neutral-700">
+              orchestrée c&apos;est mieux.
             </span>
           </h1>
-          {/* Subtle noise texture overlay on text - simulated via CSS mix-blend if needed, keeping it simple here */}
         </motion.div>
 
-        {/* Description / Copy */}
+        {/* Description - Métaphores adaptées à Horus */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-          className="max-w-2xl text-lg sm:text-xl text-neutral-400 leading-relaxed font-light"
-        >
-          Deploy a fleet of <span className="text-white font-medium">30 specialized Opus agents</span>.
-          From clean architecture to pixel-perfect UIs, elevate your codebase with
-          precision-engineered AI.
-        </motion.p>
-
-        {/* Call to Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={hydrated ? { opacity: 0, y: 20 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-          className="flex flex-col sm:flex-row items-center gap-4 pt-4 w-full justify-center"
+          className="max-w-2xl text-lg sm:text-xl text-neutral-400 leading-relaxed font-light tracking-wide"
+        >
+          Transcendez les limites du code conventionnel. Déployez{' '}
+          <span className="text-white font-medium">29 agents Opus autonomes</span>{' '}
+          et entrez dans une nouvelle dimension de l&apos;ingénierie logicielle.
+        </motion.p>
+
+        {/* Boutons d'Appel à l'Action */}
+        <motion.div
+          initial={hydrated ? { opacity: 0, y: 20 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.4, ease: "easeOut" }}
+          className="flex flex-col sm:flex-row items-center gap-5 pt-6 w-full justify-center"
         >
           <Button variant="primary" icon={<Terminal size={18} />} href="/docs">
-            Initialize Agents
+            Activer les Agents
           </Button>
 
           <Button variant="secondary" icon={<Github size={18} />} href="https://github.com">
-            View Source
+            Code Source
           </Button>
         </motion.div>
 
-        {/* Trust/Tech Stack indicators (Visual Proof) */}
+        {/* Indicateurs Tech (Orbite de Données) */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={hydrated ? { opacity: 0 } : false}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.6 }}
-          className="pt-12 flex items-center justify-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500"
+          transition={{ duration: 1, delay: 0.8 }}
+          className="pt-16 flex items-center justify-center gap-12 opacity-40 hover:opacity-100 transition-opacity duration-700"
         >
-          <div className="flex flex-col items-center gap-2 group">
-             <Cpu className="text-neutral-500 group-hover:text-tech-accent transition-colors" size={20} />
-             <span className="text-xs text-neutral-600 font-mono">OPUS NATIVE</span>
+          <div className="flex flex-col items-center gap-3 group cursor-pointer">
+            <div className="p-2 rounded-full bg-white/5 group-hover:bg-tech-accent/10 transition-colors ring-1 ring-white/10 group-hover:ring-tech-accent/50">
+              <Bot className="text-neutral-400 group-hover:text-tech-accent transition-colors" size={20} />
+            </div>
+            <span className="text-[10px] text-neutral-500 tracking-widest font-mono uppercase group-hover:text-white transition-colors">29 Agents</span>
           </div>
-          <div className="h-8 w-px bg-neutral-800" />
-          <div className="flex flex-col items-center gap-2 group">
-             <Sparkles className="text-neutral-500 group-hover:text-tech-accent transition-colors" size={20} />
-             <span className="text-xs text-neutral-600 font-mono">ZERO LATENCY</span>
+
+          <div className="h-12 w-px bg-linear-to-b from-transparent via-white/20 to-transparent" />
+
+          <div className="flex flex-col items-center gap-3 group cursor-pointer">
+            <div className="p-2 rounded-full bg-white/5 group-hover:bg-tech-accent/10 transition-colors ring-1 ring-white/10 group-hover:ring-tech-accent/50">
+              <Plug className="text-neutral-400 group-hover:text-tech-accent transition-colors" size={20} />
+            </div>
+            <span className="text-[10px] text-neutral-500 tracking-widest font-mono uppercase group-hover:text-white transition-colors">MCP Natif</span>
+          </div>
+
+          <div className="h-12 w-px bg-linear-to-b from-transparent via-white/20 to-transparent" />
+
+          <div className="flex flex-col items-center gap-3 group cursor-pointer">
+            <div className="p-2 rounded-full bg-white/5 group-hover:bg-tech-accent/10 transition-colors ring-1 ring-white/10 group-hover:ring-tech-accent/50">
+              <RefreshCw className="text-neutral-400 group-hover:text-tech-accent transition-colors" size={20} />
+            </div>
+            <span className="text-[10px] text-neutral-500 tracking-widest font-mono uppercase group-hover:text-white transition-colors">Auto-Update</span>
           </div>
         </motion.div>
       </div>
 
-      {/* Decorative Bottom Fade */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-tech-black to-transparent pointer-events-none" />
+      {/* Dégradé décoratif en bas pour une fusion harmonieuse avec la section suivante */}
+      <div className="absolute bottom-0 left-0 w-full h-40 bg-linear-to-t from-tech-black via-tech-black/80 to-transparent pointer-events-none z-20" />
     </section>
   );
 };

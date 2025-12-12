@@ -1,32 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
-import fs from 'fs/promises';
-import path from 'path';
+import { AgentDownloadParamsSchema } from '@/types';
+import { agentExists, getFullAgentContent, type Category } from '@/lib/mcp/agents';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const category = searchParams.get('category');
-  const agent = searchParams.get('agent');
 
-  if (!category || !agent) {
+  const validation = AgentDownloadParamsSchema.safeParse({
+    category: searchParams.get('category'),
+    agent: searchParams.get('agent'),
+  });
+
+  if (!validation.success) {
     return NextResponse.json(
-      { error: 'Missing category or agent parameter' },
+      { error: 'Invalid parameters', details: validation.error.flatten() },
       { status: 400 }
     );
   }
 
-  try {
-    const agentPath = path.join(process.cwd(), 'content/docs', category, agent);
+  const { category, agent } = validation.data;
 
-    // Check if agent directory exists
-    try {
-      await fs.access(agentPath);
-    } catch {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
+  try {
+    // Check if agent exists using the centralized repository function
+    const exists = await agentExists(category as Category, agent);
+    if (!exists) {
+      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
     }
+
+    // Get all agent content using the centralized service function
+    const content = await getFullAgentContent(category as Category, agent);
 
     const zip = new JSZip();
     const agentFolder = zip.folder(agent);
@@ -38,18 +40,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Read and add each MDX file as .md
-    const files = ['skill', 'reference', 'workflows'];
-
-    for (const file of files) {
-      const filePath = path.join(agentPath, `${file}.mdx`);
-      try {
-        const content = await fs.readFile(filePath, 'utf-8');
-        agentFolder.file(`${file.toUpperCase()}.md`, content);
-      } catch {
-        // File doesn't exist, skip it
-        console.log(`File ${file}.mdx not found for agent ${agent}`);
-      }
+    // Add each document type to the ZIP if content exists
+    if (content.skill) {
+      agentFolder.file('SKILL.md', content.skill);
+    }
+    if (content.reference) {
+      agentFolder.file('REFERENCE.md', content.reference);
+    }
+    if (content.workflows) {
+      agentFolder.file('WORKFLOWS.md', content.workflows);
     }
 
     // Generate ZIP as blob
@@ -62,8 +61,7 @@ export async function GET(request: NextRequest) {
         'Content-Disposition': `attachment; filename="${agent}.zip"`,
       },
     });
-  } catch (error) {
-    console.error('Error generating ZIP:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to generate ZIP' },
       { status: 500 }

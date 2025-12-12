@@ -8,8 +8,7 @@ import {
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '../../../../mdx-components';
 import type { Metadata } from 'next';
-import { CopyMarkdownButton } from '@/components/docs/CopyMarkdownButton';
-import { DownloadAgentButton } from '@/components/docs/DownloadAgentButton';
+import { CopyMarkdownButton, DownloadAgentButton } from '@/components/docs';
 
 interface PageProps {
   params: Promise<{ slug?: string[] }>;
@@ -58,15 +57,15 @@ export default async function Page(props: PageProps) {
       // Build path: content/docs/category/agent-name/pageType.mdx
       const filePath = path.join(process.cwd(), 'content/docs', ...params.slug) + '.mdx';
       rawMarkdown = await fs.readFile(filePath, 'utf-8');
-    } catch (err) {
-      console.error('Failed to read raw markdown:', err);
+    } catch {
+      // Silently fail - raw markdown is optional for copy button
     }
   }
 
   const isSkillPage = showCopyButton && params.slug && getPageType(params.slug) === 'skill';
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full}>
+    <DocsPage toc={page.data.toc} full={page.data.full} tableOfContent={{ style: 'clerk' }}>
       <div className="flex items-center justify-between gap-4 mb-2">
         <DocsTitle>{page.data.title}</DocsTitle>
         {showCopyButton && rawMarkdown && params.slug && (

@@ -50,7 +50,7 @@ Ajoutez Horus à votre configuration MCP Claude Code :
 {
   "mcpServers": {
     "horus": {
-      "url": "https://votre-instance-horus.com/api/mcp"
+      "url": "https://horus-code.com/api/mcp"
     }
   }
 }

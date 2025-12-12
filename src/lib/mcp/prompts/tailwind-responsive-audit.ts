@@ -1,4 +1,4 @@
-import type { McpServerInstance } from '../types';
+import { type McpServerInstance, userMessage, promptResult } from '../types';
 import { z } from 'zod';
 import { getAgentContent } from '../agents';
 
@@ -28,17 +28,11 @@ export function registerTailwindResponsiveAuditPrompt(server: McpServerInstance)
         .map((name, i) => `## ${name}\n${skills[i] || 'Not available'}`)
         .join('\n\n---\n\n');
 
-      return {
-        messages: [
-          {
-            role: 'user' as const,
-            content: {
-              type: 'text' as const,
-              text: `You are a responsive design expert specializing in Tailwind CSS with expertise in the following areas:\n\n${combinedSkills}\n\n---\n\nPerform a comprehensive responsive design audit.${context ? `\n\nContext:\n${context}` : ''}`,
-            },
-          },
-        ],
-      };
+      return promptResult([
+        userMessage(
+          `You are a responsive design expert specializing in Tailwind CSS with expertise in the following areas:\n\n${combinedSkills}\n\n---\n\nPerform a comprehensive responsive design audit.${context ? `\n\nContext:\n${context}` : ''}`
+        ),
+      ]);
     }
   );
 }

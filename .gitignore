@@ -49,3 +49,9 @@ next-env.d.ts
 
 # temp docs
 /docs/
+
+# Roadmap
+ROADMAP.md
+
+# Claude
+CLAUDE.md
