@@ -1,0 +1,486 @@
+---
+title: Reference Technique
+description: Documentation technique approfondie pour les images responsives avec Tailwind CSS
+---
+
+# Reference Technique - Images Expert
+
+Documentation technique approfondie pour les images responsives avec Tailwind CSS.
+
+---
+
+## Aspect Ratio en Detail
+
+### Classes Natives
+
+| Classe | CSS Genere | Ratio |
+|--------|-----------|-------|
+| `aspect-auto` | aspect-ratio: auto | Naturel |
+| `aspect-square` | aspect-ratio: 1 / 1 | 1:1 |
+| `aspect-video` | aspect-ratio: 16 / 9 | 16:9 |
+
+### Valeurs Arbitraires
+
+Pour des ratios personnalises :
+
+| Classe | Resultat |
+|--------|----------|
+| `aspect-[4/3]` | aspect-ratio: 4 / 3 |
+| `aspect-[3/2]` | aspect-ratio: 3 / 2 |
+| `aspect-[21/9]` | aspect-ratio: 21 / 9 |
+| `aspect-[1/1.414]` | aspect-ratio: 1 / 1.414 (A4) |
+
+Format : `aspect-[width/height]`
+
+### Ratios Courants
+
+| Ratio | Classe | Usage |
+|-------|--------|-------|
+| 1:1 | `aspect-square` | Avatars, thumbnails, Instagram |
+| 4:3 | `aspect-[4/3]` | Photos traditionnelles |
+| 3:2 | `aspect-[3/2]` | Photos DSLR, 35mm |
+| 16:9 | `aspect-video` | Videos HD, banners |
+| 21:9 | `aspect-[21/9]` | Cinema ultrawide |
+| 2:3 | `aspect-[2/3]` | Portraits, Pinterest |
+| 9:16 | `aspect-[9/16]` | Stories, Reels |
+
+### Comportement avec Images
+
+L'aspect-ratio s'applique au conteneur. L'image doit remplir ce conteneur avec `object-*`.
+
+**Pattern standard :**
+```html
+<div class="aspect-video">
+  <img src="..." class="w-full h-full object-cover" />
+</div>
+```
+
+**Ou directement sur l'image :**
+```html
+<img src="..." class="aspect-video w-full object-cover" />
+```
+
+Note : `h-auto` peut interferer avec `aspect-*`. Utiliser `h-full` dans un container.
+
+### Responsive Aspect Ratio
+
+Differents ratios selon les breakpoints :
+
+`aspect-square md:aspect-video lg:aspect-[21/9]`
+
+Utile pour adapter l'affichage au viewport :
+- Mobile : carre compact
+- Tablette : 16:9 standard
+- Desktop : cinematique
+
+---
+
+## Object Fit en Detail
+
+### Toutes les Classes
+
+| Classe | CSS | Comportement |
+|--------|-----|--------------|
+| `object-contain` | object-fit: contain | Entier, peut avoir des bandes |
+| `object-cover` | object-fit: cover | Remplit, peut etre croppe |
+| `object-fill` | object-fit: fill | Remplit, peut etre deforme |
+| `object-none` | object-fit: none | Taille originale |
+| `object-scale-down` | object-fit: scale-down | Plus petit de contain ou none |
+
+### Comparaison Visuelle
+
+Image 800x600 dans container 400x400 :
+
+**object-contain :**
+- Image affichee : 400x300 (reduite proportionnellement)
+- Bandes vides : 50px haut et bas
+- Aucune partie croppee
+
+**object-cover :**
+- Image remplit : 400x400
+- Image originale utilisee : portion centrale de ~533x400
+- Parties laterales croppees
+
+**object-fill :**
+- Image affichee : 400x400
+- Image deformee (ratio non respecte)
+- Aplatie visuellement
+
+**object-none :**
+- Image affichee : taille originale (800x600)
+- Depasse du container
+- Centre visible, bords croppes
+
+**object-scale-down :**
+- Compare contain et none
+- Choisit le plus petit
+- Ici : 400x300 (comme contain)
+
+### Quand Utiliser Chaque Valeur
+
+| Valeur | Cas d'usage |
+|--------|-------------|
+| `object-cover` | Backgrounds, heroes, banners, images de cards, avatars |
+| `object-contain` | Logos, images produit, previews de documents |
+| `object-fill` | Rarement recommande, cas ou la deformation est acceptable |
+| `object-none` | Images a taille fixe, sprites |
+| `object-scale-down` | Petites images dans grands containers, eviter l'upscaling |
+
+---
+
+## Object Position en Detail
+
+### Classes Predefinies
+
+| Classe | CSS | Position |
+|--------|-----|----------|
+| `object-center` | object-position: center | Centre (defaut) |
+| `object-top` | object-position: top | Haut centre |
+| `object-bottom` | object-position: bottom | Bas centre |
+| `object-left` | object-position: left | Gauche centre |
+| `object-right` | object-position: right | Droite centre |
+| `object-left-top` | object-position: left top | Coin sup. gauche |
+| `object-left-bottom` | object-position: left bottom | Coin inf. gauche |
+| `object-right-top` | object-position: right top | Coin sup. droit |
+| `object-right-bottom` | object-position: right bottom | Coin inf. droit |
+
+### Valeurs Arbitraires
+
+Pour un positionnement precis :
+
+| Classe | Effet |
+|--------|-------|
+| `object-[50%_25%]` | Focus sur le quart superieur |
+| `object-[center_top]` | Alignement personnalise |
+| `object-[20%_80%]` | Focus bas-gauche |
+
+Format : `object-[x_y]` ou `object-[keyword_keyword]`
+
+### Cas d'Usage
+
+| Situation | Classes |
+|-----------|---------|
+| Portrait avec visage en haut | `object-cover object-top` |
+| Paysage avec sujet a droite | `object-cover object-right` |
+| Produit centre en bas | `object-cover object-bottom` |
+| Focus sur un point precis | `object-cover object-[30%_20%]` |
+
+---
+
+## Lazy Loading Natif
+
+### Attribut loading
+
+| Valeur | Comportement |
+|--------|--------------|
+| `loading="lazy"` | Charge quand proche du viewport |
+| `loading="eager"` | Charge immediatement (defaut) |
+
+Support : 92%+ des navigateurs (2025)
+
+### Attribut decoding
+
+| Valeur | Comportement |
+|--------|--------------|
+| `decoding="async"` | Decode sans bloquer le rendu |
+| `decoding="sync"` | Decode avant d'afficher |
+| `decoding="auto"` | Le navigateur decide (defaut) |
+
+Recommandation : `decoding="async"` pour les images non-critiques.
+
+### Attribut fetchpriority
+
+| Valeur | Usage |
+|--------|-------|
+| `fetchpriority="high"` | Image LCP, hero |
+| `fetchpriority="low"` | Images decoratives, icones |
+| `fetchpriority="auto"` | Defaut |
+
+**Combinaison optimale pour LCP :**
+`loading="eager" fetchpriority="high"`
+
+**Combinaison pour images secondaires :**
+`loading="lazy" fetchpriority="low" decoding="async"`
+
+### Distance de Chargement
+
+Le navigateur decide quand charger les images lazy. Facteurs : vitesse connexion, distance du viewport.
+
+Typiquement : commence a charger ~1250px avant d'etre visible.
+
+Non configurable en HTML natif. Pour controle fin : Intersection Observer API.
+
+---
+
+## Srcset et Sizes Avances
+
+### Syntaxe Srcset Complete
+
+**Descripteurs de largeur (w) :**
+`srcset="small.jpg 320w, medium.jpg 640w, large.jpg 1280w"`
+
+**Descripteurs de densite (x) :**
+`srcset="normal.jpg 1x, retina.jpg 2x, ultra.jpg 3x"`
+
+Ne pas melanger w et x dans le meme srcset.
+
+### Calcul de Selection
+
+Le navigateur choisit selon :
+1. Taille d'affichage (via sizes)
+2. Densite d'ecran (device pixel ratio)
+3. Conditions reseau
+
+Exemple :
+- `sizes="50vw"` sur ecran 1920px = 960px
+- Sur ecran 2x DPR = besoin de 1920px d'image
+- Choisit l'image >= 1920w dans srcset
+
+### Patterns Sizes Courants
+
+| Contexte | Sizes |
+|----------|-------|
+| Pleine largeur | `sizes="100vw"` |
+| Avec max-width | `sizes="(max-width: 800px) 100vw, 800px"` |
+| Layout avec sidebar | `sizes="(min-width: 1024px) calc(100vw - 250px), 100vw"` |
+| Grille 3 colonnes desktop | `sizes="(min-width: 1024px) 33.33vw, (min-width: 640px) 50vw, 100vw"` |
+| Card dans container | `sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw"` |
+
+### Bonnes Pratiques Srcset
+
+**Tailles d'images recommandees :**
+320w, 640w, 960w, 1280w, 1920w, 2560w
+
+Pas besoin de plus de 2560w pour la plupart des cas. Ecart de ~1.5x a 2x entre les tailles.
+
+**Formats :**
+- Preferer WebP (30% plus leger que JPEG)
+- AVIF si support suffisant (50% plus leger)
+- Fallback JPEG pour compatibilite
+
+**Qualite compression :**
+- WebP : 75-85%
+- JPEG : 80-90%
+- AVIF : 60-70%
+
+---
+
+## Element Picture Avance
+
+### Structure Complete
+
+```html
+<picture>
+  <!-- Sources ordonnees du plus specifique au moins -->
+  <source media="..." type="..." srcset="..." sizes="..." />
+  <!-- Fallback obligatoire -->
+  <img src="..." alt="..." class="..." />
+</picture>
+```
+
+L'ordre compte : premiere source qui matche est utilisee.
+
+### Art Direction
+
+Differentes images selon le viewport :
+
+```html
+<picture>
+  <source media="(min-width: 1024px)" srcset="desktop.jpg" />
+  <source media="(min-width: 640px)" srcset="tablet.jpg" />
+  <img src="mobile.jpg" alt="..." />
+</picture>
+```
+
+Cas d'usage :
+- Crop different par viewport
+- Orientation differente (portrait mobile, paysage desktop)
+- Niveau de detail different
+
+### Format Switching
+
+Servir le meilleur format supporte :
+
+```html
+<picture>
+  <source type="image/avif" srcset="image.avif" />
+  <source type="image/webp" srcset="image.webp" />
+  <img src="image.jpg" alt="..." />
+</picture>
+```
+
+### Classes Tailwind avec Picture
+
+Les classes Tailwind s'appliquent sur `<img>`, pas sur `<picture>` :
+
+```html
+<picture>
+  <source ... />
+  <img src="..." alt="..."
+       class="w-full h-auto object-cover rounded-lg" />
+</picture>
+```
+
+`<picture>` est transparent niveau styling.
+
+---
+
+## Prevention CLS Avancee
+
+### Methodes de Reservation d'Espace
+
+| Methode | Code |
+|---------|------|
+| Attributs HTML (recommande) | `<img width="800" height="600" class="w-full h-auto" />` |
+| Aspect Ratio | `<img class="aspect-[4/3] w-full object-cover" />` |
+| Container avec ratio | `<div class="aspect-video"><img class="w-full h-full object-cover" /></div>` |
+| Padding hack (legacy) | `<div class="relative pb-[56.25%]"><img class="absolute inset-0 w-full h-full object-cover" /></div>` |
+
+### Calcul du Ratio
+
+Pour convertir dimensions en ratio :
+
+| Dimensions | Classe |
+|------------|--------|
+| 800x600 | `aspect-[800/600]` ou `aspect-[4/3]` |
+| 1920x1080 | `aspect-[1920/1080]` ou `aspect-video` |
+| 400x400 | `aspect-square` |
+
+Le navigateur simplifie automatiquement.
+
+### Placeholder Visuel
+
+Pendant le chargement :
+
+| Technique | Classes |
+|-----------|---------|
+| Background color | `<img class="bg-gray-200 ..." />` |
+| Skeleton | `<div class="animate-pulse bg-gray-300 aspect-video" />` |
+| Blur placeholder | Afficher version tres basse resolution avec `blur-xl`, retirer au chargement |
+
+### Impact CLS
+
+Valeur CLS cible : < 0.1
+
+**Impact sans reservation d'espace :**
+- Image 600px haute = CLS de ~0.6 (tres mauvais)
+- Cause : tout le contenu sous l'image se decale
+
+**Avec reservation :**
+- CLS = 0 pour l'image
+- Pas de decalage de layout
+
+---
+
+## Background Images avec Tailwind
+
+### Classes de Base
+
+| Classe | Propriete |
+|--------|-----------|
+| `bg-cover` | background-size: cover |
+| `bg-contain` | background-size: contain |
+| `bg-auto` | background-size: auto |
+| `bg-center` | background-position: center |
+| `bg-top` | background-position: top |
+| `bg-bottom` | background-position: bottom |
+| `bg-left` | background-position: left |
+| `bg-right` | background-position: right |
+| `bg-no-repeat` | background-repeat: no-repeat |
+| `bg-repeat` | background-repeat: repeat |
+| `bg-fixed` | background-attachment: fixed |
+| `bg-local` | background-attachment: local |
+
+### Pattern Background Image
+
+Hero avec background :
+
+```html
+<div class="bg-cover bg-center bg-no-repeat min-h-screen"
+     style="background-image: url('hero.jpg')">
+  <!-- Overlay -->
+  <div class="bg-black/50">
+    <!-- Content -->
+  </div>
+</div>
+```
+
+Note : background-image necessite `style=""` ou config Tailwind.
+
+### Limites des Background Images
+
+- Pas de lazy loading natif
+- Pas de srcset/picture
+- Pas de alt text (accessibilite)
+- Pas de SEO pour les images
+
+Preferer `<img>` quand possible. Reserver background-image aux cas ou l'image est purement decorative.
+
+---
+
+## Performance et Metriques
+
+### LCP (Largest Contentful Paint)
+
+Si l'image est candidate LCP :
+- `loading="eager"` (defaut)
+- `fetchpriority="high"`
+- Preload dans `<head>`
+- Pas de lazy loading
+
+```html
+<link rel="preload" as="image" href="hero.jpg" />
+```
+
+### Optimisation Taille Fichier
+
+| Type d'image | Taille cible |
+|--------------|--------------|
+| Hero | < 200KB |
+| Cards | < 50KB |
+| Thumbnails | < 20KB |
+| Avatars | < 10KB |
+
+**Compression recommandee :**
+- JPEG : mozjpeg, qualite 80-85%
+- WebP : qualite 75-80%
+- AVIF : qualite 60-70%
+
+### CDN et Transformation
+
+Services recommandes :
+- Cloudinary
+- Imgix
+- Cloudflare Images
+- Vercel Image Optimization
+
+Avantages :
+- Transformation a la volee
+- Generation srcset automatique
+- Conversion format automatique
+- Cache global
+
+---
+
+## Accessibilite
+
+### Alt Text
+
+Obligatoire pour toute image informative.
+
+**Bonnes pratiques :**
+- Decrire le contenu, pas le format ("photo de...")
+- Concis mais complet
+- Contextuellement pertinent
+
+**Images decoratives :**
+`alt=""` (vide, pas absent)
+`role="presentation"` optionnel
+
+Sans alt : considere comme erreur d'accessibilite WCAG.
+
+### Images de Texte
+
+Eviter le texte dans les images. Si necessaire :
+- Alt text incluant le texte de l'image
+- Considerer aria-label pour plus de contexte

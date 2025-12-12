@@ -1,0 +1,669 @@
+---
+title: Workflows
+description: Processus d'implémentation par pattern
+---
+
+# Patterns Expert - Workflows
+
+Processus détaillés pour implémenter chaque design pattern.
+
+---
+
+## Table des Matières
+
+1. [Implémentation Container/Presentational](#workflow-1--implémentation-containerpresentational)
+2. [Création de Compound Components](#workflow-2--création-de-compound-components)
+3. [Extraction en Custom Hook](#workflow-3--extraction-en-custom-hook)
+4. [Implémentation Factory Pattern](#workflow-4--implémentation-factory-pattern)
+5. [Implémentation Repository Pattern](#workflow-5--implémentation-repository-pattern)
+6. [Migration entre Patterns](#workflow-6--migration-entre-patterns)
+
+---
+
+## Workflow 1 : Implémentation Container/Presentational
+
+### Phase 1 : Analyse du Composant Existant
+
+Identifie dans le composant actuel :
+
+<AnalysisChecklist>
+**Logique (pour Container/Hook) :**
+- [ ] useState pour état métier
+- [ ] useEffect pour data fetching
+- [ ] useEffect pour side effects
+- [ ] Handlers complexes
+- [ ] Transformations de données
+
+**UI (pour Presentational) :**
+- [ ] JSX de rendu
+- [ ] Styling
+- [ ] Handlers de UI (toggle, expand)
+- [ ] Rendu conditionnel basé sur props
+</AnalysisChecklist>
+
+### Phase 2 : Choix de l'Approche
+
+Décide entre :
+
+| Critère | Container Explicite | Custom Hook |
+|---------|---------------------|-------------|
+| Réutilisation logique | Oui | Oui |
+| Réutilisation UI différente | Oui | Non |
+| Simplicité | Moins | Plus |
+| Boilerplate | Plus | Moins |
+
+### Phase 3 : Approche Custom Hook (Recommandée)
+
+1. **Créer le hook**
+
+   Fichier : `useComponentName.ts`
+
+   Structure :
+   - Déclarer l'interface de retour
+   - Déplacer useState, useEffect
+   - Déplacer les handlers
+   - Retourner état + actions
+
+2. **Refactorer le composant**
+
+   - Importer et appeler le hook
+   - Utiliser les valeurs retournées
+   - Garder uniquement le JSX
+
+3. **Tester**
+
+   - Test unitaire du hook avec `@testing-library/react-hooks`
+   - Test du composant avec données mockées
+
+### Phase 4 : Approche Container Explicite
+
+1. **Créer le Presentational**
+
+   Fichier : `ComponentName.tsx`
+
+   - Props typées avec toutes les données nécessaires
+   - Aucun hook d'état
+   - Pure function component
+   - Export nommé
+
+2. **Créer le Container**
+
+   Fichier : `ComponentNameContainer.tsx`
+
+   - Toute la logique (hooks, fetch, handlers)
+   - Importe et rend le Presentational
+   - Passe les props
+
+3. **Configurer l'export**
+
+   Fichier : `index.ts`
+
+   - Exporte le Container par défaut
+   - Exporte le Presentational nommé (pour tests/réutilisation)
+
+### Phase 5 : Validation
+
+Vérifier que :
+- [ ] Le Presentational fonctionne avec des props statiques
+- [ ] La logique est testable indépendamment
+- [ ] Aucune duplication de code
+- [ ] Les types sont cohérents
+
+---
+
+## Workflow 2 : Création de Compound Components
+
+### Phase 1 : Identifier les Composants
+
+Liste les éléments du composant composé :
+
+<CompoundAnalysis>
+Composant Parent : [Nom]
+Éléments enfants :
+1. [Enfant 1] - Rôle : ...
+2. [Enfant 2] - Rôle : ...
+3. [Enfant 3] - Rôle : ...
+
+État partagé :
+- [État 1] : partagé par [Enfants...]
+- [État 2] : partagé par [Enfants...]
+
+Actions partagées :
+- [Action 1] : utilisée par [Enfants...]
+</CompoundAnalysis>
+
+### Phase 2 : Créer le Context
+
+1. **Définir le type du Context**
+
+   Fichier : `ComponentContext.ts`
+
+   ```typescript
+   interface ComponentContextType {
+     // État
+     isOpen: boolean;
+     activeItem: string | null;
+
+     // Actions
+     toggle: () => void;
+     setActiveItem: (id: string) => void;
+   }
+   ```
+
+2. **Créer le Context**
+
+   - createContext avec valeur par défaut null
+   - Hook `useComponentContext` pour consommer
+   - Throw error si utilisé hors Provider
+
+### Phase 3 : Créer le Parent (Provider)
+
+Fichier : `Component.tsx`
+
+1. **Gérer l'état**
+   - useState pour chaque état partagé
+   - Handlers pour les actions
+
+2. **Créer le Provider**
+   - Wrapper children avec Context.Provider
+   - Passer la valeur du context
+
+3. **Attacher les enfants en static properties**
+   - `Component.Header = Header`
+   - `Component.Body = Body`
+   - etc.
+
+### Phase 4 : Créer les Enfants (Consumers)
+
+Pour chaque enfant :
+
+1. **Consommer le Context**
+   - Appeler useComponentContext()
+   - Extraire les valeurs nécessaires
+
+2. **Rendre le JSX**
+   - Utiliser les valeurs du context
+   - Appeler les actions si nécessaire
+
+3. **Typer les props spécifiques**
+   - Props propres à cet enfant
+   - Children si applicable
+
+### Phase 5 : Export et Documentation
+
+Fichier : `index.ts`
+
+```typescript
+export { Component } from './Component';
+export type { ComponentProps, HeaderProps, BodyProps } from './types';
+```
+
+Documentation :
+- Exemple d'usage complet
+- Props de chaque sous-composant
+- Contraintes (ordre, nesting)
+
+### Phase 6 : Validation
+
+Vérifier que :
+- [ ] Les enfants fonctionnent dans n'importe quel ordre
+- [ ] L'état est partagé correctement
+- [ ] Le composant est utilisable intuitivement
+- [ ] Erreur claire si enfant utilisé hors parent
+
+---
+
+## Workflow 3 : Extraction en Custom Hook
+
+### Phase 1 : Identifier la Logique à Extraire
+
+Repère dans le composant :
+
+<HookExtraction>
+Logique candidate :
+- [ ] Bloc de useState + useEffect liés
+- [ ] Logique dupliquée entre composants
+- [ ] Logique complexe obscurcissant le JSX
+- [ ] Logique testable indépendamment
+
+À garder dans le composant :
+- [ ] État UI local (isHovered, etc.)
+- [ ] Refs DOM
+- [ ] Logique simple et spécifique
+</HookExtraction>
+
+### Phase 2 : Concevoir l'Interface du Hook
+
+1. **Nommer le hook**
+   - Préfixe `use`
+   - Verbe ou nom décrivant la fonction
+   - Exemples : `useUser`, `useToggle`, `useFetch`
+
+2. **Définir les paramètres**
+   - Paramètres obligatoires
+   - Options facultatives (avec defaults)
+
+3. **Définir le retour**
+   - État accessible
+   - Actions/handlers
+   - Métadonnées (loading, error)
+
+### Phase 3 : Créer le Hook
+
+Fichier : `useHookName.ts`
+
+1. **Structure de base**
+
+   ```typescript
+   interface UseHookNameOptions {
+     // Options...
+   }
+
+   interface UseHookNameReturn {
+     // État
+     data: DataType | null;
+     loading: boolean;
+     error: Error | null;
+
+     // Actions
+     action1: () => void;
+     action2: (param: ParamType) => Promise<void>;
+   }
+
+   export function useHookName(
+     requiredParam: string,
+     options?: UseHookNameOptions
+   ): UseHookNameReturn {
+     // Implémentation
+   }
+   ```
+
+2. **Déplacer la logique**
+   - Copier useState, useEffect
+   - Adapter les références
+   - Créer les handlers
+
+3. **Retourner l'interface**
+   - Objet avec état et actions
+   - Ou tuple si simple [value, setValue]
+
+### Phase 4 : Refactorer le Composant
+
+1. **Importer et appeler le hook**
+   ```typescript
+   const { data, loading, action1 } = useHookName(param);
+   ```
+
+2. **Supprimer la logique migrée**
+   - Supprimer les useState/useEffect déplacés
+   - Supprimer les handlers migrés
+
+3. **Utiliser les valeurs du hook**
+   - Remplacer les variables locales
+   - Utiliser les handlers du hook
+
+### Phase 5 : Tester
+
+1. **Test unitaire du hook**
+
+   ```typescript
+   import { renderHook, act } from '@testing-library/react-hooks';
+
+   test('should return initial state', () => {
+     const { result } = renderHook(() => useHookName('param'));
+     expect(result.current.data).toBeNull();
+   });
+   ```
+
+2. **Test d'intégration**
+   - Tester le composant utilisant le hook
+   - Vérifier le comportement complet
+
+### Phase 6 : Documentation
+
+- JSDoc sur la fonction
+- Types exportés
+- Exemple d'usage
+- Notes sur les limitations
+
+---
+
+## Workflow 4 : Implémentation Factory Pattern
+
+### Phase 1 : Identifier le Besoin
+
+Confirme que la Factory est appropriée :
+
+<FactoryNeed>
+Questions :
+- [ ] Plusieurs types d'objets à créer ?
+- [ ] Logique de création complexe ?
+- [ ] Configuration dynamique ?
+- [ ] Client ne doit pas connaître les classes concrètes ?
+
+Si moins de 2 oui → Simple `new` peut suffire
+</FactoryNeed>
+
+### Phase 2 : Choisir la Variante
+
+| Situation | Variante |
+|-----------|----------|
+| Création simple par type | Simple Factory |
+| Extension par sous-classes | Factory Method |
+| Familles d'objets liés | Abstract Factory |
+
+### Phase 3 : Implémenter Simple Factory
+
+1. **Définir l'interface produit**
+
+   ```typescript
+   interface Notification {
+     send(message: string): Promise<void>;
+   }
+   ```
+
+2. **Créer les classes concrètes**
+
+   ```typescript
+   class EmailNotification implements Notification { ... }
+   class SmsNotification implements Notification { ... }
+   ```
+
+3. **Créer la Factory**
+
+   ```typescript
+   type NotificationType = 'email' | 'sms' | 'push';
+
+   class NotificationFactory {
+     create(type: NotificationType): Notification {
+       switch (type) {
+         case 'email': return new EmailNotification();
+         case 'sms': return new SmsNotification();
+         case 'push': return new PushNotification();
+       }
+     }
+   }
+   ```
+
+4. **Utiliser**
+
+   ```typescript
+   const factory = new NotificationFactory();
+   const notification = factory.create('email');
+   notification.send('Hello');
+   ```
+
+### Phase 4 : Implémenter Factory Method
+
+1. **Créer la classe abstraite**
+
+   ```typescript
+   abstract class NotificationSender {
+     abstract createNotification(): Notification;
+
+     send(message: string): void {
+       const notification = this.createNotification();
+       notification.send(message);
+     }
+   }
+   ```
+
+2. **Créer les sous-classes concrètes**
+
+   ```typescript
+   class EmailNotificationSender extends NotificationSender {
+     createNotification(): Notification {
+       return new EmailNotification();
+     }
+   }
+   ```
+
+### Phase 5 : Implémenter Abstract Factory
+
+1. **Définir les interfaces produits**
+
+   ```typescript
+   interface Button { render(): void; }
+   interface Input { render(): void; }
+   ```
+
+2. **Définir l'interface factory**
+
+   ```typescript
+   interface UIFactory {
+     createButton(): Button;
+     createInput(): Input;
+   }
+   ```
+
+3. **Créer les factories concrètes**
+
+   ```typescript
+   class MaterialUIFactory implements UIFactory {
+     createButton(): Button { return new MaterialButton(); }
+     createInput(): Input { return new MaterialInput(); }
+   }
+   ```
+
+### Phase 6 : Validation
+
+Vérifier que :
+- [ ] Le client ne connaît pas les classes concrètes
+- [ ] Ajouter un type = ajouter une classe
+- [ ] La factory est testable
+- [ ] La configuration est centralisée
+
+---
+
+## Workflow 5 : Implémentation Repository Pattern
+
+### Phase 1 : Définir les Entités du Domaine
+
+```typescript
+// domain/entities/User.ts
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
+```
+
+### Phase 2 : Créer l'Interface Repository
+
+Fichier : `repositories/interfaces/IUserRepository.ts`
+
+```typescript
+interface IUserRepository {
+  findById(id: string): Promise<User | null>;
+  findByEmail(email: string): Promise<User | null>;
+  findAll(): Promise<User[]>;
+  save(user: User): Promise<User>;
+  delete(id: string): Promise<void>;
+}
+```
+
+**Règles :**
+- Méthodes orientées domaine
+- Retourne des entités, pas des DTOs ORM
+- Pas d'exposition de QueryBuilder
+
+### Phase 3 : Créer le Generic Repository (Optionnel)
+
+Fichier : `repositories/base/GenericRepository.ts`
+
+```typescript
+interface IGenericRepository<T, ID> {
+  findById(id: ID): Promise<T | null>;
+  findAll(): Promise<T[]>;
+  save(entity: T): Promise<T>;
+  delete(id: ID): Promise<void>;
+}
+
+abstract class GenericRepository<T, ID> implements IGenericRepository<T, ID> {
+  // Implémentation avec ORM...
+}
+```
+
+### Phase 4 : Créer l'Implémentation Concrète
+
+Fichier : `repositories/implementations/UserRepository.ts`
+
+```typescript
+class UserRepository implements IUserRepository {
+  constructor(private orm: ORM) {}
+
+  async findById(id: string): Promise<User | null> {
+    const record = await this.orm.users.findUnique({ where: { id } });
+    return record ? this.toDomain(record) : null;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    // Implémentation...
+  }
+
+  // Mapper ORM → Domain
+  private toDomain(record: OrmUser): User {
+    return {
+      id: record.id,
+      email: record.email,
+      name: record.name,
+      createdAt: record.created_at,
+    };
+  }
+}
+```
+
+### Phase 5 : Créer l'Implémentation de Test
+
+Fichier : `repositories/implementations/InMemoryUserRepository.ts`
+
+```typescript
+class InMemoryUserRepository implements IUserRepository {
+  private users: Map<string, User> = new Map();
+
+  async findById(id: string): Promise<User | null> {
+    return this.users.get(id) ?? null;
+  }
+
+  async save(user: User): Promise<User> {
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  // Helper pour les tests
+  clear(): void {
+    this.users.clear();
+  }
+
+  seed(users: User[]): void {
+    users.forEach(u => this.users.set(u.id, u));
+  }
+}
+```
+
+### Phase 6 : Configurer l'Injection
+
+**Avec NestJS :**
+
+```typescript
+@Module({
+  providers: [
+    {
+      provide: 'IUserRepository',
+      useClass: UserRepository,
+    },
+  ],
+})
+export class UserModule {}
+```
+
+**Avec InversifyJS :**
+
+```typescript
+container.bind<IUserRepository>(TYPES.UserRepository)
+  .to(UserRepository);
+```
+
+### Phase 7 : Utiliser dans les Services
+
+```typescript
+class UserService {
+  constructor(private userRepository: IUserRepository) {}
+
+  async getUserById(id: string): Promise<User> {
+    const user = await this.userRepository.findById(id);
+    if (!user) throw new UserNotFoundError(id);
+    return user;
+  }
+}
+```
+
+### Phase 8 : Validation
+
+Vérifier que :
+- [ ] Service testable avec InMemoryRepository
+- [ ] Changement d'ORM = nouvelle implémentation seulement
+- [ ] Interface stable
+- [ ] Pas de leak d'abstraction (SQL, ORM types)
+
+---
+
+## Workflow 6 : Migration entre Patterns
+
+### Migration : Composant Monolithique → Container/Presentational
+
+1. Identifier logique vs UI (Phase 1 Workflow 1)
+2. Extraire le Custom Hook
+3. Refactorer le composant
+4. Tester indépendamment
+
+### Migration : Props Drilling → Compound Components
+
+1. Identifier l'état partagé profondément passé
+2. Créer le Context
+3. Convertir le parent en Provider
+4. Convertir les enfants en Consumers
+5. Nettoyer les props intermédiaires
+
+### Migration : new Partout → Factory
+
+1. Identifier les instanciations répétées
+2. Créer l'interface produit
+3. Créer la Factory
+4. Remplacer les `new` par `factory.create()`
+5. Injecter la Factory
+
+### Migration : ORM Direct → Repository
+
+1. Identifier les appels ORM dans les services
+2. Créer l'interface Repository
+3. Implémenter le Repository concret
+4. Remplacer les appels ORM par le Repository
+5. Injecter le Repository
+6. Créer l'implémentation de test
+
+---
+
+## Checklist Générale
+
+### Avant Implémentation
+
+- [ ] Le pattern résout un problème réel
+- [ ] La complexité ajoutée est justifiée
+- [ ] L'équipe comprend le pattern
+- [ ] Les alternatives simples ont été considérées
+
+### Pendant Implémentation
+
+- [ ] Types TypeScript complets
+- [ ] Tests unitaires
+- [ ] Documentation inline
+- [ ] Nommage cohérent
+
+### Après Implémentation
+
+- [ ] Code review
+- [ ] Tests passent
+- [ ] Documentation à jour
+- [ ] Exemple d'usage clair

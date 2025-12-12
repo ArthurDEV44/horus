@@ -1,0 +1,581 @@
+---
+title: SOLID Expert - Workflows
+description: Processus détaillés pour diagnostiquer et corriger les violations SOLID.
+---
+
+# SOLID Expert - Workflows
+
+Processus détaillés pour diagnostiquer et corriger les violations SOLID.
+
+---
+
+## Table des Matières
+
+1. [Audit SOLID Complet](#workflow-1--audit-solid-complet)
+2. [Correction Violation SRP](#workflow-2--correction-violation-srp)
+3. [Correction Violation OCP](#workflow-3--correction-violation-ocp)
+4. [Correction Violation LSP](#workflow-4--correction-violation-lsp)
+5. [Correction Violation ISP](#workflow-5--correction-violation-isp)
+6. [Correction Violation DIP](#workflow-6--correction-violation-dip)
+7. [Revue de Code SOLID](#workflow-7--revue-de-code-solid)
+
+---
+
+## Workflow 1 : Audit SOLID Complet
+
+Processus systématique pour analyser un module ou codebase.
+
+### Phase 1 : Préparation
+
+Collecte les informations préliminaires :
+
+<AuditPrep>
+- Périmètre : classe unique, module, ou codebase entier
+- Technologies : langage, framework, ORM
+- Contexte : application critique, MVP, legacy
+- Métriques disponibles : coverage, complexité, couplage
+</AuditPrep>
+
+### Phase 2 : Analyse SRP
+
+Pour chaque classe du périmètre :
+
+1. **Identifier les responsabilités**
+   - Liste les groupes de méthodes par domaine
+   - Identifie les dépendances importées
+   - Note les acteurs/stakeholders concernés
+
+2. **Évaluer la cohésion**
+   - Les méthodes utilisent-elles les mêmes données ?
+   - Pourrait-on décrire la classe en une phrase ?
+   - Combien de raisons de changer ?
+
+3. **Scoring**
+   | Score | Signification |
+   |-------|---------------|
+   | ✅ | Une responsabilité claire |
+   | ⚠️ | 2 responsabilités liées |
+   | ❌ | 3+ responsabilités distinctes |
+
+### Phase 3 : Analyse OCP
+
+Pour chaque point d'extension potentiel :
+
+1. **Identifier les variations**
+   - Où le code utilise-t-il switch/if sur des types ?
+   - Quelles fonctionnalités sont ajoutées fréquemment ?
+   - Où les modifications touchent-elles du code existant ?
+
+2. **Évaluer l'extensibilité**
+   - Peut-on ajouter un comportement sans modifier ?
+   - Le polymorphisme est-il utilisé ?
+   - Les abstractions existent-elles ?
+
+3. **Scoring**
+   | Score | Signification |
+   |-------|---------------|
+   | ✅ | Extension possible sans modification |
+   | ⚠️ | Modification mineure requise |
+   | ❌ | Modification majeure de code testé |
+
+### Phase 4 : Analyse LSP
+
+Pour chaque hiérarchie d'héritage :
+
+1. **Vérifier la substituabilité**
+   - Les sous-classes peuvent-elles remplacer le parent partout ?
+   - Y a-t-il des méthodes throwing/vides ?
+   - Le code client fait-il des instanceof ?
+
+2. **Vérifier les contrats**
+   - Préconditions respectées ?
+   - Postconditions maintenues ?
+   - Invariants préservés ?
+
+3. **Scoring**
+   | Score | Signification |
+   |-------|---------------|
+   | ✅ | Substitution totale possible |
+   | ⚠️ | Cas limites problématiques |
+   | ❌ | Substitution impossible |
+
+### Phase 5 : Analyse ISP
+
+Pour chaque interface :
+
+1. **Mesurer la taille**
+   - Nombre de méthodes
+   - Cohésion des méthodes
+   - Implémentations existantes
+
+2. **Vérifier les implémentations**
+   - Y a-t-il des méthodes non implémentées ?
+   - Des méthodes throwing NotImplemented ?
+   - Des clients qui n'utilisent qu'une partie ?
+
+3. **Scoring**
+   | Score | Signification |
+   |-------|---------------|
+   | ✅ | Interface fine et cohérente |
+   | ⚠️ | Quelques méthodes superflues |
+   | ❌ | Fat interface évidente |
+
+### Phase 6 : Analyse DIP
+
+Pour chaque module high-level :
+
+1. **Cartographier les dépendances**
+   - Dépendances sur des concrétions ?
+   - Instanciations directes (new) ?
+   - Import de modules low-level ?
+
+2. **Évaluer l'injection**
+   - Dépendances injectées ?
+   - Abstractions définies ?
+   - Testable avec mocks ?
+
+3. **Scoring**
+   | Score | Signification |
+   |-------|---------------|
+   | ✅ | Dépend uniquement d'abstractions |
+   | ⚠️ | Quelques dépendances concrètes |
+   | ❌ | Couplage fort aux implémentations |
+
+### Phase 7 : Rapport et Priorisation
+
+Synthétise les résultats :
+
+<AuditReport>
+**Résumé Exécutif**
+- Score global : X/5 principes respectés
+- Violations critiques : N
+- Quick wins identifiés : N
+
+**Violations par Priorité**
+
+CRITIQUE (impact testabilité/évolution)
+1. [Classe] - [Principe] - [Description]
+
+IMPORTANT (amélioration significative)
+1. [Classe] - [Principe] - [Description]
+
+MINEUR (nice to have)
+1. [Classe] - [Principe] - [Description]
+
+**Recommandations**
+- Court terme : ...
+- Moyen terme : ...
+- Long terme : ...
+</AuditReport>
+
+---
+
+## Workflow 2 : Correction Violation SRP
+
+### Phase 1 : Identification
+
+Confirme la violation SRP :
+
+1. Liste toutes les méthodes de la classe
+2. Groupe par domaine fonctionnel
+3. Identifie les acteurs/stakeholders par groupe
+
+Si plusieurs groupes distincts existent → violation confirmée.
+
+### Phase 2 : Planification de l'Extraction
+
+Pour chaque responsabilité identifiée :
+
+<ExtractionPlan>
+Responsabilité 1 : [Nom]
+- Méthodes concernées : [liste]
+- Données utilisées : [liste]
+- Nouvelle classe : [NomClasse]
+- Dépendances : [liste]
+
+Responsabilité 2 : [Nom]
+- ...
+</ExtractionPlan>
+
+### Phase 3 : Préparation des Tests
+
+Avant toute modification :
+
+1. Identifier les tests existants
+2. Ajouter des tests de caractérisation si manquants
+3. S'assurer de la couverture des comportements clés
+
+### Phase 4 : Extraction Progressive
+
+Pour chaque responsabilité à extraire :
+
+1. **Créer la nouvelle classe**
+   - Nom explicite reflétant la responsabilité
+   - Constructeur avec dépendances nécessaires
+
+2. **Déplacer les méthodes**
+   - Copier les méthodes
+   - Adapter les accès aux données
+   - Ajouter les méthodes à l'interface si nécessaire
+
+3. **Déléguer depuis l'original**
+   - La classe originale délègue à la nouvelle
+   - Maintient la compatibilité temporaire
+
+4. **Mettre à jour les clients**
+   - Graduellement, diriger vers la nouvelle classe
+   - Supprimer la délégation quand plus utilisée
+
+5. **Valider**
+   - Exécuter les tests
+   - Vérifier le comportement
+
+### Phase 5 : Nettoyage
+
+1. Supprimer le code mort de la classe originale
+2. Renommer si nécessaire (plus de "Manager", "Handler")
+3. Mettre à jour la documentation
+4. Commit atomique par extraction
+
+---
+
+## Workflow 3 : Correction Violation OCP
+
+### Phase 1 : Identification du Point d'Extension
+
+Localise le code problématique :
+
+1. Trouve les switch/if sur types
+2. Identifie les conditions qui grandissent
+3. Note les modifications récentes pour ajout de feature
+
+### Phase 2 : Choix du Pattern
+
+Sélectionne le pattern approprié :
+
+| Situation | Pattern Recommandé |
+|-----------|-------------------|
+| Algorithmes interchangeables | Strategy |
+| Comportements additionnels | Decorator |
+| Squelette avec variations | Template Method |
+| Création d'objets variés | Factory Method |
+| Famille d'objets liés | Abstract Factory |
+
+### Phase 3 : Extraction de l'Abstraction
+
+1. **Définir l'interface**
+   - Identifier le comportement commun
+   - Créer l'interface avec la signature appropriée
+
+2. **Créer les implémentations**
+   - Une classe par cas du switch/if
+   - Implémenter l'interface
+
+3. **Configurer la sélection**
+   - Factory pour créer la bonne implémentation
+   - Registry/Map pour associer type → implémentation
+   - Injection de dépendance
+
+### Phase 4 : Refactoring du Code Client
+
+1. Remplacer le switch/if par appel polymorphique
+2. Injecter ou obtenir l'implémentation appropriée
+3. Supprimer la logique de sélection inline
+
+### Phase 5 : Validation
+
+1. Exécuter les tests existants
+2. Ajouter un nouveau cas (nouvelle implémentation)
+3. Vérifier qu'aucune modification du code existant n'est nécessaire
+
+---
+
+## Workflow 4 : Correction Violation LSP
+
+### Phase 1 : Diagnostic de la Violation
+
+Identifie le type de violation :
+
+| Type | Symptôme |
+|------|----------|
+| Méthode throwing | `throw new NotImplementedException()` |
+| Méthode vide | Implémentation qui ne fait rien |
+| Précondition renforcée | Sous-classe plus restrictive |
+| Postcondition affaiblie | Sous-classe garantit moins |
+| instanceof check | Code client vérifie le type |
+
+### Phase 2 : Analyse de la Hiérarchie
+
+Questions à se poser :
+
+1. L'héritage est-il le bon mécanisme ?
+2. Y a-t-il vraiment une relation "est-un" ?
+3. Le comportement est-il réellement partagé ?
+
+### Phase 3 : Choix de la Solution
+
+#### Option A : Restructurer la Hiérarchie
+
+Si l'héritage est inapproprié :
+
+1. Créer des interfaces distinctes
+2. Faire implémenter seulement les interfaces pertinentes
+3. Utiliser la composition pour partager le code
+
+Exemple Bird/Penguin :
+- Interface `Bird` (caractéristiques de base)
+- Interface `FlyingBird extends Bird`
+- `Sparrow implements FlyingBird`
+- `Penguin implements Bird` (pas FlyingBird)
+
+#### Option B : Corriger le Contrat
+
+Si l'héritage est approprié mais mal implémenté :
+
+1. Affaiblir la précondition du parent
+2. Renforcer la postcondition de l'enfant
+3. Documenter le contrat explicitement
+
+#### Option C : Composition
+
+Remplacer l'héritage par la composition :
+
+1. Extraire le comportement variable dans une interface
+2. Injecter le comportement plutôt qu'hériter
+3. Permettre des comportements différents sans violation
+
+### Phase 4 : Implémentation
+
+1. Créer les nouvelles abstractions
+2. Migrer les classes vers la nouvelle structure
+3. Mettre à jour les clients pour utiliser les bonnes interfaces
+4. Supprimer les instanceof/type checks
+
+### Phase 5 : Validation
+
+Vérifier que :
+- Aucun instanceof dans le code client
+- Aucune méthode throwing/vide
+- Substitution possible partout
+- Tests passent avec n'importe quelle implémentation
+
+---
+
+## Workflow 5 : Correction Violation ISP
+
+### Phase 1 : Analyse de l'Interface
+
+Documente l'interface actuelle :
+
+<InterfaceAnalysis>
+Interface : [NomInterface]
+Méthodes : [nombre total]
+
+Implémentation 1 : [NomClasse]
+- Méthodes utilisées : [liste]
+- Méthodes vides/throwing : [liste]
+
+Implémentation 2 : [NomClasse]
+- ...
+
+Clients :
+- Client 1 utilise : [liste méthodes]
+- Client 2 utilise : [liste méthodes]
+</InterfaceAnalysis>
+
+### Phase 2 : Identification des Rôles
+
+Groupe les méthodes par cohésion :
+
+1. Méthodes toujours utilisées ensemble
+2. Méthodes optionnelles
+3. Méthodes mutuellement exclusives
+
+Chaque groupe = un rôle potentiel = une interface.
+
+### Phase 3 : Conception des Nouvelles Interfaces
+
+Définis les role interfaces :
+
+<RoleInterfaces>
+Interface 1 : [NomRole1]
+- Responsabilité : [description]
+- Méthodes : [liste]
+
+Interface 2 : [NomRole2]
+- ...
+
+Composition :
+- [InterfaceComplete] extends [Role1], [Role2], [Role3]
+</RoleInterfaces>
+
+### Phase 4 : Migration
+
+1. **Créer les nouvelles interfaces**
+   - Une par rôle identifié
+   - Nommage explicite du rôle
+
+2. **Adapter les implémentations**
+   - Chaque classe implémente seulement ses rôles
+   - Supprimer les méthodes vides/throwing
+
+3. **Mettre à jour les clients**
+   - Dépendre de l'interface minimale nécessaire
+   - Pas de fat interface si seules quelques méthodes utilisées
+
+4. **Déprécier l'ancienne interface**
+   - Garder temporairement pour compatibilité
+   - Marquer deprecated
+   - Supprimer après migration complète
+
+### Phase 5 : Validation
+
+Vérifier que :
+- Aucune implémentation n'a de méthode vide
+- Chaque client dépend du minimum nécessaire
+- Les interfaces sont cohérentes (un rôle = une interface)
+
+---
+
+## Workflow 6 : Correction Violation DIP
+
+### Phase 1 : Cartographie des Dépendances
+
+Identifie les dépendances problématiques :
+
+<DependencyMap>
+Classe : [NomClasse] (high-level)
+
+Dépendances concrètes :
+- [ConcreteClass1] - instanciée dans : [constructeur/méthode]
+- [ConcreteClass2] - ...
+
+Dépendances abstraites existantes :
+- [Interface1] - injectée via : [constructeur/setter]
+</DependencyMap>
+
+### Phase 2 : Définition des Abstractions
+
+Pour chaque dépendance concrète :
+
+1. **Évaluer le besoin**
+   - Cette dépendance changera-t-elle ?
+   - A-t-on besoin de la mocker pour les tests ?
+   - Plusieurs implémentations possibles ?
+
+2. **Si oui, créer l'abstraction**
+   - Interface au niveau du module high-level
+   - Signature basée sur les besoins du client
+   - Pas sur les capacités de l'implémentation
+
+### Phase 3 : Refactoring vers DI
+
+1. **Modifier le constructeur**
+   - Ajouter les dépendances abstraites en paramètre
+   - Supprimer les instanciations internes
+
+2. **Adapter les implémentations**
+   - Faire implémenter les nouvelles interfaces
+   - Vérifier la compatibilité
+
+3. **Configurer l'injection**
+   - Container DI si framework utilisé
+   - Factory sinon
+   - Composition root explicite
+
+### Phase 4 : Points d'Injection
+
+Choisir le type d'injection :
+
+| Type | Quand l'utiliser |
+|------|-----------------|
+| Constructor | Dépendances obligatoires (recommandé par défaut) |
+| Setter | Dépendances optionnelles |
+| Method | Dépendance varie par appel |
+
+### Phase 5 : Validation
+
+Vérifier que :
+- Le module high-level ne connaît que des abstractions
+- Les tests peuvent injecter des mocks
+- Le Composition Root configure toutes les dépendances
+- Aucun `new ConcreteClass()` dans la logique métier
+
+---
+
+## Workflow 7 : Revue de Code SOLID
+
+### Checklist Rapide
+
+Pour chaque classe/module à review :
+
+<SolidReviewChecklist>
+**SRP**
+[ ] La classe a une seule responsabilité identifiable
+[ ] Un seul acteur est concerné par les changements
+[ ] Le nom reflète précisément la responsabilité
+
+**OCP**
+[ ] Pas de switch/if sur types pour varier le comportement
+[ ] Extensions possibles sans modifier le code existant
+[ ] Abstractions en place pour les points de variation
+
+**LSP**
+[ ] Pas de méthodes throwing NotImplemented
+[ ] Pas de instanceof dans le code client
+[ ] Sous-classes substituables au parent partout
+
+**ISP**
+[ ] Interfaces fines et cohérentes
+[ ] Pas de méthodes inutilisées dans les implémentations
+[ ] Clients dépendent du minimum nécessaire
+
+**DIP**
+[ ] High-level dépend d'abstractions
+[ ] Dépendances injectées (pas instanciées)
+[ ] Testable avec mocks
+</SolidReviewChecklist>
+
+### Commentaires de Review
+
+Formulations constructives :
+
+| Au lieu de | Préférer |
+|------------|----------|
+| "Ça viole SRP" | "Cette classe semble avoir 2 responsabilités : X et Y. Envisager d'extraire Y dans sa propre classe." |
+| "Mauvais design" | "L'ajout d'un nouveau type nécessiterait de modifier cette méthode. Un pattern Strategy permettrait d'étendre sans modifier." |
+| "instanceof = code smell" | "Ce check de type suggère que la hiérarchie pourrait être restructurée pour permettre le polymorphisme." |
+
+### Priorisation en Review
+
+Focus sur :
+
+1. **Critique** : Code qui change souvent ET viole SOLID
+2. **Important** : Code complexe avec violations
+3. **Informatif** : Violations mineures, mentionner sans bloquer
+
+Ne pas bloquer une PR pour des violations mineures dans du code stable.
+
+---
+
+## Checklist Générale de Refactoring
+
+### Avant
+
+- [ ] Tests existants passent
+- [ ] Couverture suffisante du code à modifier
+- [ ] Backup / branche de travail
+
+### Pendant
+
+- [ ] Un refactoring à la fois
+- [ ] Tests après chaque étape
+- [ ] Commits atomiques
+- [ ] Pas de changement de comportement
+
+### Après
+
+- [ ] Tous les tests passent
+- [ ] Nouvelle structure documentée
+- [ ] Code review effectuée
+- [ ] Métriques améliorées (couplage, cohésion)

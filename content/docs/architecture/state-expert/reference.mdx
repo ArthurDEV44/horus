@@ -1,0 +1,531 @@
+---
+title: State Expert - Reference
+description: Documentation détaillée sur la gestion d'état React, les solutions disponibles et les stratégies d'optimisation.
+---
+
+# State Expert - Documentation de Référence
+
+Documentation détaillée sur la gestion d'état React, les solutions disponibles et les stratégies d'optimisation.
+
+---
+
+## Table des Matières
+
+1. [Types d'État en React](#1-types-détat-en-react)
+2. [React Context API](#2-react-context-api)
+3. [Zustand](#3-zustand)
+4. [Jotai](#4-jotai)
+5. [TanStack Query (Server State)](#5-tanstack-query-server-state)
+6. [Prop Drilling et Solutions](#6-prop-drilling-et-solutions)
+7. [Optimisation des Re-renders](#7-optimisation-des-re-renders)
+
+---
+
+## 1. Types d'État en React
+
+### Classification de l'État
+
+| Type | Caractéristiques | Exemples |
+|------|------------------|----------|
+| **Local UI State** | Spécifique à un composant, éphémère | isOpen, inputValue, hover |
+| **Shared UI State** | Partagé entre composants proches | selectedTab, expandedItems |
+| **Global Client State** | Application-wide, synchrone | theme, user, preferences |
+| **Server State** | Asynchrone, cached, stale | API data, lists, entities |
+| **URL State** | Persisté dans l'URL | filters, pagination, search |
+| **Form State** | Validation, dirty, touched | form fields, errors |
+
+### Règle de Décision
+
+1. L'état peut-il être dérivé ? → Calculer au lieu de stocker
+2. L'état est-il local à un composant ? → useState
+3. L'état est-il partagé entre composants proches ? → Lifting state ou props
+4. L'état est-il global mais rarement modifié ? → Context
+5. L'état est-il global et fréquemment modifié ? → Zustand/Jotai
+6. L'état provient-il d'une API ? → TanStack Query
+
+---
+
+## 2. React Context API
+
+### Quand Utiliser Context
+
+**Bon usage :**
+- Thème (light/dark)
+- Locale/langue
+- Utilisateur authentifié
+- Configuration globale
+
+**Mauvais usage :**
+- État fréquemment modifié
+- Données d'API
+- État de formulaires complexes
+
+### Problème Principal : Re-renders
+
+Quand la valeur du Context change, **tous les consommateurs re-render**, même s'ils n'utilisent pas la partie modifiée.
+
+### Stratégies d'Optimisation
+
+#### 1. Séparer les Contexts
+
+Au lieu d'un Context monolithique :
+
+```
+// Mauvais
+<AppContext.Provider value={{ user, theme, settings, notifications }}>
+
+// Bon
+<UserContext.Provider value={user}>
+  <ThemeContext.Provider value={theme}>
+    <SettingsContext.Provider value={settings}>
+```
+
+Chaque Context isole ses re-renders.
+
+#### 2. Séparer State et Dispatch
+
+```
+// Deux contexts distincts
+<StateContext.Provider value={state}>
+  <DispatchContext.Provider value={dispatch}>
+```
+
+Les composants qui n'ont besoin que de dispatch ne re-render pas quand state change.
+
+#### 3. Mémoïser la Valeur
+
+```typescript
+const value = useMemo(() => ({ user, preferences }), [user, preferences]);
+return <Context.Provider value={value}>{children}</Context.Provider>;
+```
+
+Évite les re-renders causés par des objets recréés.
+
+### Limites de Context
+
+| Limite | Impact |
+|--------|--------|
+| Pas de sélecteurs | Tout le Context ou rien |
+| Re-renders en cascade | Performance dégradée |
+| Pas de middleware | Logging, persistence manuels |
+| Pas de devtools native | Debugging limité |
+
+---
+
+## 3. Zustand
+
+### Philosophie
+
+Zustand est un store global minimaliste. Un seul store contient état et actions. Les composants se subscrivent à des slices via des sélecteurs.
+
+### Caractéristiques Clés
+
+| Caractéristique | Détail |
+|-----------------|--------|
+| Bundle size | ~3KB |
+| Boilerplate | Minimal |
+| Learning curve | Faible |
+| TypeScript | Excellent support |
+| DevTools | Via middleware |
+| SSR | Supporté |
+
+### Structure de Store
+
+```
+store/
+├── useUserStore.ts
+├── useCartStore.ts
+├── useSettingsStore.ts
+└── index.ts
+```
+
+Un store par domaine, chaque store contient :
+- État initial
+- Actions pour modifier l'état
+- Sélecteurs pour accéder à des parties
+
+### Sélecteurs et Performance
+
+Le sélecteur détermine quand un composant re-render :
+
+```typescript
+// Re-render à chaque changement du store
+const store = useStore();
+
+// Re-render seulement quand user.name change
+const userName = useStore((state) => state.user.name);
+
+// Re-render seulement quand le count change
+const count = useStore((state) => state.items.length);
+```
+
+**Règle :** Toujours utiliser un sélecteur qui retourne la plus petite partie nécessaire.
+
+### Middleware Utiles
+
+| Middleware | Usage |
+|------------|-------|
+| `persist` | Sauvegarder dans localStorage |
+| `devtools` | Intégration Redux DevTools |
+| `immer` | Mutations immutables simplifiées |
+| `subscribeWithSelector` | Subscriptions granulaires |
+
+### Quand Choisir Zustand
+
+- Application moyenne à grande
+- Équipe qui veut simplicité sans boilerplate
+- Besoin de performance (sélecteurs)
+- Multiples stores indépendants
+
+---
+
+## 4. Jotai
+
+### Philosophie
+
+Jotai utilise des "atomes" - des unités primitives d'état. Les composants se subscrivent à des atomes spécifiques. Les atomes peuvent dépendre d'autres atomes.
+
+### Caractéristiques Clés
+
+| Caractéristique | Détail |
+|-----------------|--------|
+| Bundle size | ~4KB |
+| Modèle | Bottom-up (atomes) |
+| Re-renders | Automatiquement optimisés |
+| Computed values | Via derived atoms |
+| TypeScript | Excellent support |
+
+### Structure Atomique
+
+```
+atoms/
+├── userAtom.ts        # atom primitif
+├── cartAtom.ts        # atom primitif
+├── cartTotalAtom.ts   # atom dérivé (dépend de cartAtom)
+└── index.ts
+```
+
+### Types d'Atomes
+
+**Atom Primitif :**
+```typescript
+const countAtom = atom(0);
+```
+
+**Atom Dérivé (Read-only) :**
+```typescript
+const doubleCountAtom = atom((get) => get(countAtom) * 2);
+```
+
+**Atom Dérivé (Read-Write) :**
+```typescript
+const countAtom = atom(
+  (get) => get(baseCountAtom),
+  (get, set, newValue) => set(baseCountAtom, newValue)
+);
+```
+
+### Avantages sur Zustand
+
+| Aspect | Jotai | Zustand |
+|--------|-------|---------|
+| Re-renders | Automatique par atom | Manuel via sélecteurs |
+| Dépendances | Graphe automatique | Manuel |
+| Granularité | Très fine | Par sélecteur |
+| Computed values | Natif | Via sélecteur |
+
+### Quand Choisir Jotai
+
+- État avec beaucoup d'interdépendances
+- Besoin de réactivité très fine
+- Formulaires complexes avec validation
+- Préférence pour le modèle atomique
+
+---
+
+## 5. TanStack Query (Server State)
+
+### Différence Server State vs Client State
+
+| Client State | Server State |
+|--------------|--------------|
+| Synchrone | Asynchrone |
+| Contrôlé localement | Partagé, potentiellement stale |
+| Pas de cache | Cache avec invalidation |
+| useState/Zustand | TanStack Query |
+
+### Concepts Clés
+
+#### Query Keys
+
+Identifiant unique pour chaque requête :
+```typescript
+['users']           // Liste
+['users', userId]   // Détail
+['users', { status: 'active' }]  // Filtré
+```
+
+#### Stale Time vs Cache Time
+
+| Paramètre | Signification | Défaut |
+|-----------|---------------|--------|
+| `staleTime` | Durée pendant laquelle les données sont "fraîches" | 0 |
+| `gcTime` | Durée de conservation en cache après démontage | 5 min |
+
+#### États de Query
+
+| État | Signification |
+|------|---------------|
+| `isLoading` | Première requête en cours |
+| `isFetching` | Requête en cours (initial ou refetch) |
+| `isError` | Erreur survenue |
+| `isSuccess` | Données disponibles |
+| `isStale` | Données périmées |
+
+### Patterns Importants
+
+#### Prefetching
+
+Charger les données avant qu'elles soient nécessaires :
+```typescript
+queryClient.prefetchQuery({ queryKey: ['user', id], queryFn: fetchUser });
+```
+
+#### Optimistic Updates
+
+Mettre à jour l'UI avant la confirmation serveur :
+1. `onMutate` : Sauvegarder état précédent, appliquer le changement
+2. `onError` : Rollback si échec
+3. `onSettled` : Invalider pour synchroniser
+
+#### Pagination
+
+```typescript
+useInfiniteQuery({
+  queryKey: ['posts'],
+  queryFn: ({ pageParam = 0 }) => fetchPosts(pageParam),
+  getNextPageParam: (lastPage) => lastPage.nextCursor,
+});
+```
+
+### Erreurs Courantes
+
+| Erreur | Conséquence | Solution |
+|--------|-------------|----------|
+| `staleTime: 0` | Refetch agressif | Ajuster selon le besoin |
+| Ignorer `isError` | UI bloquée sur loading | Toujours gérer les erreurs |
+| Query keys inconsistants | Cache mal utilisé | Utiliser des factories |
+| Pas d'invalidation après mutation | Données stale | `queryClient.invalidateQueries` |
+
+### Cohabitation avec Client State
+
+TanStack Query gère le server state. Pour le client state (UI, préférences), utiliser Zustand ou Jotai en parallèle.
+
+---
+
+## 6. Prop Drilling et Solutions
+
+### Définition
+
+Prop drilling : passer des props à travers plusieurs niveaux de composants qui n'en ont pas besoin, juste pour les transmettre plus bas.
+
+### Impact
+
+| Problème | Conséquence |
+|----------|-------------|
+| Maintenance | Modifier un prop = toucher tous les intermédiaires |
+| Couplage | Composants intermédiaires dépendent de props inutiles |
+| Réutilisabilité | Composants liés à une structure spécifique |
+| Lisibilité | Difficile de tracer l'origine des données |
+
+### Solutions par Ordre de Préférence
+
+#### 1. Component Composition (Recommandé)
+
+Au lieu de passer des props à travers, passer le composant lui-même :
+
+```jsx
+// Avant (prop drilling)
+<Layout>
+  <Sidebar user={user} />
+</Layout>
+
+// Après (composition)
+<Layout sidebar={<Sidebar user={user} />} />
+```
+
+L'enfant reçoit directement ses props sans passer par Layout.
+
+#### 2. Compound Components
+
+Pour des composants qui travaillent ensemble :
+
+```jsx
+<Tabs>
+  <Tabs.List>
+    <Tabs.Tab>One</Tabs.Tab>
+  </Tabs.List>
+  <Tabs.Panel>Content One</Tabs.Panel>
+</Tabs>
+```
+
+L'état est partagé via Context interne au compound.
+
+#### 3. Context API
+
+Quand la composition ne suffit pas :
+
+```jsx
+<UserContext.Provider value={user}>
+  <DeepNestedComponent />
+</UserContext.Provider>
+
+// Dans DeepNestedComponent
+const user = useContext(UserContext);
+```
+
+#### 4. State Management Library
+
+Pour un state global avec besoins de performance :
+
+```typescript
+// Zustand
+const user = useUserStore((state) => state.user);
+```
+
+### Quand Prop Drilling est OK
+
+| Situation | Verdict |
+|-----------|---------|
+| 2-3 niveaux | ✅ Acceptable |
+| Props utilisées par intermédiaires | ✅ Pas du drilling |
+| Composants fortement liés | ✅ Couplage intentionnel |
+| > 4 niveaux | ❌ Chercher alternative |
+
+---
+
+## 7. Optimisation des Re-renders
+
+### Comprendre les Re-renders
+
+Un composant re-render quand :
+1. Son state change
+2. Ses props changent (référence)
+3. Son parent re-render
+4. Un Context consommé change
+
+### Outils de Diagnostic
+
+| Outil | Usage |
+|-------|-------|
+| React DevTools Profiler | Visualiser les re-renders |
+| why-did-you-render | Logger les causes |
+| React.StrictMode | Détecter les effets doubles |
+| Performance tab (Chrome) | Mesurer l'impact réel |
+
+### React.memo
+
+Mémoïse un composant pour éviter le re-render si les props n'ont pas changé :
+
+```typescript
+const MemoizedComponent = React.memo(MyComponent);
+```
+
+**Quand utiliser :**
+- Composant coûteux à render
+- Re-render fréquemment avec mêmes props
+- Props stables (primitives ou références stables)
+
+**Quand éviter :**
+- Composants simples (le check coûte plus que le re-render)
+- Props toujours différentes
+
+### useMemo
+
+Mémoïse une valeur calculée :
+
+```typescript
+const sortedItems = useMemo(
+  () => items.sort((a, b) => a.name.localeCompare(b.name)),
+  [items]
+);
+```
+
+**Quand utiliser :**
+- Calculs coûteux (sort, filter, transform)
+- Objets passés en props à des enfants mémoïsés
+- Valeurs de Context
+
+### useCallback
+
+Mémoïse une fonction :
+
+```typescript
+const handleClick = useCallback(() => {
+  doSomething(id);
+}, [id]);
+```
+
+**Quand utiliser :**
+- Fonction passée à un enfant mémoïsé
+- Fonction dans un tableau de dépendances
+- Callbacks dans des listes
+
+### React Compiler (2025)
+
+Le React Compiler ajoute automatiquement la mémoïsation. Avec le compiler :
+- useMemo/useCallback deviennent moins nécessaires
+- React.memo peut être retiré
+- Le code est plus propre
+
+### Patterns d'Optimisation
+
+#### 1. Séparer le State
+
+```jsx
+// Avant : tout re-render
+function Parent() {
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <ExpensiveTree />
+      <Counter count={count} setCount={setCount} />
+    </div>
+  );
+}
+
+// Après : ExpensiveTree ne re-render pas
+function Parent() {
+  return (
+    <div>
+      <ExpensiveTree />
+      <CounterWithState />
+    </div>
+  );
+}
+```
+
+#### 2. Descendre le State
+
+Placer le state au plus proche de son usage.
+
+#### 3. Remonter le Contenu
+
+Passer le contenu statique en children pour éviter qu'il re-render.
+
+---
+
+## Ressources
+
+### Documentation Officielle
+- [React - Managing State](https://react.dev/learn/managing-state)
+- [TanStack Query](https://tanstack.com/query/latest)
+- [Zustand](https://zustand.docs.pmnd.rs/)
+- [Jotai](https://jotai.org/)
+
+### Articles 2025
+- [State Management in 2025](https://dev.to/hijazi313/state-management-in-2025-when-to-use-context-redux-zustand-or-jotai-2d2k)
+- [Stop Using Redux for Server State](https://www.it-labs.com/stop-using-redux-for-server-state-why-tanstack-query-is-the-better-choice-in-2025/)
+- [React.memo 2025 Guide](https://strapi.io/blog/react-memo-optimize-functional-components-guide)
+- [How to Write Performant React Apps with Context](https://www.developerway.com/posts/how-to-write-performant-react-apps-with-context)
+- [Zustand vs Jotai vs Valtio Performance](https://www.reactlibraries.com/blog/zustand-vs-jotai-vs-valtio-performance-guide-2025)

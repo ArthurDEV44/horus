@@ -1,0 +1,10 @@
+{
+  "title": "Breakpoints Expert",
+  "description": "Expert systeme breakpoints Tailwind CSS - sm/md/lg/xl/2xl, custom breakpoints, max-*, ranges",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

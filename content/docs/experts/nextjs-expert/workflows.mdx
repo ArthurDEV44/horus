@@ -1,0 +1,667 @@
+---
+title: Workflows
+description: Processus pas-a-pas pour Next.js 16 - Audit, Server Actions, Caching, Migration, PPR, Core Web Vitals, Debugging
+---
+
+# Next.js Expert - Workflows
+
+## Workflow 1 : Audit d'Architecture Next.js
+
+### Objectif
+Analyser une application Next.js existante et produire un rapport d'evaluation avec recommandations.
+
+### Etapes
+
+#### 1.1 Reconnaissance Technique
+
+<Actions>
+- Lire package.json : version Next.js, React, TypeScript
+- Analyser next.config.ts : output, reactCompiler, images, headers
+- Verifier la structure app/ vs pages/ (ou hybride)
+- Identifier le runtime cible (Node.js, Edge, Serverless)
+</Actions>
+
+<Output>
+Fiche technique avec versions, configuration et architecture actuelle.
+</Output>
+
+#### 1.2 Analyse des Composants
+
+<Actions>
+- Compter les Server Components vs Client Components
+- Identifier les patterns "use client" (positionnement dans l'arbre)
+- Reperer les composants qui pourraient etre Server Components
+- Verifier l'absence de secrets dans les Client Components
+</Actions>
+
+<Output>
+Ratio Server/Client avec recommandations de migration.
+</Output>
+
+#### 1.3 Evaluation du Data Fetching
+
+<Actions>
+- Lister les Server Actions existantes
+- Analyser les Route Handlers
+- Verifier le caching (ancien implicite ou nouveau explicite)
+- Identifier les patterns fetch sans cache
+</Actions>
+
+<Output>
+Mapping des strategies de data fetching avec optimisations suggerees.
+</Output>
+
+#### 1.4 Analyse de Performance
+
+<Actions>
+- Verifier l'utilisation de next/image (priority, sizes)
+- Controler next/font (preloading)
+- Evaluer le code splitting
+- Identifier les imports dynamiques manquants
+</Actions>
+
+<Output>
+Score de performance avec quick wins identifies.
+</Output>
+
+#### 1.5 Verification Securite
+
+<Actions>
+- Controler les headers de securite (CSP, HSTS)
+- Verifier la validation des Server Actions
+- Analyser l'exposition des variables d'environnement
+- Evaluer le pattern d'authentification
+</Actions>
+
+<Output>
+Rapport de securite avec criticites classees.
+</Output>
+
+---
+
+## Workflow 2 : Implementation Server Action
+
+### Objectif
+Creer une Server Action securisee suivant les best practices Next.js 16.
+
+### Etapes
+
+#### 2.1 Definition du Besoin
+
+<ContextQuestions>
+- Quelle mutation doit etre effectuee ?
+- Quelles donnees en input/output ?
+- L'utilisateur doit-il etre authentifie ?
+- Des validations specifiques sont-elles necessaires ?
+</ContextQuestions>
+
+#### 2.2 Structure du Fichier
+
+Creer dans `src/actions/` ou `src/lib/actions/` selon la convention du projet.
+
+<Pattern>
+1. "use server" en premiere ligne
+2. Import Zod pour validation
+3. Import auth/session si necessaire
+4. Schema de validation
+5. Fonction async exportee
+6. Type de retour explicite
+</Pattern>
+
+#### 2.3 Implementation Securisee
+
+<AnalysisChecklist>
+- [ ] Directive "use server" presente
+- [ ] Schema Zod pour tous les inputs
+- [ ] Verification session/auth en debut
+- [ ] Verification permissions si applicable
+- [ ] Pas de secrets dans les reponses
+- [ ] Gestion d'erreurs sans fuite d'info
+- [ ] Type de retour explicite (success/error)
+</AnalysisChecklist>
+
+#### 2.4 Integration UI
+
+<Pattern>
+- Utiliser useTransition pour les Server Actions depuis Client Components
+- Ou utiliser directement dans les forms avec action prop
+- Gerer les etats loading/error cote client
+</Pattern>
+
+#### 2.5 Validation
+
+<Actions>
+- Tester le happy path
+- Tester les cas d'erreur (validation, auth, permissions)
+- Verifier que les erreurs ne leakent pas d'infos sensibles
+- Controler le type-checking TypeScript
+</Actions>
+
+---
+
+## Workflow 3 : Configuration du Caching Next.js 16
+
+### Objectif
+Mettre en place une strategie de caching explicite avec Cache Components.
+
+### Etapes
+
+#### 3.1 Analyse des Besoins de Cache
+
+<ContextQuestions>
+Pour chaque route/composant, determiner :
+- Frequence de changement des donnees
+- Besoin de personnalisation utilisateur
+- Impact SEO (besoin de fraicheur)
+- Tolerance au stale content
+</ContextQuestions>
+
+#### 3.2 Choix des Profils cacheLife
+
+| Type de contenu | Profil | Raison |
+|-----------------|--------|--------|
+| Pages marketing | 'days' ou 'weeks' | Contenu stable |
+| Blog posts | 'hours' | Mis a jour occasionnellement |
+| Catalogue produits | 'minutes' | Stock/prix peuvent changer |
+| Dashboard | Pas de cache | Donnees temps reel |
+| API publique | 'seconds' | Cache court pour performance |
+
+#### 3.3 Implementation "use cache"
+
+**Niveau Page** : Cacher toute la page
+- Placer "use cache" en haut du fichier page.tsx
+- Definir cacheTag et cacheLife
+
+**Niveau Composant** : Cacher des sections
+- Wrapper les composants caches dans des fichiers separes
+- Utiliser avec Suspense pour streaming
+
+**Niveau Fonction** : Cacher des computations
+- Fonctions de fetch reutilisables
+- Transformations de donnees couteuses
+
+#### 3.4 Configuration des Tags
+
+<Patterns>
+- Tags semantiques : 'products', 'blog-posts', 'users'
+- Tags granulaires : 'product-123', 'post-my-slug'
+- Permettre invalidation fine et groupee
+</Patterns>
+
+#### 3.5 Implementation de l'Invalidation
+
+<Triggers>
+| Evenement | Action |
+|-----------|--------|
+| CMS webhook | revalidateTag('blog-posts') |
+| Server Action mutation | revalidateTag('product-123') |
+| Cron job | revalidatePath('/') |
+| Admin action | updateTag('settings') |
+</Triggers>
+
+---
+
+## Workflow 4 : Migration middleware.ts vers proxy.ts
+
+### Objectif
+Migrer une application Next.js 15 utilisant middleware.ts vers le nouveau proxy.ts de Next.js 16.
+
+### Etapes
+
+#### 4.1 Audit de l'Existant
+
+<Actions>
+- Lire middleware.ts actuel
+- Identifier les fonctionnalites utilisees :
+  - Redirections
+  - Rewrites
+  - Headers modification
+  - Auth checks
+  - Rate limiting
+- Documenter les matchers configures
+</Actions>
+
+#### 4.2 Evaluation des Responsabilites
+
+```
+Fonctionnalite presente dans middleware ?
+├── Authentification/Authorization
+│   └── Deplacer vers Data Access Layer (pas proxy)
+├── Redirections simples
+│   └── Garder dans proxy.ts
+├── Rewrites
+│   └── Garder dans proxy.ts ou next.config.ts
+├── Headers de securite
+│   └── Evaluer : proxy.ts vs next.config.ts headers
+├── Logging/Analytics
+│   └── Garder dans proxy.ts
+└── Rate limiting
+    └── Deplacer vers Route Handlers ou services externes
+```
+
+#### 4.3 Migration
+
+Executer le codemod officiel Next.js :
+```bash
+npx @next/codemod@latest middleware-to-proxy
+```
+
+Si codemod insuffisant :
+1. Renommer middleware.ts → proxy.ts
+2. Renommer export function middleware → proxy
+3. Mettre a jour les imports si necessaire
+4. Verifier la config matcher
+
+#### 4.4 Separation des Concerns
+
+Si le middleware faisait de l'auth :
+1. Creer lib/dal.ts avec verifySession()
+2. Appeler verifySession() dans les Server Components proteges
+3. Appeler verifySession() dans les Server Actions
+4. Garder uniquement les redirections UX dans proxy.ts
+
+#### 4.5 Validation
+
+<Validation>
+- [ ] Application demarre sans erreur
+- [ ] Redirections fonctionnent
+- [ ] Headers de securite presents
+- [ ] Auth fonctionne (via DAL)
+- [ ] Pas de regression fonctionnelle
+</Validation>
+
+---
+
+## Workflow 5 : Implementation Partial Prerendering (PPR)
+
+### Objectif
+Combiner contenu statique et dynamique sur une meme page avec PPR.
+
+### Etapes
+
+#### 5.1 Identification des Zones
+
+Pour chaque section de la page :
+
+| Section | Statique ou Dynamique ? | Raison |
+|---------|------------------------|--------|
+| Header/Nav | Statique | Meme pour tous |
+| Hero | Statique | Contenu marketing |
+| Produits recommandes | Dynamique | Personnalise |
+| Avis clients | Dynamique | Temps reel |
+| Footer | Statique | Meme pour tous |
+
+#### 5.2 Activation de PPR
+
+Dans next.config.ts :
+- Ajouter `cacheComponents: true` (active PPR + Cache Components)
+
+#### 5.3 Structure de la Page
+
+<Pattern>
+Page principale :
+- Contenu statique directement
+- Suspense boundaries autour des parties dynamiques
+- Chaque partie dynamique dans son propre composant async
+</Pattern>
+
+#### 5.4 Implementation des Composants Dynamiques
+
+<Standards>
+Chaque composant dynamique doit :
+- Etre dans un fichier separe
+- Avoir son propre data fetching
+- Etre wrappe dans Suspense avec fallback
+- NE PAS utiliser "use cache" (sinon devient statique)
+</Standards>
+
+#### 5.5 Validation
+
+<Validation>
+- [ ] Build reussit
+- [ ] HTML statique contient le shell
+- [ ] Parties dynamiques streamees correctement
+- [ ] Fallback UI affiche pendant le chargement
+- [ ] Performance amelioree (TTFB, LCP)
+</Validation>
+
+---
+
+## Workflow 6 : Optimisation Core Web Vitals
+
+### Objectif
+Atteindre les seuils "Good" pour LCP, INP et CLS.
+
+### Etapes
+
+#### 6.1 Mesure Initiale
+
+Outils recommandes :
+- Lighthouse (lab data)
+- Chrome DevTools Performance panel
+- Web Vitals extension
+- PageSpeed Insights (field data si disponible)
+- Vercel Analytics (si deploye sur Vercel)
+
+Noter les scores actuels :
+- LCP : ___s (cible < 2.5s)
+- INP : ___ms (cible < 200ms)
+- CLS : ___ (cible < 0.1)
+
+#### 6.2 Optimisation LCP
+
+**Images :**
+- [ ] Element LCP identifie (souvent hero image)
+- [ ] next/image avec priority pour l'image LCP
+- [ ] sizes prop optimise (eviter 100vw si inutile)
+- [ ] Format moderne (WebP/AVIF via Next.js)
+
+**Fonts :**
+- [ ] next/font utilise
+- [ ] font-display: swap configure
+- [ ] Preconnect aux origines externes
+
+**Server :**
+- [ ] TTFB < 200ms (CDN, edge)
+- [ ] Streaming active pour contenu dynamique
+- [ ] Cache efficace
+
+#### 6.3 Optimisation INP
+
+**JavaScript :**
+- [ ] Code splitting agressif
+- [ ] dynamic() pour composants lourds
+- [ ] Scripts tiers en strategy="lazyOnload"
+
+**React :**
+- [ ] useTransition pour updates non-urgentes
+- [ ] Debounce sur les inputs rapides
+- [ ] React Compiler active (memoization auto)
+
+**Handlers :**
+- [ ] Event handlers legers
+- [ ] Pas de calculs lourds dans les handlers
+- [ ] requestIdleCallback pour taches non-critiques
+
+#### 6.4 Optimisation CLS
+
+**Images :**
+- [ ] width et height sur toutes les images
+- [ ] aspect-ratio CSS defini
+- [ ] placeholder="blur" pour eviter le reflow
+
+**Layout :**
+- [ ] min-height sur les conteneurs de contenu dynamique
+- [ ] Skeleton UI pour les zones en chargement
+- [ ] Fonts avec font-display: optional (zero shift)
+
+**Ads/Embeds :**
+- [ ] Espace reserve pour les pubs
+- [ ] iframes avec dimensions fixes
+
+#### 6.5 Validation Finale
+
+<Validation>
+Relancer les mesures :
+- [ ] LCP < 2.5s
+- [ ] INP < 200ms
+- [ ] CLS < 0.1
+- [ ] Lighthouse Performance >= 90
+</Validation>
+
+---
+
+## Workflow 7 : Debugging Hydration Mismatch
+
+### Objectif
+Identifier et corriger les erreurs d'hydration React.
+
+### Etapes
+
+#### 7.1 Identification de l'Erreur
+
+Symptomes :
+- Console error : "Hydration failed because..."
+- Console error : "Text content does not match..."
+- UI clignote ou change apres chargement
+- Comportement different en dev vs prod
+
+#### 7.2 Causes Courantes
+
+| Cause | Exemple | Solution |
+|-------|---------|----------|
+| Date/heure | `new Date()` | Passer depuis le serveur |
+| Math.random() | IDs aleatoires | Generer cote serveur |
+| window/document | Acces direct | useEffect ou check typeof |
+| localStorage | Valeur initiale | useEffect avec state |
+| Extension browser | DOM modifie | Ignorer (pas de fix) |
+| Contenu conditionnel | `{isMobile && ...}` | CSS media queries |
+
+#### 7.3 Strategies de Resolution
+
+**Pattern 1 : Suppresseur d'hydration (dernier recours)**
+
+Ajouter `suppressHydrationWarning` sur l'element concerne.
+Utiliser uniquement pour du contenu attendu comme different (ex: timestamp).
+
+**Pattern 2 : Client-only rendering**
+
+Utiliser un state `mounted` qui passe a true dans useEffect.
+Rendre un placeholder tant que mounted est false.
+
+**Pattern 3 : Passer les donnees depuis le serveur**
+
+Si le composant a besoin d'une valeur dynamique, la passer en prop depuis un Server Component parent.
+
+#### 7.4 Validation
+
+<Validation>
+- [ ] Plus d'erreur hydration en console
+- [ ] UI stable au chargement (pas de flash)
+- [ ] Meme comportement dev et prod
+- [ ] Tests E2E passent
+</Validation>
+
+---
+
+## Workflow 8 : Implementation Route Handler
+
+### Objectif
+Creer un endpoint API RESTful avec Route Handler.
+
+### Etapes
+
+#### 8.1 Definition de l'API
+
+<ContextQuestions>
+- Methodes HTTP supportees (GET, POST, PUT, DELETE)
+- Parametres de route ([id], etc.)
+- Query parameters attendus
+- Body schema pour POST/PUT
+- Response format
+</ContextQuestions>
+
+#### 8.2 Creation du Fichier
+
+Location : `app/api/[resource]/route.ts` ou `app/api/[resource]/[id]/route.ts` pour les routes avec ID
+
+<Pattern>
+1. Imports necessaires (NextRequest, NextResponse)
+2. Schema de validation (Zod)
+3. Export des methodes HTTP
+4. Type de reponse explicite
+</Pattern>
+
+#### 8.3 Implementation Securisee
+
+<AnalysisChecklist>
+- [ ] Validation des inputs (params, query, body)
+- [ ] Verification auth si necessaire
+- [ ] Gestion d'erreurs structuree
+- [ ] Headers de reponse corrects (Content-Type)
+- [ ] Status codes HTTP appropries
+- [ ] Pas de fuite d'information dans les erreurs
+</AnalysisChecklist>
+
+#### 8.4 Configuration Cache/Revalidation
+
+| Export | Effet |
+|--------|-------|
+| `dynamic = 'force-dynamic'` | Toujours dynamique |
+| `revalidate = 60` | ISR toutes les 60s |
+| Response headers | Cache-Control personnalise |
+
+#### 8.5 Documentation et Tests
+
+**Documentation :**
+- Documenter l'endpoint (OpenAPI/Swagger si applicable)
+- Exemples de requetes/reponses
+- Codes d'erreur possibles
+
+**Tests :**
+- Test unitaire de la logique metier
+- Test d'integration de l'endpoint
+- Test des cas d'erreur
+
+---
+
+## Arbres de Decision
+
+### Choix de la Strategie de Rendering
+
+```
+La page a-t-elle besoin de donnees fraîches a chaque requete ?
+├── Oui → Les donnees sont-elles personnalisees par utilisateur ?
+│   ├── Oui → SSR dynamique (pas de cache)
+│   └── Non → ISR avec revalidate court
+└── Non → Le contenu change-t-il parfois ?
+    ├── Oui → ISR avec revalidate adapte
+    └── Non → SSG (contenu vraiment statique)
+```
+
+### Choix Server Component vs Client Component
+
+```
+Le composant a-t-il besoin de...
+├── useState, useEffect, useRef ?
+│   └── Client Component
+├── onClick, onChange, onSubmit ?
+│   └── Client Component
+├── APIs browser (localStorage, window) ?
+│   └── Client Component
+├── Fetch de donnees depuis DB/API ?
+│   └── Server Component (prefere)
+└── Aucun des precedents ?
+    └── Server Component par defaut
+```
+
+### Choix Server Action vs Route Handler
+
+```
+L'operation est-elle...
+├── Une mutation declenchee par l'UI ?
+│   └── Server Action
+├── Un endpoint API pour clients externes ?
+│   └── Route Handler
+├── Un webhook entrant ?
+│   └── Route Handler
+├── Un GET de donnees ?
+│   └── Route Handler (ou fetch direct en RSC)
+└── Un formulaire avec redirect apres ?
+    └── Server Action
+```
+
+---
+
+## Checklist Pre-Production
+
+### Build et Types
+
+- [ ] `pnpm build` sans erreur
+- [ ] `pnpm typecheck` sans erreur
+- [ ] `pnpm lint` sans erreur critique
+
+### Performance
+
+- [ ] Images LCP avec priority
+- [ ] next/font configure
+- [ ] Code splitting verifie
+- [ ] Bundle analyzer verifie (pas de dependance enorme)
+
+### SEO
+
+- [ ] Metadata sur toutes les pages
+- [ ] generateMetadata pour les routes dynamiques
+- [ ] sitemap.xml genere
+- [ ] robots.txt configure
+
+### Securite
+
+- [ ] Headers de securite configures
+- [ ] Variables sensibles non exposees
+- [ ] Server Actions valident les inputs
+- [ ] Auth verifiee via DAL
+
+### Monitoring
+
+- [ ] Error tracking configure (Sentry)
+- [ ] Analytics configure (Vercel Analytics)
+- [ ] Logs structures en place
+
+---
+
+## Scenarios de Depannage
+
+### Le Build Echoue avec "Dynamic server usage"
+
+<Diagnostic>
+Erreur indiquant qu'une page statique utilise des APIs dynamiques.
+</Diagnostic>
+
+Causes :
+- Utilisation de cookies() ou headers() dans une page sans force-dynamic
+- Server Action appelee au render time
+- searchParams utilise sans dynamic export
+
+<Resolution>
+1. Ajouter `export const dynamic = 'force-dynamic'`
+2. Deplacer l'appel dynamique dans un composant Suspense
+3. Utiliser generateStaticParams si possible
+</Resolution>
+
+### Les Modifications ne S'affichent Pas (Cache Stale)
+
+<Diagnostic>
+Les donnees ne se mettent pas a jour malgre les changements.
+</Diagnostic>
+
+Investigation :
+1. Verifier si revalidateTag/revalidatePath est appele
+2. Verifier les tags utilises (coherence)
+3. Verifier le cacheLife configure
+4. En dev : le cache fonctionne differemment
+
+<Resolution>
+1. Appeler revalidateTag avec le bon tag apres mutation
+2. Augmenter la granularite des tags
+3. Reduire le cacheLife si necessite de fraicheur
+4. Utiliser revalidatePath('/') en dernier recours
+</Resolution>
+
+### Erreur "Failed to fetch" dans Server Action
+
+<Diagnostic>
+Server Action echoue avec erreur reseau.
+</Diagnostic>
+
+Causes :
+- CORS mal configure (si appel cross-origin)
+- Body trop large (limite par defaut)
+- Timeout serveur
+
+<Resolution>
+1. Verifier serverActions.allowedOrigins si architecture multi-domaine
+2. Augmenter serverActions.bodySizeLimit si necessaire
+3. Optimiser la logique pour eviter timeouts
+4. Verifier les logs serveur pour l'erreur reelle
+</Resolution>

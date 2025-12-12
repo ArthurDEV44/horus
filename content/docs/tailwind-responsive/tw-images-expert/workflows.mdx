@@ -1,0 +1,595 @@
+---
+title: Workflows
+description: Processus detailles et cas d'usage pour les images responsives avec Tailwind CSS
+---
+
+# Workflows - Images Expert
+
+Processus detailles et cas d'usage pour les images responsives avec Tailwind CSS.
+
+---
+
+## Workflow 1 : Image Hero Full-Screen
+
+### Contexte
+
+L'utilisateur veut creer une image hero qui couvre l'ecran entier avec un bon comportement responsive.
+
+### Processus
+
+**Phase 1 - Analyse**
+
+1. Identifier le sujet principal de l'image
+2. Determiner si overlay/texte sera superpose
+3. Evaluer les points de focus pour differents viewports
+4. Verifier que c'est l'image LCP
+
+**Phase 2 - Structure HTML**
+
+| Element | Classes |
+|---------|---------|
+| Container pleine hauteur | `min-h-screen` ou `h-screen`, `relative` pour overlays |
+| Image configuration | `w-full h-full object-cover` |
+| Focus | `object-center` ou `object-[position]` |
+
+**Phase 3 - Optimisation Chargement**
+
+Image critique (LCP) :
+- `loading="eager"` (ou omettre, c'est le defaut)
+- `fetchpriority="high"`
+- Preload dans `<head>` si possible
+
+**Phase 4 - Srcset pour Performance**
+
+Fournir plusieurs tailles :
+- srcset avec widths (640w, 1280w, 1920w, 2560w)
+- `sizes="100vw"` car pleine largeur
+
+**Phase 5 - Art Direction (optionnel)**
+
+Si le crop mobile necessite une image differente :
+- Utiliser `<picture>`
+- Source differente pour mobile vs desktop
+- Crop portrait pour mobile, paysage pour desktop
+
+**Phase 6 - Overlay**
+
+Si texte superpose :
+- Container `relative` sur le wrapper
+- Overlay `absolute` avec `bg-black/50` ou gradient
+- Contenu `relative z-10 text-white`
+
+**Phase 7 - Validation**
+
+1. Verifier le rendu sur mobile (320px) a 4K
+2. Confirmer que le sujet reste visible
+3. Tester le LCP dans Lighthouse
+4. Verifier CLS = 0
+
+---
+
+## Workflow 2 : Grille de Cards avec Images
+
+### Contexte
+
+L'utilisateur cree une grille de cards produit ou article avec des images uniformes.
+
+### Processus
+
+**Phase 1 - Definir le Ratio**
+
+Choisir un ratio coherent pour toutes les cards :
+- `aspect-video` (16:9) pour contenu multimedia
+- `aspect-[4/3]` pour photos
+- `aspect-square` pour produits/e-commerce
+
+**Phase 2 - Structure de la Card**
+
+| Element | Classes |
+|---------|---------|
+| Container card | `overflow-hidden rounded-lg` ou `rounded-xl` |
+| Container image | `aspect-[ratio] w-full` |
+| Image | `w-full h-full object-cover loading="lazy"` (sauf premiere rangee) |
+
+**Phase 3 - Gestion du Hover**
+
+Effet zoom au hover :
+
+| Element | Classes |
+|---------|---------|
+| Image | `transition-transform duration-300` |
+| Hover | `hover:scale-105` ou `hover:scale-110` |
+| Container | `overflow-hidden` pour contenir le zoom |
+
+**Phase 4 - Responsive Grid**
+
+Configuration grid :
+`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6`
+
+Srcset avec sizes appropries :
+`sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"`
+
+**Phase 5 - Lazy Loading Strategique**
+
+| Rangee | Attribut |
+|--------|----------|
+| Premiere rangee visible | pas de lazy |
+| Rangees suivantes | `loading="lazy"` |
+
+Determiner selon le viewport :
+- Mobile : 1-2 images eager
+- Desktop : 3-4 images eager
+
+**Phase 6 - Placeholder**
+
+Pendant le chargement :
+- `bg-gray-200` sur l'image
+- Ou skeleton avec `animate-pulse`
+
+**Phase 7 - Validation**
+
+1. Verifier l'uniformite des ratios
+2. Tester le lazy loading en scrollant
+3. Confirmer CLS < 0.1
+4. Verifier la performance reseau
+
+---
+
+## Workflow 3 : Image Produit avec Zoom
+
+### Contexte
+
+L'utilisateur veut afficher une image produit qui doit etre vue entierement, avec possibilite de zoom.
+
+### Processus
+
+**Phase 1 - Choix Object-Fit**
+
+Produit doit etre entierement visible :
+- `object-contain` (pas `object-cover`)
+- Background blanc ou transparent
+
+**Phase 2 - Structure**
+
+| Element | Classes |
+|---------|---------|
+| Container avec ratio | `aspect-square` ou `aspect-[4/5]`, `bg-white` |
+| Image | `w-full h-full object-contain p-4` ou `p-8` |
+
+**Phase 3 - Multiple Images (Galerie)**
+
+| Element | Classes |
+|---------|---------|
+| Image principale | Grande, ratio defini, sans lazy loading |
+| Thumbnails | `aspect-square object-cover cursor-pointer` |
+| Etat actif | Style distinct (ring, border) |
+
+**Phase 4 - Fonctionnalite Zoom**
+
+Options :
+- Zoom au hover (CSS scale)
+- Loupe suivant le curseur (JS)
+- Modal fullscreen (JS)
+
+Pour zoom simple au hover :
+- Container : `overflow-hidden`
+- Image : `transition-transform hover:scale-150`
+- `origin-[position]` selon le curseur (JS)
+
+**Phase 5 - Multi-Format**
+
+Fournir WebP avec fallback :
+- `<picture>` avec `<source type="image/webp">`
+- Fallback PNG/JPEG
+
+**Phase 6 - Validation**
+
+1. Produit entierement visible
+2. Details visibles au zoom
+3. Pas de deformation
+4. Background coherent
+
+---
+
+## Workflow 4 : Avatars Responsive
+
+### Contexte
+
+L'utilisateur veut afficher des avatars utilisateur a differentes tailles selon le contexte.
+
+### Processus
+
+**Phase 1 - Definir les Tailles**
+
+Etablir une echelle :
+
+| Taille | Classes | Pixels |
+|--------|---------|--------|
+| XS | `w-6 h-6` | 24px |
+| SM | `w-8 h-8` | 32px |
+| MD | `w-10 h-10` | 40px |
+| LG | `w-12 h-12` | 48px |
+| XL | `w-16 h-16` | 64px |
+| 2XL | `w-24 h-24` | 96px |
+
+**Phase 2 - Structure de Base**
+
+Image avatar :
+- `rounded-full` pour le cercle
+- `object-cover` pour le crop
+- `aspect-square` implicite avec w et h egaux
+
+**Phase 3 - Gestion du Fallback**
+
+Si pas d'image :
+- Initiales sur fond colore
+- Icone utilisateur generique
+- Gere via JS/state, pas CSS seul
+
+**Phase 4 - Border et Ring**
+
+Distinction visuelle :
+- `ring-2 ring-white` pour superposition
+- `border-2 border-white` pour contour simple
+
+**Phase 5 - Groupe d'Avatars**
+
+Avatars empiles :
+- `flex -space-x-2`
+- Chaque avatar : `ring-2 ring-white`
+- z-index croissant : `z-10`, `z-20`, etc.
+- Ou `hover:z-50` pour elever au survol
+
+**Phase 6 - Responsive**
+
+Taille selon le contexte :
+
+| Contexte | Classes |
+|----------|---------|
+| Liste | `w-8 h-8` |
+| Profile | `w-24 h-24 md:w-32 md:h-32` |
+| Header | `w-8 h-8 md:w-10 md:h-10` |
+
+**Phase 7 - Accessibilite**
+
+- Alt text avec nom de l'utilisateur
+- Ou `alt=""` si le nom est affiche a cote
+
+---
+
+## Workflow 5 : Galerie d'Images Responsive
+
+### Contexte
+
+L'utilisateur cree une galerie de photos avec differentes tailles et layouts.
+
+### Processus
+
+**Phase 1 - Choix du Layout**
+
+| Option | Description |
+|--------|-------------|
+| Grille uniforme | Toutes images meme taille |
+| Masonry | Hauteurs variables |
+| Featured | Une grande + petites |
+
+**Phase 2 - Grille Uniforme**
+
+Structure :
+- `grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4`
+
+Chaque image :
+- `aspect-square object-cover`
+- `loading="lazy"` (sauf visibles)
+- `cursor-pointer` pour lightbox
+
+**Phase 3 - Layout Masonry (CSS)**
+
+Avec columns :
+- `columns-2 md:columns-3 lg:columns-4 gap-4`
+- Chaque item : `break-inside-avoid mb-4`
+
+Note : ordre de lecture en colonnes, pas en rangees.
+
+**Phase 4 - Layout Featured**
+
+Structure grid :
+- `grid grid-cols-4 grid-rows-2`
+- Featured : `col-span-2 row-span-2`
+- Autres : `col-span-1 row-span-1`
+
+Toutes : `aspect-square object-cover`
+
+**Phase 5 - Lazy Loading**
+
+Configuration :
+- Premieres images visibles : eager
+- Reste : `loading="lazy"`
+- `decoding="async"` pour toutes
+
+**Phase 6 - Lightbox**
+
+Preparation pour modal :
+- `data-*` attributes avec URL haute resolution
+- Srcset avec grande taille disponible
+- Alt text pour accessibilite
+
+**Phase 7 - Srcset et Sizes**
+
+Adapter selon le layout :
+
+Grille 4 colonnes :
+`sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"`
+
+**Phase 8 - Validation**
+
+1. Toutes images chargent correctement
+2. Lazy loading fonctionne
+3. Performance acceptable
+4. Layout coherent
+
+---
+
+## Workflow 6 : Images avec Texte Superpose
+
+### Contexte
+
+L'utilisateur veut superposer du texte lisible sur une image.
+
+### Processus
+
+**Phase 1 - Structure de Base**
+
+| Element | Classes |
+|---------|---------|
+| Container | `relative overflow-hidden` |
+| Image | `w-full h-full object-cover` |
+
+**Phase 2 - Options d'Overlay**
+
+| Type | Classes |
+|------|---------|
+| Overlay plein | `absolute inset-0 bg-black/50` |
+| Gradient de bas | `bg-gradient-to-t from-black/70 via-black/30 to-transparent` |
+| Gradient horizontal | `bg-gradient-to-r from-black/70 to-transparent` |
+
+**Phase 3 - Positionnement du Texte**
+
+Container texte :
+- `absolute` avec positionnement (`bottom-0 left-0`, `inset-0`, etc.)
+- `z-10` pour etre au-dessus de l'overlay
+- Padding approprie : `p-4 md:p-6`
+
+**Phase 4 - Lisibilite**
+
+Texte :
+- `text-white`
+- Optionnel : text-shadow via style ou `drop-shadow-lg`
+
+Si pas d'overlay :
+- text-shadow obligatoire
+- Ou `backdrop-blur` sur le texte container
+
+**Phase 5 - Responsive**
+
+Ajuster selon le viewport :
+- Taille du texte : `text-lg md:text-xl lg:text-2xl`
+- Padding : `p-4 md:p-6 lg:p-8`
+- Gradient intensity si necessaire
+
+**Phase 6 - Accessibilite**
+
+- Alt text decrit l'image, pas le texte dessus
+- Le texte superpose est dans le HTML, pas l'image
+- Contraste suffisant texte/fond
+
+---
+
+## Workflow 7 : Optimisation des Images Existantes
+
+### Contexte
+
+L'utilisateur a des images existantes a optimiser pour la performance.
+
+### Processus
+
+**Phase 1 - Audit**
+
+Identifier les problemes :
+- Images sans dimensions → CLS
+- Images trop grandes → Performance
+- Pas de lazy loading → Temps de chargement
+- Format JPEG/PNG uniquement → Taille fichier
+
+**Phase 2 - Ajouter les Dimensions**
+
+Pour chaque image :
+- Ajouter `width` et `height` HTML
+- Ou ajouter `aspect-[W/H]`
+- Ajouter `h-auto` pour responsive
+
+**Phase 3 - Implementer Lazy Loading**
+
+| Type | Attributs |
+|------|-----------|
+| Images sous le fold | `loading="lazy" decoding="async"` |
+| Images critiques | `loading="eager" fetchpriority="high"` si LCP |
+
+**Phase 4 - Convertir en Formats Modernes**
+
+Generer versions WebP :
+- Utiliser Squoosh, ImageOptim, ou CLI
+- Qualite 75-85%
+
+Implementer avec `<picture>` :
+```html
+<picture>
+  <source type="image/webp" srcset="...">
+  <img src="original.jpg">
+</picture>
+```
+
+**Phase 5 - Generer Srcset**
+
+Creer multiples tailles :
+- 320w, 640w, 960w, 1280w, 1920w
+- Automatiser avec script ou CDN
+
+Ajouter srcset et sizes aux images.
+
+**Phase 6 - Configurer un CDN (optionnel)**
+
+Services :
+- Cloudinary, Imgix, Cloudflare
+- Transformation automatique
+- Format automatique
+
+**Phase 7 - Validation**
+
+Tester avec Lighthouse :
+- LCP < 2.5s
+- CLS < 0.1
+- Pas d'images oversized
+- Formats modernes utilises
+
+---
+
+## Workflow 8 : Debug des Problemes d'Images
+
+### Contexte
+
+Les images ne s'affichent pas correctement.
+
+### Processus
+
+**Phase 1 - Identification du Probleme**
+
+Symptomes courants :
+- Image deformee
+- Image croppee incorrectement
+- Layout shift au chargement
+- Image ne charge pas
+- Image trop lente
+
+**Phase 2 - Image Deformee**
+
+| Cause | Solution |
+|-------|----------|
+| `object-fill` ou pas d'object-* | Ajouter `object-cover` ou `object-contain` |
+| Ratio inapproprie | Verifier que le ratio est correct |
+
+**Phase 3 - Crop Incorrect**
+
+| Cause | Solution |
+|-------|----------|
+| object-position ne cible pas le sujet | Ajuster `object-position` (top, bottom, [x_y]) |
+| Image differente selon viewport | Considerer art direction avec `<picture>` |
+
+**Phase 4 - Layout Shift**
+
+| Cause | Solution |
+|-------|----------|
+| Pas de dimensions reservees | Ajouter width/height HTML ou `aspect-[W/H]` |
+| h-auto sans width | Verifier que `h-auto` est present pour responsive |
+
+**Phase 5 - Image Ne Charge Pas**
+
+Verifications :
+- URL correcte ?
+- CORS configure ?
+- Fichier existe ?
+- Console errors ?
+
+**Phase 6 - Image Lente**
+
+| Cause | Solution |
+|-------|----------|
+| Fichier trop gros | Compresser l'image |
+| Pas de lazy loading | Ajouter `loading="lazy"` si applicable |
+| Pas de CDN | Utiliser un CDN |
+| Format non optimise | Convertir en WebP |
+
+**Phase 7 - DevTools**
+
+Network tab :
+- Verifier taille des images
+- Verifier temps de chargement
+- Verifier format servi
+
+Performance tab :
+- Identifier les images blocking
+- Verifier LCP element
+
+---
+
+## Cas d'Usage Speciaux
+
+### Cas 1 : Image avec Ratio Variable
+
+Contexte : l'image source a un ratio inconnu
+
+**Solution aspect-auto :**
+```html
+<img class="w-full h-auto aspect-auto object-cover" />
+```
+
+**Avec contrainte max-height :**
+```html
+<img class="w-full h-auto max-h-96 object-cover" />
+```
+
+Le ratio naturel est respecte jusqu'a la hauteur max.
+
+### Cas 2 : Image Responsive en Background
+
+Contexte : background-image ne supporte pas srcset
+
+Solutions :
+1. Utiliser `<img>` avec absolute positioning
+2. Image-set() CSS (support limite)
+3. JS pour changer l'URL selon viewport
+4. CDN avec transformation automatique
+
+Preferer `<img>` quand possible.
+
+### Cas 3 : Sprites et Icones
+
+Pour les icones, preferer SVG.
+
+Si sprites necessaires :
+- `object-none` pour garder la taille originale
+- `object-[position]` pour selectionner la zone
+- Clip ou `overflow-hidden` sur le container
+
+Moderne : utiliser SVG sprite avec `<use>`.
+
+### Cas 4 : Images dans Markdown/CMS
+
+Contenu non controle :
+
+Avec prose :
+- `prose prose-img:rounded-lg`
+- `prose prose-img:shadow-md`
+
+Pour garantir le responsive :
+- CSS global : `img { max-width: 100%; height: auto; }`
+- Tailwind : `@layer base` avec `img { @apply max-w-full h-auto }`
+
+---
+
+## Ressources et References
+
+### Documentation Officielle
+
+- Tailwind CSS Aspect Ratio
+- Tailwind CSS Object Fit
+- Tailwind CSS Object Position
+- MDN Responsive Images
+
+### Outils
+
+- Squoosh (squoosh.app) : compression et conversion
+- Cloudinary : CDN et transformation
+- imgix : CDN et transformation
+- responsivebreakpoints.com : generateur srcset
+- Lighthouse : audit performance

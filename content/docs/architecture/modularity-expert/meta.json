@@ -1,0 +1,6 @@
+{
+  "title": "Modularity Expert",
+  "description": "Expert en architecture modulaire, feature-based modules, encapsulation et stratégies d'exports",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

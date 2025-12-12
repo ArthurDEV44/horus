@@ -1,0 +1,12 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "---Catégories---",
+    "architecture",
+    "seo",
+    "tailwind-responsive",
+    "experts"
+  ],
+  "defaultOpen": true
+}

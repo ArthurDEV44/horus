@@ -1,0 +1,479 @@
+---
+title: Workflows
+description: Processus detailles et cas d'usage pour le design responsive mobile-first avec Tailwind CSS
+---
+
+# Workflows - Mobile First
+
+Processus detailles et cas d'usage pour le design responsive mobile-first avec Tailwind CSS.
+
+---
+
+## Workflow 1 : Creation d'un Layout Responsive Complet
+
+### Contexte
+
+L'utilisateur souhaite creer une page complete avec header, navigation, contenu principal et footer, adaptee a toutes les tailles d'ecran.
+
+### Processus
+
+**Phase 1 - Analyse des Besoins**
+
+1. Identifier les sections principales de la page
+2. Determiner les comportements souhaites par breakpoint
+3. Lister les composants reutilisables
+4. Definir la hierarchie de contenu mobile
+
+**Phase 2 - Structure Mobile**
+
+1. Creer la structure HTML semantique
+2. Appliquer les styles de base sans prefixe
+3. Organiser le contenu en stack vertical
+4. Assurer la lisibilite et l'accessibilite tactile
+
+**Phase 3 - Adaptation Tablette (sm/md)**
+
+1. Convertir les stacks en layouts horizontaux si pertinent
+2. Ajuster les espacements
+3. Reveler le contenu secondaire cache sur mobile
+4. Adapter la navigation
+
+**Phase 4 - Adaptation Desktop (lg/xl/2xl)**
+
+1. Implementer les layouts multi-colonnes
+2. Affiner les espacements
+3. Optimiser l'utilisation de l'espace
+4. Ajouter les interactions hover
+
+**Phase 5 - Validation**
+
+1. Tester chaque breakpoint
+2. Verifier les transitions entre breakpoints
+3. Valider l'accessibilite
+4. Mesurer les performances
+
+---
+
+## Workflow 2 : Conversion Desktop-First vers Mobile-First
+
+### Contexte
+
+L'utilisateur a un design existant concu pour desktop et souhaite le rendre responsive en adoptant l'approche mobile-first.
+
+### Processus
+
+**Phase 1 - Audit du Code Existant**
+
+1. Identifier toutes les classes avec prefixes de breakpoint
+2. Reperer les largeurs fixes problematiques
+3. Lister les elements hidden/block par breakpoint
+4. Noter les incoherences de styles
+
+**Phase 2 - Inversion de la Logique**
+
+1. Extraire les styles actuellement appliques aux grands ecrans
+2. Definir ces styles comme base (sans prefixe)
+3. Extraire les styles pour les ecrans plus petits
+4. Appliquer ces styles avec les prefixes appropries
+
+**Phase 3 - Refactoring des Classes**
+
+Pour chaque element :
+1. Commencer par le style mobile souhaite (sans prefixe)
+2. Ajouter `sm:` pour les ajustements tablette
+3. Ajouter `md:`, `lg:` pour les ajustements desktop
+4. Supprimer les classes devenues redondantes
+
+**Phase 4 - Resolution des Conflits**
+
+1. Identifier les styles qui ne cascadent pas correctement
+2. Ajouter les overrides explicites necessaires
+3. Simplifier les classes en double
+
+**Phase 5 - Tests et Validation**
+
+1. Comparer le rendu avant/apres sur desktop
+2. Verifier le nouveau comportement mobile
+3. S'assurer qu'aucune regression n'a ete introduite
+
+### Patterns de Conversion Courants
+
+| Desktop-first | Mobile-first |
+|---------------|--------------|
+| `lg:flex` | `flex` (base) + `flex-col md:flex-row` |
+| `lg:w-1/3` | `w-full md:w-1/2 lg:w-1/3` |
+| `lg:block` | `block` (ou `hidden` si cache sur mobile) |
+| `lg:text-lg` | `text-base lg:text-lg` |
+
+---
+
+## Workflow 3 : Implementation d'une Navigation Responsive
+
+### Contexte
+
+L'utilisateur souhaite creer une navigation qui affiche un menu hamburger sur mobile et une barre horizontale sur desktop.
+
+### Processus
+
+**Phase 1 - Structure HTML**
+
+1. Creer le header avec position appropriee
+2. Ajouter le logo/branding
+3. Creer le bouton hamburger (visible mobile uniquement)
+4. Creer la liste de navigation
+
+**Phase 2 - Styles Mobile (base)**
+
+| Element | Classes |
+|---------|---------|
+| Header | `flex justify-between items-center p-4` |
+| Bouton hamburger | `block` ou `flex` |
+| Navigation | `hidden` (par defaut) |
+
+Etat ouvert : gestion via JS/state.
+
+**Phase 3 - Styles Desktop (md: ou lg:)**
+
+| Element | Classes |
+|---------|---------|
+| Bouton hamburger | `md:hidden` |
+| Navigation | `md:flex md:items-center` |
+| Items | `md:flex-row md:gap-6` |
+
+**Phase 4 - Etats Interactifs**
+
+1. Definir les styles hover pour desktop
+2. Configurer les focus states accessibles
+3. Gerer l'etat actif de la page courante
+
+**Phase 5 - Animation et Transition**
+
+1. Ajouter `transition-all` sur la navigation
+2. Configurer transform pour l'animation d'ouverture
+3. Utiliser opacity pour le fade
+
+---
+
+## Workflow 4 : Creation d'une Grille de Cards Responsive
+
+### Contexte
+
+L'utilisateur souhaite afficher une collection d'elements en grille qui s'adapte au nombre de colonnes selon l'ecran.
+
+### Processus
+
+**Phase 1 - Choix de l'Approche**
+
+| Option | Avantages |
+|--------|-----------|
+| Grid avec colonnes fixes par breakpoint | Controle precis |
+| Grid auto-fit | Adaptation automatique |
+
+**Phase 2 - Implementation Grid Fixe**
+
+```html
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+  <!-- Cards -->
+</div>
+```
+
+**Phase 3 - Alternative Auto-fit**
+
+```html
+<div class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+  <!-- Cards -->
+</div>
+```
+
+Pas besoin de breakpoints, adaptation automatique.
+
+**Phase 4 - Styles des Cards**
+
+| Element | Classes |
+|---------|---------|
+| Structure | `flex flex-col` |
+| Image | `aspect-video w-full object-cover` |
+| Contenu | `flex-1 p-4` |
+| Actions | `mt-auto` |
+
+**Phase 5 - Optimisations**
+
+1. Lazy loading sur les images
+2. Skeleton loading pour le chargement
+3. Animation hover sur desktop
+
+---
+
+## Workflow 5 : Implementation de Container Queries
+
+### Contexte
+
+L'utilisateur a un composant (card, widget) qui doit s'adapter a son conteneur plutot qu'au viewport.
+
+### Processus
+
+**Phase 1 - Evaluation de la Necessite**
+
+Questions a poser :
+1. Le composant est-il reutilise dans differents contextes ?
+2. La largeur du conteneur varie-t-elle independamment du viewport ?
+3. Le composant doit-il avoir plusieurs layouts selon son espace ?
+
+Si oui aux trois : container queries appropriees.
+
+**Phase 2 - Definition du Container**
+
+1. Identifier l'element parent approprie
+2. Ajouter `@container`
+3. Optionnel : nommer avec `@container/nom` si imbrication
+
+**Phase 3 - Styles des Enfants**
+
+1. Definir les styles de base (container etroit)
+2. Ajouter `@sm:` pour container moyen
+3. Ajouter `@md:`, `@lg:` pour containers plus larges
+
+**Phase 4 - Gestion des Cas Imbriques**
+
+1. Nommer chaque container : `@container/card`, `@container/sidebar`
+2. Cibler specifiquement : `@md/card:flex-row`
+
+**Phase 5 - Fallback et Compatibilite**
+
+1. S'assurer que les styles de base fonctionnent sans container queries
+2. Tester sur les navigateurs cibles
+3. Envisager un polyfill si support ancien requis
+
+---
+
+## Workflow 6 : Optimisation des Images Responsive
+
+### Contexte
+
+L'utilisateur souhaite optimiser les images pour differentes tailles d'ecran et densites de pixels.
+
+### Processus
+
+**Phase 1 - Audit des Images**
+
+1. Identifier toutes les images du projet
+2. Categoriser : hero, thumbnails, icones, decoratives
+3. Determiner les tailles d'affichage par contexte
+4. Evaluer les besoins retina/HiDPI
+
+**Phase 2 - Preparation des Assets**
+
+1. Generer les variantes de taille necessaires
+2. Convertir en formats modernes (WebP, AVIF)
+3. Creer les versions 1x et 2x
+4. Optimiser la compression
+
+**Phase 3 - Implementation Basique**
+
+| Element | Classes |
+|---------|---------|
+| Container | `aspect-video` ou `aspect-square` |
+| Image | `w-full h-auto object-cover` |
+| Attribut | `loading="lazy"` |
+
+**Phase 4 - Srcset et Sizes**
+
+```html
+<img
+  srcset="image-320.jpg 320w, image-640.jpg 640w, image-1280.jpg 1280w"
+  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+  src="image-640.jpg"
+  alt="Description"
+>
+```
+
+**Phase 5 - Picture Element (si necessaire)**
+
+```html
+<picture>
+  <source type="image/webp" srcset="image.webp">
+  <source type="image/jpeg" srcset="image.jpg">
+  <img src="image.jpg" alt="Description">
+</picture>
+```
+
+**Phase 6 - Validation Performance**
+
+1. Verifier le LCP avec Lighthouse
+2. S'assurer qu'il n'y a pas de CLS
+3. Tester le chargement sur reseau lent
+
+---
+
+## Workflow 7 : Debugging des Problemes Responsive
+
+### Contexte
+
+L'utilisateur rencontre un probleme de rendu sur certaines tailles d'ecran.
+
+### Processus
+
+**Phase 1 - Identification du Probleme**
+
+1. Decrire precisement le comportement attendu vs observe
+2. Identifier le(s) breakpoint(s) concerne(s)
+3. Isoler le composant problematique
+4. Verifier la reproductibilite
+
+**Phase 2 - Verifications Preliminaires**
+
+- [ ] Viewport meta tag present et correct ?
+- [ ] Tailwind bien charge et configure ?
+- [ ] Classes purgees correctement en production ?
+- [ ] Pas de CSS custom qui interfere ?
+
+**Phase 3 - Analyse des Classes**
+
+1. Lister toutes les classes de l'element
+2. Verifier l'ordre : base -> sm -> md -> lg -> xl -> 2xl
+3. Identifier les conflits potentiels
+4. Verifier la logique mobile-first
+
+**Phase 4 - Inspection DevTools**
+
+1. Ouvrir le mode responsive
+2. Tester chaque breakpoint
+3. Inspecter les styles appliques
+4. Verifier quelles classes sont actives
+
+**Phase 5 - Resolution**
+
+1. Corriger les classes problematiques
+2. Ajouter les overrides manquants
+3. Simplifier si trop de classes conflictuelles
+4. Tester a nouveau
+
+**Phase 6 - Documentation**
+
+1. Noter la cause du probleme
+2. Documenter la solution
+3. Ajouter un commentaire si logique non evidente
+
+### Checklist de Debug
+
+**Viewport** :
+- [ ] Meta viewport present
+- [ ] `width=device-width, initial-scale=1.0`
+
+**Configuration** :
+- [ ] Tailwind configure correctement
+- [ ] Content paths incluent tous les fichiers
+- [ ] Pas de purge excessive
+
+**Classes** :
+- [ ] Styles mobile sans prefixe
+- [ ] Breakpoints dans le bon ordre
+- [ ] Pas de classes contradictoires
+- [ ] Overrides explicites si necessaire
+
+**Layout** :
+- [ ] Pas de largeurs fixes > viewport
+- [ ] overflow gere correctement
+- [ ] Flexbox/Grid utilise pour les layouts
+
+---
+
+## Workflow 8 : Migration vers Tailwind v4
+
+### Contexte
+
+L'utilisateur souhaite migrer un projet de Tailwind v3 vers v4 en conservant le comportement responsive.
+
+### Processus
+
+**Phase 1 - Preparation**
+
+1. Lire les release notes v4
+2. Identifier les breaking changes lies au responsive
+3. Sauvegarder la configuration actuelle
+4. Creer une branche de migration
+
+**Phase 2 - Configuration**
+
+1. Migrer de `tailwind.config.js` vers `@theme` CSS
+2. Convertir les breakpoints de px en rem
+3. Verifier les valeurs : 640px -> 40rem, 768px -> 48rem, etc.
+4. Transferer les breakpoints personnalises
+
+**Phase 3 - Nouvelles Fonctionnalites**
+
+1. Evaluer l'utilisation des variantes `max-*`
+2. Considerer les container queries natives
+3. Explorer les nouvelles options de range
+
+**Phase 4 - Tests Complets**
+
+1. Verifier chaque page/composant
+2. Comparer les rendus v3 vs v4
+3. Corriger les regressions
+4. Valider les performances
+
+**Phase 5 - Nettoyage**
+
+1. Supprimer les anciens fichiers de config
+2. Retirer les plugins devenus inutiles
+3. Mettre a jour la documentation
+
+---
+
+## Cas d'Usage Speciaux
+
+### Cas 1 : Orientation (Portrait/Paysage)
+
+Tailwind v4 propose des variantes d'orientation :
+
+| Variante | Usage |
+|----------|-------|
+| `portrait:` | Orientation portrait |
+| `landscape:` | Orientation paysage |
+
+Exemple : `portrait:flex-col landscape:flex-row`
+
+### Cas 2 : Print Responsive
+
+| Classe | Effet |
+|--------|-------|
+| `print:hidden` | Masquer a l'impression |
+| `print:text-black` | Texte noir |
+| `print:bg-white` | Fond blanc |
+
+### Cas 3 : Dark Mode Responsive
+
+Combiner responsive et dark mode :
+
+```html
+<div class="bg-white dark:bg-gray-900 md:bg-gray-100 md:dark:bg-gray-800">...</div>
+```
+
+Tester les deux modes a chaque breakpoint.
+
+### Cas 4 : Hover sur Touch
+
+Problematique : hover ne fonctionne pas sur mobile.
+
+Solutions :
+- Utiliser `@media (hover: hover)` via arbitrary variants
+- Alternative : `hover:md:effect` (hover seulement sur md+)
+- `focus-visible` pour l'accessibilite
+
+---
+
+## Ressources et References
+
+### Documentation Officielle
+
+- Tailwind CSS Responsive Design : documentation principale
+- Tailwind CSS Container Queries : guide des container queries
+- Tailwind CSS Screens : configuration des breakpoints
+
+### Outils Recommandes
+
+- Tailwind CSS IntelliSense (VS Code)
+- Tailwind CSS Playground (tailwindcss.com/play)
+- Chrome DevTools Device Mode
+- Responsively App (test multi-devices)

@@ -1,0 +1,553 @@
+---
+title: Workflows
+description: Processus detailles et cas d'usage pour les layouts Flexbox, Grid et Container avec Tailwind CSS
+---
+
+# Workflows - Layout Expert
+
+Processus detailles et cas d'usage pour les layouts Flexbox, Grid et Container avec Tailwind CSS.
+
+---
+
+## Workflow 1 : Creation d'un Layout de Page Complet
+
+### Contexte
+
+L'utilisateur souhaite creer une structure de page avec header, sidebar, contenu principal et footer.
+
+### Processus
+
+**Phase 1 - Analyse de la Structure**
+
+1. Identifier les zones : header, sidebar (optionnel), main, footer
+2. Determiner si sidebar est fixe ou responsive
+3. Evaluer le comportement mobile (sidebar cachee ou en drawer)
+4. Definir les hauteurs : full-height ou content-based
+
+**Phase 2 - Choix de l'Approche**
+
+| Besoin | Systeme |
+|--------|---------|
+| Page complete avec zones definies | Grid |
+| Adaptation simple header/main/footer | Flexbox |
+
+**Phase 3 - Implementation Grid (Recommande)**
+
+Structure de base :
+1. Parent : `min-h-screen grid grid-rows-[auto_1fr_auto]`
+2. Si sidebar : `grid-cols-1 lg:grid-cols-[250px_1fr]`
+3. Header : `lg:col-span-2` (si sidebar)
+4. Footer : `lg:col-span-2` (si sidebar)
+5. Main : overflow gere si necessaire
+
+**Phase 4 - Implementation Alternative Flexbox**
+
+Structure de base :
+1. Parent : `min-h-screen flex flex-col`
+2. Header : `shrink-0`
+3. Middle : `flex-1 flex flex-col lg:flex-row`
+4. Sidebar : `w-full lg:w-64 shrink-0`
+5. Main : `flex-1`
+6. Footer : `shrink-0`
+
+**Phase 5 - Responsive Mobile**
+
+1. Mobile : sidebar cachee ou en drawer
+2. Utiliser `lg:grid-cols-[250px_1fr]` (visible uniquement desktop)
+3. Ajouter toggle pour sidebar mobile
+4. Tester les transitions entre breakpoints
+
+**Phase 6 - Finitions**
+
+1. Ajouter `container mx-auto` au contenu si necessaire
+2. Configurer les gaps entre sections
+3. Gerer le scroll : `overflow-y-auto` sur main si sticky header
+
+---
+
+## Workflow 2 : Creation d'une Grille de Cards Responsive
+
+### Contexte
+
+L'utilisateur veut afficher une collection de cards qui s'adaptent a l'ecran.
+
+### Processus
+
+**Phase 1 - Analyse des Besoins**
+
+1. Nombre minimum/maximum de colonnes souhaite
+2. Taille minimum des cards
+3. Comportement quand peu de cards
+4. Espacement entre les cards
+
+**Phase 2 - Choix de l'Approche**
+
+| Option | Description |
+|--------|-------------|
+| Colonnes fixes par breakpoint | Plus de controle |
+| Auto-fit avec minmax | Plus fluide |
+
+**Phase 3 - Implementation Colonnes Fixes**
+
+Container :
+`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4`
+
+Progression classique :
+- Mobile : 1 colonne
+- Tablette portrait : 2 colonnes
+- Tablette paysage/laptop : 3 colonnes
+- Desktop : 4 colonnes
+
+**Phase 4 - Implementation Auto-fit**
+
+Container :
+`grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4`
+
+Avantages :
+- Pas besoin de breakpoints
+- Adaptation automatique
+- Fonctionne avec n'importe quel nombre de cards
+
+**Phase 5 - Gestion des Cards Individuelles**
+
+Structure card :
+1. `flex flex-col` pour organisation verticale
+2. Image : `aspect-video w-full object-cover`
+3. Content : `flex-1 p-4`
+4. Actions : `mt-auto` pour coller en bas
+
+**Phase 6 - Cas Speciaux**
+
+| Cas | Classes |
+|-----|---------|
+| Card featured (pleine largeur) | `col-span-full` ou `sm:col-span-2` |
+| Card tall (plusieurs rangees) | `row-span-2` |
+
+**Phase 7 - Validation**
+
+1. Tester avec 1, 2, 3, 4+ cards
+2. Verifier l'alignement des cards de hauteurs differentes
+3. Confirmer le comportement sur tous les breakpoints
+
+---
+
+## Workflow 3 : Navigation avec Flexbox
+
+### Contexte
+
+L'utilisateur veut creer une barre de navigation responsive avec logo, liens et actions.
+
+### Processus
+
+**Phase 1 - Identification des Elements**
+
+1. Logo/Brand (gauche)
+2. Navigation links (centre ou apres logo)
+3. Actions/CTA (droite)
+4. Menu hamburger (mobile)
+
+**Phase 2 - Structure Desktop**
+
+Container nav :
+`flex items-center justify-between px-4 py-3`
+
+Sections :
+- Logo : `shrink-0`
+- Nav links : `flex items-center gap-6`
+- Actions : `flex items-center gap-4`
+
+**Phase 3 - Structure Mobile**
+
+1. Menu hamburger visible : `md:hidden`
+2. Nav links caches : `hidden md:flex`
+3. Menu mobile : fixed ou absolute overlay
+
+**Phase 4 - Alignements**
+
+| Besoin | Classes |
+|--------|---------|
+| Logo a gauche, actions a droite | `justify-between` |
+| Tout centre | `justify-center` avec gap |
+| Logo gauche, nav centre, actions droite | Logo `flex-none`, Nav `flex-1 flex justify-center`, Actions `flex-none` |
+
+**Phase 5 - Espacement des Links**
+
+Utiliser `gap-*` plutot que `space-*` :
+`flex items-center gap-6`
+
+Evite les problemes de margin sur le premier/dernier element.
+
+**Phase 6 - Etats et Interactions**
+
+1. Hover states sur les liens
+2. Active state pour la page courante
+3. Focus visible pour accessibilite
+4. Transition sur les changements d'etat
+
+---
+
+## Workflow 4 : Centrage d'Elements
+
+### Contexte
+
+L'utilisateur veut centrer un element horizontalement, verticalement, ou les deux.
+
+### Processus
+
+**Phase 1 - Identifier le Type de Centrage**
+
+| Type | Methodes |
+|------|----------|
+| Centrage horizontal seul | `mx-auto` (block avec largeur), `justify-center` (flex row), `justify-items-center` (grid) |
+| Centrage vertical seul | `items-center` (flex row), `justify-center` (flex col) - necessite hauteur |
+| Centrage complet | `flex justify-center items-center`, `grid place-items-center` |
+
+**Phase 2 - Contexte Parent**
+
+Pour le centrage vertical, le parent doit avoir une hauteur :
+- `min-h-screen` pour pleine page
+- `h-full` si parent a une hauteur
+- `h-64` ou autre valeur fixe
+
+**Phase 3 - Implementation Flexbox (Recommande)**
+
+Parent :
+`flex justify-center items-center min-h-screen`
+
+L'enfant sera centre parfaitement.
+
+**Phase 4 - Implementation Grid**
+
+Parent :
+`grid place-items-center min-h-screen`
+
+Equivalent mais syntaxe plus courte.
+
+**Phase 5 - Centrage de Texte**
+
+Pour centrer le texte dans un element :
+`text-center`
+
+Different du centrage de l'element lui-meme.
+
+**Phase 6 - Cas Particuliers**
+
+| Cas | Classes |
+|-----|---------|
+| Modal centre dans viewport | `fixed inset-0 flex justify-center items-center` |
+| Contenu centre dans container | `container mx-auto` + flex justify-center si besoin vertical |
+
+---
+
+## Workflow 5 : Layout avec Container Queries
+
+### Contexte
+
+L'utilisateur veut un composant qui s'adapte a la taille de son conteneur, pas du viewport.
+
+### Processus
+
+**Phase 1 - Evaluation du Besoin**
+
+Questions a poser :
+1. Le composant sera-t-il dans des contextes de tailles differentes ?
+2. Le viewport ne reflete pas l'espace disponible ?
+3. Le composant est-il reutilisable ?
+
+Si oui : container queries appropriees.
+
+**Phase 2 - Configuration du Container**
+
+| Element | Classes |
+|---------|---------|
+| Parent wrapper | `@container` |
+| Optionnel avec nom | `@container/card` |
+
+**Phase 3 - Styles Conditionnels sur Enfants**
+
+| Taille container | Classes |
+|------------------|---------|
+| Base (etroit) | `flex flex-col gap-2` |
+| Moyen (@sm = 384px+) | `@sm:flex-row @sm:gap-4` |
+| Large (@md = 448px+) | `@md:grid @md:grid-cols-2` |
+
+**Phase 4 - Exemple Pratique : Card Adaptative**
+
+Structure :
+- Container : `@container`
+- Layout etroit : image au-dessus, texte en dessous
+- Layout large : image a gauche, texte a droite
+
+Classes :
+`grid grid-cols-1 @sm:grid-cols-[120px_1fr] gap-4`
+
+**Phase 5 - Container Query Units**
+
+Pour des tailles proportionnelles :
+- width: `w-[50cqw]` → 50% de la largeur du container
+- font-size: `text-[3cqw]` → taille relative au container
+
+**Phase 6 - Containers Nommes**
+
+Si plusieurs containers imbriques :
+1. Parent externe : `@container/sidebar`
+2. Parent interne : `@container/card`
+3. Enfant ciblant sidebar : `@md/sidebar:block`
+4. Enfant ciblant card : `@sm/card:flex-row`
+
+**Phase 7 - Fallbacks**
+
+S'assurer que les styles de base fonctionnent sans container queries pour les anciens navigateurs.
+
+---
+
+## Workflow 6 : Grille 12 Colonnes Style Bootstrap
+
+### Contexte
+
+L'utilisateur veut reproduire un systeme de grille 12 colonnes familier.
+
+### Processus
+
+**Phase 1 - Configuration de la Grille**
+
+Container :
+`grid grid-cols-12 gap-4`
+
+**Phase 2 - Placement des Elements**
+
+Utiliser `col-span-*` pour definir la largeur :
+
+| Classe | Largeur |
+|--------|---------|
+| `col-span-12` | Pleine largeur (12/12) |
+| `col-span-6` | Demi-largeur (6/12) |
+| `col-span-4` | Tiers (4/12) |
+| `col-span-3` | Quart (3/12) |
+| `col-span-8` | Deux-tiers (8/12) |
+| `col-span-9` | Trois-quarts (9/12) |
+
+**Phase 3 - Layout Responsive**
+
+Progression typique :
+`col-span-12 md:col-span-6 lg:col-span-4`
+
+Equivalent Bootstrap :
+`col-12 col-md-6 col-lg-4`
+
+**Phase 4 - Offset (Decalage)**
+
+Utiliser `col-start-*` pour decaler :
+
+| Classe | Effet |
+|--------|-------|
+| `col-start-1` | Pas de decalage |
+| `col-start-3` | Decalage de 2 colonnes |
+| `col-start-5` | Decalage de 4 colonnes |
+
+**Phase 5 - Layouts Asymetriques**
+
+| Layout | Classes |
+|--------|---------|
+| Sidebar + Main | Sidebar: `col-span-12 md:col-span-3`, Main: `col-span-12 md:col-span-9` |
+| Main + Sidebar | Main: `col-span-12 md:col-span-8`, Sidebar: `col-span-12 md:col-span-4` |
+
+**Phase 6 - Nested Grids**
+
+Grille dans grille :
+L'enfant peut avoir sa propre `grid grid-cols-12 gap-2`
+
+---
+
+## Workflow 7 : Layout Dashboard
+
+### Contexte
+
+L'utilisateur cree un dashboard avec sidebar fixe, header et contenu scrollable.
+
+### Processus
+
+**Phase 1 - Structure Principale**
+
+Approche : CSS Grid pour la structure macro
+
+Container :
+`min-h-screen grid grid-cols-1 lg:grid-cols-[250px_1fr] grid-rows-[auto_1fr]`
+
+**Phase 2 - Zones**
+
+| Zone | Classes |
+|------|---------|
+| Sidebar | `row-span-2` (ou `lg:row-span-2`) |
+| Header | `col-start-2` sur desktop |
+| Main | `overflow-y-auto` |
+
+**Phase 3 - Sidebar**
+
+Structure :
+`flex flex-col bg-gray-800`
+
+Contenu :
+- Logo : `shrink-0 p-4`
+- Nav : `flex-1 overflow-y-auto`
+- User : `shrink-0 p-4 mt-auto`
+
+**Phase 4 - Header**
+
+Structure :
+`flex items-center justify-between px-6 py-4 border-b`
+
+Contenu :
+- Breadcrumb/Title : `flex-1`
+- Actions : `flex items-center gap-4`
+
+**Phase 5 - Main Content**
+
+Structure :
+`p-6 overflow-y-auto`
+
+Grilles de widgets :
+`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6`
+
+**Phase 6 - Responsive Mobile**
+
+1. Sidebar : fixed ou drawer, hidden par defaut
+2. Utiliser `lg:grid-cols-[250px_1fr]` (sidebar visible desktop)
+3. Toggle button dans header mobile
+4. Overlay quand sidebar ouverte sur mobile
+
+**Phase 7 - Scroll Management**
+
+- Main scrollable independamment : `overflow-y-auto`
+- Sidebar scrollable si contenu long : `overflow-y-auto`
+- Header et sidebar fixes visuellement
+
+---
+
+## Workflow 8 : Debug de Layout
+
+### Contexte
+
+Le layout ne fonctionne pas comme prevu.
+
+### Processus
+
+**Phase 1 - Identification du Probleme**
+
+Symptomes courants :
+- Elements non alignes
+- Espacement incorrect
+- Overflow/scroll inattendu
+- Layout casse sur un breakpoint
+
+**Phase 2 - Inspection Visuelle**
+
+Ajouter temporairement :
+- `border-2 border-red-500` sur les containers
+- `bg-blue-100/50` sur les zones
+
+Visualiser les limites reelles des elements.
+
+**Phase 3 - DevTools**
+
+1. Inspecter l'element problematique
+2. Activer Grid/Flexbox overlay
+3. Verifier les proprietes computed
+4. Identifier les conflits de styles
+
+**Phase 4 - Problemes Flexbox Courants**
+
+| Probleme | Solution |
+|----------|----------|
+| Element ne grandit pas | Verifier `flex-1` ou `grow` sur l'element |
+| Elements debordent | Ajouter `min-w-0` sur les flex items, `overflow-hidden` si necessaire |
+| Alignement incorrect | Verifier `items-*` (cross axis) vs `justify-*` (main axis), confirmer `flex-row` vs `flex-col` |
+
+**Phase 5 - Problemes Grid Courants**
+
+| Probleme | Solution |
+|----------|----------|
+| Colonnes inegales | Verifier `grid-cols-*` utilise bien fr ou minmax |
+| Element mal place | Verifier `col-start-*`, `col-span-*`, confirmer l'ordre HTML |
+| Gap non visible | S'assurer que les elements sont des enfants directs du grid |
+
+**Phase 6 - Problemes Container**
+
+| Probleme | Solution |
+|----------|----------|
+| Container non centre | Ajouter `mx-auto` |
+| Container trop etroit | Verifier les breakpoints actifs, utiliser `max-w-*` plutot que container |
+
+**Phase 7 - Nettoyage**
+
+Supprimer toutes les classes de debug apres resolution.
+
+---
+
+## Cas d'Usage Speciaux
+
+### Cas 1 : Masonry Layout
+
+Tailwind ne propose pas de masonry natif.
+
+**Approche CSS columns :**
+`columns-2 md:columns-3 lg:columns-4 gap-4`
+
+Chaque item :
+`break-inside-avoid mb-4`
+
+Limitation : ordre de lecture en colonnes, pas en rangees.
+
+Alternative : librairie JS (Masonry.js, etc.)
+
+### Cas 2 : Aspect Ratio Boxes
+
+Pour des boxes avec ratio fixe :
+
+| Ratio | Classe |
+|-------|--------|
+| 1:1 | `aspect-square` |
+| 16:9 | `aspect-video` |
+| 4:3 | `aspect-[4/3]` |
+
+Utile pour thumbnails d'images, embeds video, cards uniformes.
+
+### Cas 3 : Sticky Elements
+
+| Element | Classes |
+|---------|---------|
+| Header sticky | `sticky top-0 z-10` |
+| Sidebar sticky | `sticky top-0 h-screen overflow-y-auto` |
+
+Attention : sticky necessite que le parent ne soit pas `overflow-hidden`.
+
+### Cas 4 : Equal Height Columns
+
+**Avec Flexbox :**
+Parent : `flex`
+Enfants : auront automatiquement la meme hauteur (`items-stretch` par defaut)
+
+**Avec Grid :**
+Parent : `grid grid-cols-3`
+Enfants : meme hauteur automatiquement
+
+Pour le contenu interne :
+`flex flex-col` avec `flex-1` sur la zone extensible
+
+---
+
+## Ressources et References
+
+### Documentation Officielle
+
+- Tailwind CSS Flexbox
+- Tailwind CSS Grid
+- Tailwind CSS Container
+- Tailwind CSS Gap
+
+### Outils
+
+- Chrome DevTools Grid/Flexbox Inspector
+- Firefox Layout Inspector
+- Tailwind Play pour prototypage
+- CSS Grid Generator (cssgrid-generator.netlify.app)

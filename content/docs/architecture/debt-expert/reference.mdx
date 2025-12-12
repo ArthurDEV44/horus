@@ -1,0 +1,158 @@
+---
+title: Reference
+description: Documentation détaillée sur la dette technique, code smells, complexité et outils de détection.
+---
+
+# Debt Expert - Documentation de Référence
+
+## Concepts Fondamentaux
+
+### Dette Technique
+
+La dette technique représente le coût futur engendré par des choix de développement sous-optimaux. Comme une dette financière, elle accumule des intérêts sous forme de temps supplémentaire pour comprendre, modifier et maintenir le code.
+
+Selon Oliver Wyman en 2024, la dette technique mondiale a doublé pour atteindre environ six mille milliards de dollars. McKinsey estime que la dette représente vingt à quarante pour cent du patrimoine technologique des entreprises.
+
+La dette se divise en deux catégories. La dette intentionnelle résulte de décisions conscientes documentées pour livrer plus vite. La dette accidentelle s'accumule par négligence, manque de connaissance ou évolution des standards.
+
+### Code Smells
+
+Les code smells sont des indicateurs de problèmes potentiels dans la structure du code. Ils ne constituent pas des bugs mais signalent des zones nécessitant attention.
+
+Les Bloaters regroupent les problèmes de volume excessif. Long Method désigne les fonctions dépassant cinquante lignes ou dix niveaux de complexité. Large Class indique une classe avec trop de responsabilités. Long Parameter List signale plus de trois ou quatre paramètres. Primitive Obsession marque l'usage excessif de types primitifs au lieu d'objets métier.
+
+Les Object-Orientation Abusers concernent les mauvais usages de l'orienté objet. Feature Envy apparaît quand une méthode utilise plus les données d'une autre classe que les siennes. Data Class désigne une classe sans comportement réel contenant uniquement des getters et setters. Refused Bequest survient quand une classe hérite de méthodes qu'elle n'utilise pas.
+
+Les Change Preventers bloquent l'évolution du code. Divergent Change force des modifications multiples dans une classe pour des raisons différentes. Shotgun Surgery impose des changements dans plusieurs classes pour une seule modification. Parallel Inheritance Hierarchies crée une dépendance entre deux hiérarchies de classes.
+
+Les Dispensables représentent du code inutile. Dead Code n'est jamais exécuté. Speculative Generality anticipe des besoins qui ne se matérialisent jamais. Duplicate Code répète la même logique à plusieurs endroits.
+
+### Dead Code
+
+Le dead code désigne tout code qui n'est jamais exécuté en production. Il alourdit la base de code, complexifie la maintenance et peut induire en erreur les développeurs.
+
+Les formes courantes incluent les fonctions jamais appelées, les exports jamais importés, les variables assignées mais jamais lues, les branches conditionnelles inatteignables, les dépendances npm non utilisées, et les fichiers orphelins sans référence.
+
+La détection nécessite une analyse statique du graphe d'imports et d'appels. Les outils modernes comme Knip analysent l'ensemble du projet pour identifier les exports non consommés. Vercel a supprimé environ trois cent mille lignes de code mort grâce à Knip.
+
+### Complexité Cyclomatique
+
+La complexité cyclomatique mesure le nombre de chemins d'exécution indépendants dans une fonction. Introduite par Thomas McCabe en 1976, elle reste une métrique fondamentale de qualité.
+
+Le calcul compte un plus le nombre de points de décision. Chaque if, else, case, boucle for ou while, opérateur logique and ou or, et opérateur ternaire ajoute un au compte.
+
+Les seuils recommandés classifient les fonctions. Une complexité de un à dix est considérée simple et facilement testable. De onze à vingt, le code est modérément complexe nécessitant attention. De vingt et un à cinquante, le complexité est haute avec risque élevé de bugs. Au-delà de cinquante, le code est considéré intestable et doit être refactoré.
+
+La recherche montre une corrélation directe entre complexité cyclomatique et densité de bugs. Les fonctions à haute complexité sont significativement plus susceptibles de contenir des défauts.
+
+### Complexité Cognitive
+
+La complexité cognitive mesure la difficulté pour un humain de comprendre le code. Développée par SonarSource, elle complète la complexité cyclomatique en tenant compte de la lisibilité.
+
+Elle pénalise l'imbrication profonde où chaque niveau supplémentaire augmente le score. Elle considère les ruptures de flux linéaire comme les boucles, conditions et sauts. Elle évalue les structures nécessitant un effort mental pour suivre la logique.
+
+Une fonction peut avoir une complexité cyclomatique acceptable mais une complexité cognitive élevée si elle utilise beaucoup d'imbrication ou de logique non linéaire.
+
+## Métriques de Dette
+
+### Technical Debt Ratio
+
+Le Technical Debt Ratio quantifie le pourcentage d'effort requis pour corriger la dette par rapport à la capacité totale de développement.
+
+La formule divise le temps de remédiation de la dette par le temps total de développement multiplié par cent.
+
+Les benchmarks suggèrent qu'un ratio inférieur à cinq pour cent permet une haute vélocité avec rework minimal. Entre cinq et vingt-cinq pour cent, l'organisation reste saine mais doit surveiller. Au-delà de quarante pour cent, la dette nécessite une attention urgente.
+
+### Defect Ratio
+
+Le ratio de défauts mesure le nombre de défauts relatif à la taille du logiciel. Un ratio élevé indique une dette accumulée affectant la qualité.
+
+Cette métrique corrèle avec la complexité. Les zones à haute complexité cyclomatique présentent généralement un ratio de défauts supérieur.
+
+### Velocity Impact
+
+L'impact sur la vélocité compare les temps de livraison entre zones à haute dette et zones propres. Cette donnée traduit directement la valeur business de la réduction de dette.
+
+Une vélocité en déclin progressif sur un module indique une accumulation de dette technique invisible dans les métriques traditionnelles.
+
+### Code Coverage
+
+La couverture de tests mesure le pourcentage de code exercé par les tests automatisés. Elle indique la confiance possible lors des refactorings.
+
+Un code à haute complexité avec faible couverture représente un risque majeur. Tout refactoring dans cette zone devrait commencer par ajouter des tests.
+
+## Outils de Détection
+
+### Analyse Statique
+
+SonarQube analyse la qualité de code avec détection de smells, calcul de dette technique et suivi dans le temps. Il s'intègre aux pipelines CI/CD et aux IDE via SonarLint.
+
+ESLint détecte les problèmes JavaScript et TypeScript via règles configurables. La règle no-unused-vars identifie les variables mortes. Des plugins ajoutent la détection de complexité.
+
+PMD cible Java avec analyse de variables inutilisées, code complexe et duplication. Il supporte des règles personnalisées.
+
+### Dead Code
+
+Knip est l'outil recommandé pour JavaScript et TypeScript en 2025. Il détecte les exports inutilisés, dépendances mortes et fichiers orphelins via algorithme mark-and-sweep.
+
+TypeScript Remove automatise la suppression du dead code détecté. L'option write modifie directement les fichiers sources.
+
+ts-unused-exports complète le linting en signalant les exports sans consommateur cross-module.
+
+### Complexité
+
+CodeClimate calcule la complexité et identifie les hotspots. Il fournit un score de maintenabilité global.
+
+CodeScene utilise la métrique CodeHealth validée par des outcomes réels. Les Priority Heatmaps classent les refactorings par impact business.
+
+## Anti-Patterns de Gestion
+
+### Ignorer la Dette
+
+Accumuler la dette sans suivi mène à une base de code ingérable. La vélocité décroît progressivement jusqu'à rendre toute évolution coûteuse.
+
+La solution établit un inventaire visible de la dette avec priorisation régulière et allocation de temps dédiée.
+
+### Réécriture Totale
+
+Proposer de tout réécrire face à une dette importante. Cette approche échoue généralement en sous-estimant la complexité accidentelle et les edge cases du système existant.
+
+La solution préfère les refactorings incrémentaux avec migration progressive. Le pattern Strangler Fig permet de remplacer graduellement les composants.
+
+### Perfection Technique
+
+Poursuivre un code parfait au détriment de la livraison business. Certaine dette intentionnelle est acceptable si documentée et planifiée.
+
+La solution priorise par impact business. La dette dans du code legacy stable rarement modifié peut être tolérée.
+
+### Faux Positifs
+
+Signaler comme dette du code qui répond en fait à des contraintes légitimes. Certains patterns semblent être des smells mais servent un objectif valide.
+
+La solution valide toujours le contexte avant de qualifier un problème. Consulter les auteurs originaux si disponibles.
+
+## Stratégies de Remboursement
+
+### Boy Scout Rule
+
+Améliorer le code touché lors de chaque modification. Chaque développeur laisse le code dans un meilleur état qu'il l'a trouvé.
+
+Cette approche intègre le remboursement au flux normal sans effort dédié visible. Elle cible naturellement les zones à haute vélocité de changement.
+
+### Tech Debt Sprint
+
+Dédier périodiquement un sprint complet au remboursement de dette. Permet des refactorings plus importants impossible en boy scout.
+
+Recommandé un sprint sur quatre à six pour maintenir un ratio dette sous contrôle.
+
+### Hotspot Focus
+
+Concentrer les efforts sur les fichiers combinant haute complexité et changements fréquents. Ces hotspots génèrent le plus de friction quotidienne.
+
+CodeScene et des analyses git permettent d'identifier ces zones à fort ROI de refactoring.
+
+### Strangler Fig
+
+Remplacer progressivement un système legacy par construction parallèle. Le nouveau code capture graduellement le trafic jusqu'à extinction de l'ancien.
+
+Cette approche évite le risque big bang tout en permettant une modernisation complète sur le long terme.

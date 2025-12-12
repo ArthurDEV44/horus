@@ -1,0 +1,10 @@
+{
+  "title": "Accessibility Expert",
+  "description": "Expert accessibilite Tailwind CSS - sr-only, focus-visible, aria-*, contraste, touch targets",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

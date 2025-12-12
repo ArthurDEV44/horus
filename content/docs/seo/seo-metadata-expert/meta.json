@@ -1,0 +1,10 @@
+{
+  "title": "SEO Metadata Expert",
+  "description": "Expert SEO metadata pour Next.js - Meta tags, Open Graph, Twitter Cards, JSON-LD",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Mobile First Expert",
+  "description": "Expert Tailwind CSS mobile-first responsive design - breakpoints sm/md/lg/xl/2xl, optimisation mobile",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

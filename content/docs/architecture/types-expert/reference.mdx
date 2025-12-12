@@ -1,0 +1,562 @@
+---
+title: Types Expert - Reference
+description: Documentation détaillée sur le système de types TypeScript, les patterns avancés et les meilleures pratiques.
+---
+
+# Types Expert - Documentation de Référence
+
+Documentation détaillée sur le système de types TypeScript, les patterns avancés et les meilleures pratiques.
+
+---
+
+## Table des Matières
+
+1. [Types Fondamentaux](#1-types-fondamentaux)
+2. [Interface vs Type](#2-interface-vs-type)
+3. [Génériques](#3-génériques)
+4. [Types Spéciaux : any, unknown, never](#4-types-spéciaux--any-unknown-never)
+5. [Inférence et Assertions](#5-inférence-et-assertions)
+6. [Types Avancés](#6-types-avancés)
+7. [Types Utilitaires](#7-types-utilitaires)
+
+---
+
+## 1. Types Fondamentaux
+
+### Types Primitifs
+
+| Type | Description | Exemple |
+|------|-------------|---------|
+| `string` | Chaîne de caractères | `"hello"` |
+| `number` | Nombre (int et float) | `42`, `3.14` |
+| `boolean` | Booléen | `true`, `false` |
+| `null` | Absence de valeur intentionnelle | `null` |
+| `undefined` | Non initialisé | `undefined` |
+| `symbol` | Identifiant unique | `Symbol("id")` |
+| `bigint` | Grands entiers | `9007199254740991n` |
+
+### Types Littéraux
+
+Types restreints à des valeurs spécifiques :
+
+```typescript
+type Status = "pending" | "approved" | "rejected";
+type HttpCode = 200 | 400 | 404 | 500;
+type Toggle = true | false;
+```
+
+### Types Composés
+
+**Union (|)** : L'un OU l'autre
+```typescript
+type StringOrNumber = string | number;
+```
+
+**Intersection (&)** : Les deux à la fois
+```typescript
+type Employee = Person & { employeeId: string };
+```
+
+### Tuples
+
+Tableaux à longueur et types fixés :
+```typescript
+type Coordinate = [number, number];
+type NameAge = [string, number];
+```
+
+---
+
+## 2. Interface vs Type
+
+### Capacités Comparées
+
+| Capacité | Interface | Type |
+|----------|-----------|------|
+| Objets | ✅ | ✅ |
+| Primitives | ❌ | ✅ |
+| Unions | ❌ | ✅ |
+| Intersections | Via extends | ✅ |
+| Declaration merging | ✅ | ❌ |
+| Mapped types | ❌ | ✅ |
+| Conditional types | ❌ | ✅ |
+| extends keyword | ✅ | Via & |
+
+### Declaration Merging (Interface Only)
+
+Les interfaces du même nom fusionnent :
+
+```typescript
+interface User {
+  name: string;
+}
+
+interface User {
+  email: string;
+}
+
+// Résultat : User a name ET email
+```
+
+C'est utile pour :
+- Étendre des types de librairies
+- Ajouter des propriétés globales (Window, etc.)
+
+Avec `type`, redéclarer produit une erreur.
+
+### Recommandations 2025
+
+**Approche pragmatique :**
+- `interface` pour objets extensibles et API publiques
+- `type` pour tout le reste (unions, tuples, types complexes)
+- Cohérence dans le projet > règle absolue
+
+**Tendance :** Beaucoup d'experts recommandent `type` par défaut car :
+- Plus flexible
+- Pas de comportement surprenant (declaration merging)
+- Supporte tous les patterns avancés
+
+---
+
+## 3. Génériques
+
+### Syntaxe de Base
+
+```typescript
+function identity<T>(arg: T): T {
+  return arg;
+}
+
+// Usage : inférence automatique
+const result = identity("hello"); // T = string
+```
+
+### Nommage des Paramètres
+
+| Convention | Usage |
+|------------|-------|
+| `T` | Type générique principal |
+| `U`, `V` | Types additionnels |
+| `K` | Key (clé d'objet) |
+| `V` | Value (valeur) |
+| `E` | Element (élément de collection) |
+
+**Pour la lisibilité :** Utiliser des noms descriptifs dans les cas complexes :
+```typescript
+function merge<TSource, TTarget>(source: TSource, target: TTarget)
+```
+
+### Contraintes (extends)
+
+Limiter les types acceptés :
+
+```typescript
+// T doit avoir une propriété length
+function getLength<T extends { length: number }>(item: T): number {
+  return item.length;
+}
+
+// T doit être une clé de Obj
+function getProperty<Obj, Key extends keyof Obj>(obj: Obj, key: Key) {
+  return obj[key];
+}
+```
+
+### Valeurs par Défaut
+
+```typescript
+type Container<T = string> = {
+  value: T;
+};
+
+// Usage sans spécifier T
+const strContainer: Container = { value: "hello" };
+
+// Ou avec type explicite
+const numContainer: Container<number> = { value: 42 };
+```
+
+### Inférence dans les Génériques
+
+TypeScript infère souvent le type automatiquement :
+
+```typescript
+function createPair<T, U>(first: T, second: U): [T, U] {
+  return [first, second];
+}
+
+// Inféré : [string, number]
+const pair = createPair("hello", 42);
+```
+
+### Variance (in/out)
+
+Annotations de variance pour les performances (rarement nécessaire) :
+
+```typescript
+type Producer<out T> = () => T;    // Covariant
+type Consumer<in T> = (value: T) => void;  // Contravariant
+```
+
+---
+
+## 4. Types Spéciaux : any, unknown, never
+
+### Comparaison
+
+| Type | Description | Opérations permises |
+|------|-------------|---------------------|
+| `any` | Désactive le type-checking | Toutes |
+| `unknown` | Type inconnu, sûr | Aucune sans narrowing |
+| `never` | Valeur impossible | Aucune |
+
+### `any` - À Éviter
+
+**Problèmes :**
+- Perte totale de type safety
+- Propagation silencieuse dans le code
+- Bugs runtime non détectés à la compilation
+
+**Usages légitimes (rares) :**
+- Migration progressive de JS
+- Librairies sans types
+- Prototypage rapide (temporaire)
+
+### `unknown` - Alternative Sûre
+
+`unknown` oblige à vérifier le type avant usage :
+
+```typescript
+function processValue(value: unknown) {
+  // Erreur : Object is of type 'unknown'
+  // value.toUpperCase();
+
+  // OK après narrowing
+  if (typeof value === "string") {
+    value.toUpperCase(); // Maintenant TypeScript sait que c'est string
+  }
+}
+```
+
+### Type Guards pour `unknown`
+
+```typescript
+// typeof
+if (typeof value === "string") { ... }
+
+// instanceof
+if (value instanceof Date) { ... }
+
+// in
+if ("name" in value) { ... }
+
+// Custom type guard
+function isUser(value: unknown): value is User {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "name" in value &&
+    "email" in value
+  );
+}
+```
+
+### `never` - Cas Impossibles
+
+Représente ce qui ne devrait jamais arriver :
+
+**Fonctions qui ne retournent jamais :**
+```typescript
+function throwError(message: string): never {
+  throw new Error(message);
+}
+
+function infiniteLoop(): never {
+  while (true) {}
+}
+```
+
+**Exhaustive checks :**
+```typescript
+type Status = "pending" | "approved" | "rejected";
+
+function handleStatus(status: Status) {
+  switch (status) {
+    case "pending":
+      return "En attente";
+    case "approved":
+      return "Approuvé";
+    case "rejected":
+      return "Rejeté";
+    default:
+      // Si on oublie un case, TypeScript erreur ici
+      const exhaustiveCheck: never = status;
+      return exhaustiveCheck;
+  }
+}
+```
+
+---
+
+## 5. Inférence et Assertions
+
+### Inférence Automatique
+
+TypeScript infère les types automatiquement :
+
+```typescript
+const name = "Alice";     // Type: string (littéral widened)
+const age = 30;           // Type: number
+const active = true;      // Type: boolean
+const items = [1, 2, 3];  // Type: number[]
+```
+
+### `const` Assertions
+
+Préserve les types littéraux et rend readonly :
+
+```typescript
+// Sans as const : type { name: string }
+const config = { name: "app" };
+
+// Avec as const : type { readonly name: "app" }
+const config = { name: "app" } as const;
+
+// Array : readonly ["a", "b"] au lieu de string[]
+const tuple = ["a", "b"] as const;
+```
+
+### `satisfies` Operator (TS 4.9+)
+
+Vérifie le type sans perdre l'inférence précise :
+
+```typescript
+type Colors = Record<string, [number, number, number] | string>;
+
+// Avec annotation : perd la précision
+const colorsAnnotated: Colors = {
+  red: [255, 0, 0],
+  green: "#00ff00",
+};
+// colorsAnnotated.red est (number[] | string)
+
+// Avec satisfies : garde la précision
+const colorsSatisfies = {
+  red: [255, 0, 0],
+  green: "#00ff00",
+} satisfies Colors;
+// colorsSatisfies.red est [number, number, number]
+```
+
+### Combiner `as const` et `satisfies`
+
+```typescript
+const routes = {
+  home: "/",
+  about: "/about",
+  contact: "/contact",
+} as const satisfies Record<string, string>;
+
+// Type précis : readonly, littéraux préservés
+// ET vérifié contre Record<string, string>
+```
+
+### Type Assertions (as)
+
+Force un type (à utiliser avec précaution) :
+
+```typescript
+const value = someValue as string;
+
+// Double assertion (dangereux, dernier recours)
+const forced = someValue as unknown as TargetType;
+```
+
+**Règle :** Préférer le narrowing aux assertions.
+
+---
+
+## 6. Types Avancés
+
+### Discriminated Unions
+
+Union avec propriété discriminante pour le narrowing :
+
+```typescript
+type Result<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+function handleResult<T>(result: Result<T>) {
+  if (result.success) {
+    // TypeScript sait que result.data existe
+    console.log(result.data);
+  } else {
+    // TypeScript sait que result.error existe
+    console.log(result.error);
+  }
+}
+```
+
+### Conditional Types
+
+Types qui dépendent d'une condition :
+
+```typescript
+type IsString<T> = T extends string ? true : false;
+
+type A = IsString<string>;  // true
+type B = IsString<number>;  // false
+```
+
+### `infer` Keyword
+
+Extraire un type dans un conditional type :
+
+```typescript
+// Extraire le type de retour d'une fonction
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
+
+// Extraire le type des éléments d'un array
+type ElementType<T> = T extends (infer E)[] ? E : never;
+
+// Extraire les paramètres
+type Parameters<T> = T extends (...args: infer P) => any ? P : never;
+```
+
+### Mapped Types
+
+Transformer les propriétés d'un type :
+
+```typescript
+// Rendre toutes les propriétés optionnelles
+type Partial<T> = {
+  [K in keyof T]?: T[K];
+};
+
+// Rendre toutes les propriétés readonly
+type Readonly<T> = {
+  readonly [K in keyof T]: T[K];
+};
+
+// Renommer les clés
+type Getters<T> = {
+  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];
+};
+```
+
+### Template Literal Types
+
+Types basés sur des patterns de string :
+
+```typescript
+type EventName = `on${Capitalize<string>}`;
+// "onClick", "onHover", "onSubmit", etc.
+
+type Endpoint = `/api/${string}`;
+// "/api/users", "/api/posts", etc.
+
+type CSSValue = `${number}${"px" | "em" | "rem"}`;
+// "10px", "2em", "1.5rem", etc.
+```
+
+### Branded Types
+
+Distinguer des types structurellement identiques :
+
+```typescript
+type Brand<T, B> = T & { __brand: B };
+
+type UserId = Brand<string, "UserId">;
+type OrderId = Brand<string, "OrderId">;
+
+function getUser(id: UserId) { ... }
+
+const userId = "123" as UserId;
+const orderId = "456" as OrderId;
+
+getUser(userId);   // OK
+getUser(orderId);  // Erreur : OrderId n'est pas UserId
+```
+
+---
+
+## 7. Types Utilitaires
+
+### Types Utilitaires Natifs
+
+| Utility | Description |
+|---------|-------------|
+| `Partial<T>` | Toutes propriétés optionnelles |
+| `Required<T>` | Toutes propriétés requises |
+| `Readonly<T>` | Toutes propriétés readonly |
+| `Pick<T, K>` | Sélectionner certaines propriétés |
+| `Omit<T, K>` | Exclure certaines propriétés |
+| `Record<K, V>` | Object avec clés K et valeurs V |
+| `Exclude<T, U>` | Exclure U de l'union T |
+| `Extract<T, U>` | Extraire U de l'union T |
+| `NonNullable<T>` | Exclure null et undefined |
+| `ReturnType<T>` | Type de retour d'une fonction |
+| `Parameters<T>` | Types des paramètres en tuple |
+| `Awaited<T>` | Type résolu d'une Promise |
+
+### Exemples d'Usage
+
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+}
+
+// Création : tout sauf id
+type CreateUserDTO = Omit<User, "id">;
+
+// Mise à jour : tout optionnel sauf id
+type UpdateUserDTO = Partial<Omit<User, "id">> & Pick<User, "id">;
+
+// Lecture : sans password
+type PublicUser = Omit<User, "password">;
+```
+
+### Types Utilitaires Personnalisés
+
+**DeepPartial :**
+```typescript
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+```
+
+**DeepReadonly :**
+```typescript
+type DeepReadonly<T> = {
+  readonly [P in keyof T]: T[P] extends object ? DeepReadonly<T[P]> : T[P];
+};
+```
+
+**Nullable :**
+```typescript
+type Nullable<T> = T | null;
+```
+
+---
+
+## Ressources
+
+### Documentation Officielle
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/)
+- [TypeScript Playground](https://www.typescriptlang.org/play)
+- [Release Notes](https://www.typescriptlang.org/docs/handbook/release-notes/)
+
+### Articles 2025
+- [TypeScript Advanced Patterns 2025 - DEV](https://dev.to/frontendtoolstech/typescript-advanced-patterns-writing-cleaner-safer-code-in-2025-4gbn)
+- [TypeScript Best Practices 2025 - Medium](https://medium.com/@nikhithsomasani/best-practices-for-using-typescript-in-2025-a-guide-for-experienced-developers-4fca1cfdf052)
+- [Types vs Interfaces - LogRocket](https://blog.logrocket.com/types-vs-interfaces-typescript/)
+- [satisfies Operator Guide - Refine](https://refine.dev/blog/typescript-satisfies-operator/)
+
+### Librairies de Types
+- [type-fest](https://github.com/sindresorhus/type-fest)
+- [ts-toolbelt](https://github.com/millsp/ts-toolbelt)
+- [utility-types](https://github.com/piotrwitek/utility-types)

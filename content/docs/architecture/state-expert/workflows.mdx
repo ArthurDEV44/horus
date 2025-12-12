@@ -1,0 +1,618 @@
+---
+title: State Expert - Workflows
+description: Processus détaillés pour la gestion d'état, l'optimisation des re-renders et les migrations.
+---
+
+# State Expert - Workflows
+
+Processus détaillés pour la gestion d'état, l'optimisation des re-renders et les migrations.
+
+---
+
+## Table des Matières
+
+1. [Choix d'une Solution de State Management](#workflow-1--choix-dune-solution-de-state-management)
+2. [Diagnostic et Optimisation des Re-renders](#workflow-2--diagnostic-et-optimisation-des-re-renders)
+3. [Résolution du Prop Drilling](#workflow-3--résolution-du-prop-drilling)
+4. [Configuration de TanStack Query](#workflow-4--configuration-de-tanstack-query)
+5. [Migration Redux vers Zustand](#workflow-5--migration-redux-vers-zustand)
+6. [Implémentation de Zustand](#workflow-6--implémentation-de-zustand)
+
+---
+
+## Workflow 1 : Choix d'une Solution de State Management
+
+### Phase 1 : Audit de l'État
+
+Inventorie tous les types d'état dans l'application :
+
+<StateAudit>
+**UI State Local**
+- [ ] Modals, tooltips, dropdowns
+- [ ] États de hover, focus
+- [ ] Valeurs d'inputs temporaires
+
+**UI State Partagé**
+- [ ] Onglet sélectionné (partagé entre composants)
+- [ ] Filtres de liste
+- [ ] État de sidebar
+
+**Client State Global**
+- [ ] Utilisateur authentifié
+- [ ] Thème/préférences
+- [ ] Notifications
+- [ ] Panier
+
+**Server State**
+- [ ] Données d'API (listes, détails)
+- [ ] État de chargement
+- [ ] Mutations
+</StateAudit>
+
+### Phase 2 : Évaluation des Besoins
+
+| Question | Impact sur le choix |
+|----------|---------------------|
+| Taille de l'équipe ? | Grande → Redux, Petite → Zustand |
+| Fréquence de changement d'état ? | Haute → Zustand/Jotai, Basse → Context |
+| Complexité des interdépendances ? | Haute → Jotai, Normale → Zustand |
+| Besoin de devtools avancés ? | Oui → Redux/Zustand |
+| Performance critique ? | Oui → Zustand/Jotai avec sélecteurs |
+
+### Phase 3 : Matrice de Décision
+
+```
+                    Simplicité
+                        ↑
+                        |
+            Context API | Zustand
+                        |
+    Moins perf ←--------+-------→ Plus perf
+                        |
+               Redux TK | Jotai
+                        |
+                        ↓
+                    Complexité
+```
+
+### Phase 4 : Recommandation
+
+**Pour 90% des applications (MVP, SaaS, Dashboard) :**
+- Server State → TanStack Query
+- Client State Global → Zustand
+- UI State Local → useState
+
+**Pour applications complexes avec état interdépendant :**
+- Server State → TanStack Query
+- Client State → Jotai
+- Formulaires → Jotai ou React Hook Form
+
+**Pour grandes équipes avec besoin de rigueur :**
+- Server State → TanStack Query + Redux Toolkit Query
+- Client State → Redux Toolkit
+
+### Phase 5 : Validation
+
+Checklist avant implémentation :
+- [ ] Chaque type d'état a une solution assignée
+- [ ] Pas de chevauchement (server state dans Zustand = erreur)
+- [ ] Équipe formée sur les outils choisis
+- [ ] Patterns documentés
+
+---
+
+## Workflow 2 : Diagnostic et Optimisation des Re-renders
+
+### Phase 1 : Identification du Problème
+
+Symptômes de re-renders excessifs :
+- UI lente/saccadée
+- Input lag lors de la saisie
+- Scroll peu fluide
+- CPU élevé lors d'interactions
+
+### Phase 2 : Mesure avec React DevTools
+
+1. **Ouvrir React DevTools → Profiler**
+2. **Démarrer l'enregistrement**
+3. **Effectuer l'interaction problématique**
+4. **Arrêter et analyser**
+
+Informations à collecter :
+- Quels composants re-render ?
+- Combien de temps prend chaque render ?
+- Quelle est la cause (state, props, context) ?
+
+### Phase 3 : Installation de why-did-you-render (Optionnel)
+
+Pour un diagnostic plus détaillé :
+
+```typescript
+// wdyr.ts (importer en premier dans index.tsx)
+import React from 'react';
+
+if (process.env.NODE_ENV === 'development') {
+  const whyDidYouRender = require('@welldone-software/why-did-you-render');
+  whyDidYouRender(React, { trackAllPureComponents: true });
+}
+```
+
+### Phase 4 : Classification des Causes
+
+| Cause | Diagnostic | Solution |
+|-------|------------|----------|
+| Props objet recréé | `{ user }` recréé chaque render | useMemo |
+| Callback recréé | `onClick={() => ...}` | useCallback |
+| Context change | Consumer re-render | Séparer contexts |
+| Parent re-render | Enfant suit | React.memo |
+| State mal placé | Trop haut dans l'arbre | Descendre le state |
+
+### Phase 5 : Application des Solutions
+
+#### Pour Props Objet Instable
+
+```typescript
+// Avant
+<Child config={{ theme: 'dark', size: 'large' }} />
+
+// Après
+const config = useMemo(() => ({ theme: 'dark', size: 'large' }), []);
+<Child config={config} />
+```
+
+#### Pour Callbacks Instables
+
+```typescript
+// Avant
+<Button onClick={() => handleClick(id)} />
+
+// Après
+const handleButtonClick = useCallback(() => handleClick(id), [id]);
+<Button onClick={handleButtonClick} />
+```
+
+#### Pour Re-renders de Parent
+
+```typescript
+// Composant enfant coûteux
+const ExpensiveComponent = React.memo(({ data }) => {
+  // Render coûteux...
+});
+```
+
+#### Pour Context Trop Large
+
+```typescript
+// Avant : un seul context
+<AppContext.Provider value={{ user, theme, settings }}>
+
+// Après : contexts séparés
+<UserContext.Provider value={user}>
+  <ThemeContext.Provider value={theme}>
+    <SettingsContext.Provider value={settings}>
+```
+
+### Phase 6 : Validation
+
+Réexécuter le Profiler :
+- [ ] Nombre de re-renders réduit
+- [ ] Temps de render < 16ms
+- [ ] Interaction fluide
+
+---
+
+## Workflow 3 : Résolution du Prop Drilling
+
+### Phase 1 : Identifier le Drilling
+
+Signes de prop drilling :
+- Props passées à travers 4+ composants
+- Composants intermédiaires avec des props qu'ils n'utilisent pas
+- Difficile de modifier la structure
+
+### Phase 2 : Cartographier le Flux
+
+<DrillingMap>
+Prop : [nom]
+Source : [composant source]
+Destination : [composant qui utilise]
+Intermédiaires : [liste des composants traversés]
+Utilisée par intermédiaires : [oui/non]
+</DrillingMap>
+
+### Phase 3 : Choisir la Solution
+
+| Profondeur | Intermédiaires utilisent ? | Solution |
+|------------|---------------------------|----------|
+| 2-3 | Oui | Garder les props |
+| 2-3 | Non | Component Composition |
+| 4+ | Non | Composition ou Context |
+| 4+ | Performance critique | Zustand avec sélecteur |
+
+### Phase 4 : Appliquer Component Composition
+
+**Problème :**
+```jsx
+<App>
+  <Layout>
+    <Sidebar>
+      <UserMenu user={user} />  // user vient de App
+    </Sidebar>
+  </Layout>
+</App>
+```
+
+**Solution :**
+```jsx
+<App>
+  <Layout sidebar={<Sidebar userMenu={<UserMenu user={user} />} />}>
+    {/* content */}
+  </Layout>
+</App>
+```
+
+UserMenu reçoit user directement de App, sans passer par Layout et Sidebar.
+
+### Phase 5 : Appliquer Context (si nécessaire)
+
+1. **Créer le Context**
+   ```typescript
+   const UserContext = createContext<User | null>(null);
+   ```
+
+2. **Créer le Provider**
+   ```typescript
+   function UserProvider({ children }: { children: ReactNode }) {
+     const [user, setUser] = useState<User | null>(null);
+     return (
+       <UserContext.Provider value={user}>
+         {children}
+       </UserContext.Provider>
+     );
+   }
+   ```
+
+3. **Créer le Hook**
+   ```typescript
+   function useUser() {
+     const context = useContext(UserContext);
+     if (context === undefined) {
+       throw new Error('useUser must be used within UserProvider');
+     }
+     return context;
+   }
+   ```
+
+4. **Utiliser**
+   ```tsx
+   function DeepComponent() {
+     const user = useUser();
+     return <span>{user.name}</span>;
+   }
+   ```
+
+### Phase 6 : Validation
+
+- [ ] Props drilling éliminé
+- [ ] Composants intermédiaires simplifiés
+- [ ] Performance maintenue ou améliorée
+
+---
+
+## Workflow 4 : Configuration de TanStack Query
+
+### Phase 1 : Installation et Setup
+
+1. **Installer les packages**
+   ```bash
+   npm install @tanstack/react-query @tanstack/react-query-devtools
+   ```
+
+2. **Configurer le QueryClient**
+   ```typescript
+   const queryClient = new QueryClient({
+     defaultOptions: {
+       queries: {
+         staleTime: 1000 * 60 * 5, // 5 minutes
+         gcTime: 1000 * 60 * 30,   // 30 minutes
+         retry: 1,
+         refetchOnWindowFocus: false,
+       },
+     },
+   });
+   ```
+
+3. **Wrapper l'application**
+   ```tsx
+   <QueryClientProvider client={queryClient}>
+     <ReactQueryDevtools initialIsOpen={false} />
+     <App />
+   </QueryClientProvider>
+   ```
+
+### Phase 2 : Créer les Queries
+
+Structure recommandée :
+
+```
+src/
+├── api/
+│   ├── users.ts          # Fonctions fetch
+│   └── posts.ts
+├── hooks/
+│   ├── useUsers.ts       # Hooks useQuery
+│   └── usePosts.ts
+└── queries/
+    └── queryKeys.ts      # Factory de query keys
+```
+
+**Query Keys Factory :**
+```typescript
+export const queryKeys = {
+  users: {
+    all: ['users'] as const,
+    detail: (id: string) => ['users', id] as const,
+    list: (filters: UserFilters) => ['users', 'list', filters] as const,
+  },
+};
+```
+
+### Phase 3 : Créer les Hooks
+
+```typescript
+export function useUser(userId: string) {
+  return useQuery({
+    queryKey: queryKeys.users.detail(userId),
+    queryFn: () => fetchUser(userId),
+    enabled: !!userId,
+  });
+}
+```
+
+### Phase 4 : Gérer les Mutations
+
+```typescript
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateUser,
+    onSuccess: (data, variables) => {
+      // Invalider les queries liées
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.users.all,
+      });
+    },
+  });
+}
+```
+
+### Phase 5 : Optimistic Updates (Optionnel)
+
+```typescript
+useMutation({
+  mutationFn: updateUser,
+  onMutate: async (newUser) => {
+    await queryClient.cancelQueries({ queryKey: ['users', newUser.id] });
+    const previousUser = queryClient.getQueryData(['users', newUser.id]);
+    queryClient.setQueryData(['users', newUser.id], newUser);
+    return { previousUser };
+  },
+  onError: (err, newUser, context) => {
+    queryClient.setQueryData(['users', newUser.id], context?.previousUser);
+  },
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['users'] });
+  },
+});
+```
+
+---
+
+## Workflow 5 : Migration Redux vers Zustand
+
+### Phase 1 : Audit Redux Actuel
+
+Inventorie :
+- Nombre de slices/reducers
+- Actions synchrones vs thunks
+- Middleware utilisés
+- Sélecteurs (reselect)
+- Données serveur dans Redux
+
+### Phase 2 : Séparer Server State
+
+Avant de migrer, extraire le server state vers TanStack Query :
+
+| Dans Redux | Vers |
+|------------|------|
+| Listes d'API | TanStack Query |
+| État de loading/error | TanStack Query |
+| Cache de données | TanStack Query |
+| État UI pur | Zustand |
+
+### Phase 3 : Migrer un Slice à la Fois
+
+**Redux Slice :**
+```typescript
+const userSlice = createSlice({
+  name: 'user',
+  initialState: { user: null, preferences: {} },
+  reducers: {
+    setUser: (state, action) => { state.user = action.payload; },
+    updatePreferences: (state, action) => { state.preferences = action.payload; },
+  },
+});
+```
+
+**Zustand Store :**
+```typescript
+interface UserState {
+  user: User | null;
+  preferences: Preferences;
+  setUser: (user: User | null) => void;
+  updatePreferences: (prefs: Preferences) => void;
+}
+
+const useUserStore = create<UserState>((set) => ({
+  user: null,
+  preferences: {},
+  setUser: (user) => set({ user }),
+  updatePreferences: (preferences) => set({ preferences }),
+}));
+```
+
+### Phase 4 : Migrer les Sélecteurs
+
+**Redux :**
+```typescript
+const selectUserName = (state: RootState) => state.user.user?.name;
+const userName = useSelector(selectUserName);
+```
+
+**Zustand :**
+```typescript
+const userName = useUserStore((state) => state.user?.name);
+```
+
+### Phase 5 : Migrer les Consommateurs
+
+1. Remplacer `useSelector` par le hook Zustand
+2. Remplacer `useDispatch` + action par appel direct de l'action
+3. Supprimer le slice Redux quand migration complète
+
+### Phase 6 : Nettoyage
+
+- [ ] Supprimer redux, react-redux du package.json
+- [ ] Supprimer les fichiers store/slices inutilisés
+- [ ] Mettre à jour les imports
+
+---
+
+## Workflow 6 : Implémentation de Zustand
+
+### Phase 1 : Structure des Fichiers
+
+```
+src/
+├── stores/
+│   ├── useUserStore.ts
+│   ├── useCartStore.ts
+│   ├── useUIStore.ts
+│   └── index.ts
+└── ...
+```
+
+### Phase 2 : Créer un Store
+
+```typescript
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
+
+interface CartState {
+  items: CartItem[];
+  addItem: (item: CartItem) => void;
+  removeItem: (id: string) => void;
+  clearCart: () => void;
+  totalItems: () => number;
+}
+
+export const useCartStore = create<CartState>()(
+  devtools(
+    persist(
+      (set, get) => ({
+        items: [],
+        addItem: (item) => set((state) => ({
+          items: [...state.items, item],
+        })),
+        removeItem: (id) => set((state) => ({
+          items: state.items.filter((i) => i.id !== id),
+        })),
+        clearCart: () => set({ items: [] }),
+        totalItems: () => get().items.length,
+      }),
+      { name: 'cart-storage' }
+    )
+  )
+);
+```
+
+### Phase 3 : Utiliser les Sélecteurs
+
+```typescript
+// Sélecteur simple
+const items = useCartStore((state) => state.items);
+
+// Sélecteur dérivé (mémoïsé)
+const totalPrice = useCartStore((state) =>
+  state.items.reduce((sum, item) => sum + item.price, 0)
+);
+
+// Action
+const addItem = useCartStore((state) => state.addItem);
+```
+
+### Phase 4 : Middleware
+
+**Persist (localStorage) :**
+```typescript
+persist(storeCreator, {
+  name: 'store-key',
+  partialize: (state) => ({ items: state.items }), // Persister seulement certains champs
+});
+```
+
+**DevTools :**
+```typescript
+devtools(storeCreator, { name: 'CartStore' });
+```
+
+**Immer (mutations simplifiées) :**
+```typescript
+import { immer } from 'zustand/middleware/immer';
+
+create(immer((set) => ({
+  items: [],
+  addItem: (item) => set((state) => {
+    state.items.push(item); // Mutation directe OK avec immer
+  }),
+})));
+```
+
+### Phase 5 : Tests
+
+```typescript
+import { useCartStore } from './useCartStore';
+
+beforeEach(() => {
+  useCartStore.setState({ items: [] });
+});
+
+test('adds item to cart', () => {
+  const { addItem, items } = useCartStore.getState();
+  addItem({ id: '1', name: 'Test', price: 10 });
+  expect(useCartStore.getState().items).toHaveLength(1);
+});
+```
+
+---
+
+## Checklist Générale
+
+### Avant Implémentation
+
+- [ ] Types d'état classifiés
+- [ ] Solution choisie pour chaque type
+- [ ] Équipe alignée
+
+### Pendant Implémentation
+
+- [ ] Un store/context par domaine
+- [ ] Sélecteurs pour performance
+- [ ] Devtools configurés
+
+### Après Implémentation
+
+- [ ] Performance vérifiée (Profiler)
+- [ ] Tests ajoutés
+- [ ] Documentation mise à jour

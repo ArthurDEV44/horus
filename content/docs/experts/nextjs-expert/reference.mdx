@@ -1,0 +1,417 @@
+---
+title: Reference
+description: Documentation technique approfondie Next.js 16 - Glossaire, Architecture, Caching, Server Actions, Performance, Securite
+---
+
+# Next.js Expert - Documentation Technique
+
+## Glossaire
+
+| Terme | Definition |
+|-------|------------|
+| **App Router** | Systeme de routing base sur le filesystem dans le repertoire app/, introduit Next.js 13 |
+| **Cache Components** | Fonctionnalite Next.js 16 permettant le caching explicite via "use cache" |
+| **Client Component** | Composant avec "use client", execute cote client, acces aux hooks React |
+| **Data Access Layer** | Pattern de securite centralisant l'acces aux donnees avec verification auth |
+| **Dynamic Rendering** | Rendu a la requete (SSR), contenu frais a chaque visite |
+| **Edge Runtime** | Runtime leger pour middleware/proxy, sous-ensemble des APIs Node.js |
+| **generateMetadata** | Fonction async pour generer des metadonnees dynamiques |
+| **generateStaticParams** | Fonction pour pre-generer les routes dynamiques au build |
+| **ISR** | Incremental Static Regeneration, regeneration statique a la demande |
+| **Layout** | Composant partage entre plusieurs pages, preserve l'etat entre navigations |
+| **Parallel Routes** | Routes simultanees dans la meme page via slots (@folder) |
+| **Partial Prerendering** | Combinaison de contenu statique et dynamique dans une meme page |
+| **PPR** | Partial Prerendering, stable dans Next.js 16 |
+| **proxy.ts** | Remplacant de middleware.ts dans Next.js 16 pour l'interception de requetes |
+| **React Compiler** | Compilateur optimisant automatiquement les re-renders React |
+| **Route Handler** | API endpoint dans app/ via route.ts |
+| **RSC** | React Server Components, composants executes uniquement cote serveur |
+| **Server Action** | Fonction async "use server" pour mutations cote serveur |
+| **SSG** | Static Site Generation, pages pre-generees au build |
+| **SSR** | Server-Side Rendering, rendu a chaque requete |
+| **Streaming** | Envoi progressif du HTML via Suspense |
+| **Turbopack** | Bundler Rust ultra-rapide, defaut dans Next.js 16 |
+
+---
+
+## Architecture App Router
+
+### Structure de Fichiers
+
+| Fichier | Role |
+|---------|------|
+| `page.tsx` | UI unique d'une route, rend la route accessible |
+| `layout.tsx` | UI partagee, preserve l'etat entre navigations |
+| `loading.tsx` | UI de chargement avec Suspense automatique |
+| `error.tsx` | Error boundary pour la route |
+| `not-found.tsx` | UI pour les 404 |
+| `route.ts` | API endpoint (Route Handler) |
+| `template.tsx` | Comme layout mais recree a chaque navigation |
+| `default.tsx` | Fallback pour Parallel Routes |
+
+### Conventions de Dossiers
+
+| Pattern | Usage |
+|---------|-------|
+| `[slug]` | Route dynamique |
+| `[...slug]` | Catch-all route |
+| `[[...slug]]` | Optional catch-all |
+| `(group)` | Route group (organisation sans impact URL) |
+| `@slot` | Parallel Route slot |
+| `(.)folder` | Intercepting route (meme niveau) |
+| `(..)folder` | Intercepting route (niveau parent) |
+
+### Hierarchie de Rendu
+
+```
+layout.tsx
+├── template.tsx (optionnel)
+│   ├── error.tsx (Error Boundary)
+│   │   ├── loading.tsx (Suspense Boundary)
+│   │   │   └── page.tsx ou layout enfant
+```
+
+---
+
+## Server Components vs Client Components
+
+### Quand Utiliser Quoi
+
+| Besoin | Server Component | Client Component |
+|--------|------------------|------------------|
+| Fetch de donnees | Oui | Non (preferer) |
+| Acces backend direct | Oui | Non |
+| Secrets/tokens | Oui | Non |
+| Hooks React (useState, useEffect) | Non | Oui |
+| Event handlers (onClick) | Non | Oui |
+| Browser APIs | Non | Oui |
+| Effets/lifecycle | Non | Oui |
+
+### Patterns de Composition
+
+**Pattern 1 : Client Component enfant de Server Component**
+```
+ServerComponent
+└── ClientComponent (avec "use client")
+    └── Peut recevoir des Server Components en children
+```
+
+**Pattern 2 : Passer des Server Components via props/children**
+Le Client Component peut wrapper des Server Components passes en props, mais ne peut pas importer directement un Server Component.
+
+### Regles de Frontieres
+
+- Un fichier avec "use client" rend tous ses imports Client Components
+- Placer "use client" le plus bas possible dans l'arbre
+- Les props passees doivent etre serialisables (pas de fonctions, sauf Server Actions)
+
+---
+
+## Caching Next.js 16
+
+### Modele de Cache Explicite
+
+Next.js 16 abandonne le cache implicite. Tout cache doit etre opt-in via "use cache".
+
+### Directive "use cache"
+
+| Niveau | Usage |
+|--------|-------|
+| Fichier entier | En haut du fichier pour cacher toute la page |
+| Fonction | Dans une fonction pour cacher son resultat |
+| Composant | Dans un composant pour cacher son rendu |
+
+### Configuration du Cache
+
+| API | Role |
+|-----|------|
+| `cacheTag('tag')` | Associe un tag pour invalidation selective |
+| `cacheLife('profile')` | Definit la duree de vie du cache |
+| `revalidateTag('tag', profile)` | Invalide et regenere le cache |
+| `updateTag('tag')` | Mise a jour sans invalidation complete |
+
+### Profils cacheLife Integres
+
+| Profil | stale | revalidate | expire |
+|--------|-------|------------|--------|
+| `'seconds'` | - | 1s | 60s |
+| `'minutes'` | 5min | 1min | 1h |
+| `'hours'` | 5min | 1h | 1 jour |
+| `'days'` | 5min | 1 jour | 1 semaine |
+| `'weeks'` | 5min | 1 semaine | 1 mois |
+| `'max'` | 5min | 1 mois | indefini |
+
+### Invalidation du Cache
+
+| Methode | Usage |
+|---------|-------|
+| Time-based | Via cacheLife profile, automatique |
+| On-demand | revalidateTag() depuis Server Action ou Route Handler |
+| Path-based | revalidatePath() pour une route specifique |
+
+---
+
+## Server Actions
+
+### Securite
+
+| Aspect | Recommandation |
+|--------|----------------|
+| **Validation** | Toujours valider avec Zod ou equivalent |
+| **Authentification** | Verifier la session a chaque appel |
+| **Autorisation** | Verifier les permissions utilisateur |
+| **Rate Limiting** | Implementer sur les actions sensibles |
+| **Secrets** | Jamais exposes, utiliser env server-only |
+
+### Protection CSRF Native
+
+- Server Actions utilisent uniquement POST
+- Validation automatique Origin vs Host
+- Action IDs chiffres et non-deterministes
+
+### Bonnes Pratiques
+
+| Pratique | Raison |
+|----------|--------|
+| Definir dans fichiers separes | Organisation, reusabilite |
+| Nommer explicitement | "use server" + export nomme |
+| Retourner des objets | Pas de throw pour erreurs metier |
+| Typer strictement | TypeScript pour inputs et outputs |
+
+---
+
+## Performance
+
+### Core Web Vitals Cibles
+
+| Metrique | Bon | A Ameliorer | Mauvais |
+|----------|-----|-------------|---------|
+| **LCP** | < 2.5s | 2.5s - 4s | > 4s |
+| **INP** | < 200ms | 200ms - 500ms | > 500ms |
+| **CLS** | < 0.1 | 0.1 - 0.25 | > 0.25 |
+
+### Optimisations next/image
+
+| Prop | Usage |
+|------|-------|
+| `priority` | Images LCP above-the-fold |
+| `sizes` | Responsive breakpoints |
+| `placeholder="blur"` | Placeholder pendant chargement |
+| `loading="lazy"` | Defaut, sauf si priority |
+
+### Optimisations next/font
+
+| Avantage | Description |
+|----------|-------------|
+| Zero layout shift | Fonts preloaded, pas de CLS |
+| Self-hosting | Pas de requete externe |
+| Subsetting automatique | Seuls les glyphes utilises |
+
+### Turbopack
+
+| Avantage | Gain |
+|----------|------|
+| Fast Refresh | 5-10x plus rapide |
+| Cold start | 2x plus rapide |
+| Build production | 2-5x plus rapide |
+| Filesystem cache | Persistence entre restarts |
+
+---
+
+## Rendering Strategies
+
+### Decision Tree
+
+| Condition | Strategie |
+|-----------|-----------|
+| Contenu fixe, connu au build | **SSG** |
+| Contenu change periodiquement | **ISR** (revalidate) |
+| Contenu personnalise/temps reel | **SSR** (dynamic) |
+| Dashboard prive, pas SEO | **CSR** (client-side) |
+| Mix statique + dynamique | **PPR** |
+
+### ISR Configuration
+
+| Option | Usage |
+|--------|-------|
+| `revalidate: 60` | Regeneration toutes les 60s |
+| `revalidate: false` | Jamais regenere (vraiment statique) |
+| `revalidate: 0` | Toujours dynamique |
+
+### Partial Prerendering (PPR)
+
+- Combine statique (shell) et dynamique (streaming)
+- Active via next.config.ts : `cacheComponents: true`
+- Utilise Suspense pour delimiter les parties dynamiques
+
+---
+
+## Securite
+
+### Headers de Securite Essentiels
+
+| Header | Valeur Recommandee |
+|--------|-------------------|
+| `Strict-Transport-Security` | max-age=63072000; includeSubDomains; preload |
+| `X-Frame-Options` | DENY ou SAMEORIGIN |
+| `X-Content-Type-Options` | nosniff |
+| `Referrer-Policy` | strict-origin-when-cross-origin |
+| `Permissions-Policy` | camera=(), microphone=(), geolocation=() |
+
+### CSP avec Nonces
+
+| Etape | Description |
+|-------|-------------|
+| 1. Generer nonce | `crypto.randomUUID()` dans proxy.ts |
+| 2. Passer au header | `script-src 'nonce-${nonce}'` |
+| 3. Appliquer aux scripts | Injecter le nonce dans les script tags |
+
+### Data Access Layer (DAL)
+
+| Principe | Implementation |
+|----------|----------------|
+| Centraliser l'auth | Fonction `verifySession()` cachee avec `cache()` |
+| Server-only | Import `'server-only'` pour bloquer client |
+| Appeler partout | Dans chaque Server Component et Server Action proteges |
+
+### Variables d'Environnement
+
+| Prefixe | Visibilite |
+|---------|------------|
+| Sans prefixe | Server-only (secrets) |
+| `NEXT_PUBLIC_` | Client-side (expose) |
+
+---
+
+## Migration et Upgrade
+
+### Next.js 15 vers 16
+
+| Changement | Action |
+|------------|--------|
+| middleware.ts | Renommer en proxy.ts, fonction `middleware` → `proxy` |
+| Cache implicite | Ajouter "use cache" la ou necessaire |
+| Turbopack | Desormais defaut, `--webpack` pour ancien comportement |
+| Node.js 18 | Upgrader vers Node.js 20.9+ |
+
+### Pages Router vers App Router
+
+| Etape | Description |
+|-------|-------------|
+| 1. Creer app/ | Coexistence possible avec pages/ |
+| 2. Migrer layout | `_app.tsx` → `app/layout.tsx` |
+| 3. Migrer pages | Une par une, pages/ prioritaire |
+| 4. Migrer API | `pages/api/` → `app/api/route.ts` |
+| 5. Supprimer pages/ | Une fois migration complete |
+
+---
+
+## Configuration next.config.ts
+
+### Options Principales Next.js 16
+
+| Option | Description |
+|--------|-------------|
+| `output: 'standalone'` | Build autonome pour containers |
+| `reactCompiler: true` | Active le React Compiler |
+| `cacheComponents: true` | Active PPR et Cache Components |
+| `turbopackFileSystemCacheForBuild` | Cache filesystem Turbopack (beta) |
+
+### Configuration Images
+
+| Option | Defaut Next.js 16 |
+|--------|------------------|
+| `minimumCacheTTL` | 14400 (4h, anciennement 60s) |
+| `qualities` | [75] (anciennement toutes) |
+| `imageSizes` | Sans 16px |
+| `maximumRedirects` | 3 |
+
+---
+
+## Debugging
+
+### Problemes Courants
+
+| Probleme | Cause Probable | Solution |
+|----------|----------------|----------|
+| Hydration mismatch | Contenu different server/client | Verifier les conditions cote client |
+| Cache stale | Tag non invalide | Verifier revalidateTag() appele |
+| Build timeout | Composant lourd | Optimiser ou augmenter timeout |
+| Type errors | generateMetadata | Verifier le type Metadata retourne |
+| 404 en prod | Route dynamique | Verifier generateStaticParams() |
+
+### Outils de Debug
+
+| Outil | Usage |
+|-------|-------|
+| `next.config.ts` logging | Verbose build logs |
+| React DevTools | Inspecter composants |
+| Network tab | Verifier fetch, cache headers |
+| Lighthouse | Performance, SEO, Accessibility |
+
+---
+
+## Ressources Officielles
+
+### Documentation
+
+| Sujet | URL |
+|-------|-----|
+| App Router | nextjs.org/docs/app |
+| Caching | nextjs.org/docs/app/guides/caching |
+| Server Actions | nextjs.org/docs/app/building-your-application/data-fetching/server-actions |
+| Security | nextjs.org/docs/app/guides/security |
+| Upgrading | nextjs.org/docs/app/guides/upgrading |
+
+### Blog Next.js
+
+| Article | Sujet |
+|---------|-------|
+| next-16 | Release notes Next.js 16 |
+| security-nextjs-server-components-actions | Securite RSC et Actions |
+
+### Changelogs
+
+- GitHub releases : github.com/vercel/next.js/releases
+- Canary builds : npm info next versions
+
+---
+
+## FAQ
+
+### Quand utiliser Route Handlers vs Server Actions ?
+
+- **Route Handlers** : APIs RESTful, webhooks, integrations tierces, GET requests
+- **Server Actions** : Mutations depuis UI, forms, operations liees a un composant
+
+### Comment forcer le dynamic rendering ?
+
+Options dans le fichier :
+- `export const dynamic = 'force-dynamic'`
+- `export const revalidate = 0`
+- Utiliser `cookies()` ou `headers()` (force dynamique)
+
+### Comment pre-build toutes les routes dynamiques ?
+
+```typescript
+export async function generateStaticParams() {
+  const items = await getItems()
+  return items.map((item) => ({ slug: item.slug }))
+}
+```
+
+Ajouter `dynamicParams = false` pour 404 sur routes non pre-built.
+
+### Turbopack ne fonctionne pas avec ma config webpack custom ?
+
+Turbopack n'est pas compatible avec les configurations webpack personnalisees. Options :
+- Utiliser `next dev --webpack` ou `next build --webpack`
+- Migrer vers la configuration native Turbopack
+- Attendre le support des plugins specifiques
+
+### Comment debugger les problemes de cache ?
+
+1. Verifier les tags avec `console.log` dans les Server Actions
+2. Utiliser le header `x-vercel-cache` en production Vercel
+3. Tester avec `revalidatePath('/')` pour forcer le refresh
+4. Inspecter le Data Cache via les logs de build

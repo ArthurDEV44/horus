@@ -1,0 +1,128 @@
+---
+title: Reference
+description: Documentation de référence sur les concepts de modularité
+---
+
+# Modularity Expert - Documentation de Référence
+
+## Concepts Fondamentaux
+
+### Organisation Feature-Based vs Layer-Based
+
+L'approche layer-based traditionnelle organise le code par type technique avec des dossiers séparés pour components, hooks, utils et services. Cette structure crée une dispersion où le code d'une même fonctionnalité se retrouve éparpillé dans plusieurs dossiers distants.
+
+L'approche feature-based moderne regroupe tout le code relatif à une fonctionnalité dans un même dossier. Une feature user-management contient ses propres components, hooks, utils, types et api. Cette colocation facilite la navigation, améliore la cohésion et permet l'extraction future en package indépendant.
+
+La structure feature-based recommandée place chaque feature dans src/features avec une organisation interne standardisée contenant components pour l'interface, hooks pour la logique réutilisable, utils pour les fonctions pures, types pour les définitions TypeScript, api pour les appels serveur, et un index.ts minimal pour l'API publique.
+
+### Encapsulation de Module
+
+Un module bien encapsulé expose une API publique claire et cache ses détails d'implémentation. Le fichier index.ts à la racine du module définit explicitement ce qui est accessible depuis l'extérieur.
+
+Les éléments internes comme les composants auxiliaires, les hooks spécifiques ou les utilitaires de transformation restent privés. Ils ne sont pas exportés dans l'index et ne doivent pas être importés directement par d'autres modules.
+
+Cette encapsulation permet de refactorer librement l'intérieur d'un module sans impacter les consommateurs tant que l'API publique reste stable. Elle établit un contrat clair entre le module et ses utilisateurs.
+
+### Problèmes des Barrel Files
+
+Les barrel files sont des fichiers index.ts qui ré-exportent le contenu d'un dossier pour simplifier les imports. Bien qu'ils offrent une syntaxe plus courte, ils causent plusieurs problèmes significatifs.
+
+Le premier problème concerne les performances de build. Quand un bundler rencontre un import depuis un barrel file, il doit souvent charger et parser tous les fichiers ré-exportés même si un seul élément est utilisé. Atlassian a documenté une réduction de 75% des temps de build après avoir remplacé les barrel exports par des imports directs.
+
+Le second problème affecte le tree-shaking. Les exports wildcard avec export asterisk from empêchent les bundlers d'éliminer le code mort efficacement. Le bundle final contient du code jamais utilisé augmentant inutilement sa taille.
+
+Le troisième problème concerne les dépendances circulaires. Les barrel files créent des chemins d'import indirects qui masquent les cycles de dépendances. Ces cycles provoquent des bugs subtils où des modules reçoivent undefined au moment de l'import.
+
+### Stratégie d'Import Direct
+
+L'import direct pointe vers le fichier source exact plutôt que vers un barrel file intermédiaire. Au lieu d'importer depuis features/auth, on importe depuis features/auth/components/LoginForm.
+
+Cette approche permet au bundler de ne charger que le fichier nécessaire. Le tree-shaking fonctionne parfaitement car la chaîne de dépendances est explicite. Les cycles sont plus facilement détectables car le graphe d'imports est transparent.
+
+Pour maintenir l'ergonomie des imports, on peut configurer des alias TypeScript comme @features/auth pointant vers le dossier. L'autocomplétion de l'IDE guide vers les fichiers spécifiques sans passer par un index.
+
+### API Publique Minimale
+
+Un module expose uniquement ce qui est nécessaire à ses consommateurs externes. Le fichier index.ts liste explicitement chaque export nommé sans utiliser de wildcard.
+
+Les exports publics typiques incluent les composants principaux de la feature, les hooks réutilisables, les types et interfaces du contrat, et les constantes partagées. Les utilitaires internes, composants auxiliaires et types de détail restent privés.
+
+Cette discipline force à réfléchir à l'interface du module. Chaque ajout à l'API publique est une décision consciente plutôt qu'un export automatique.
+
+## Patterns de Modularité
+
+### Module Feature Autonome
+
+Un module feature autonome possède tout ce dont il a besoin pour fonctionner. Il contient ses composants UI, sa logique métier dans des hooks, ses appels API, ses types et ses tests.
+
+Les dépendances externes se limitent aux modules shared véritablement transversaux et aux autres features via leurs APIs publiques uniquement. Le module ne dépend jamais des détails internes d'une autre feature.
+
+Cette autonomie permet d'extraire le module en package npm si nécessaire. Elle facilite le travail en équipe où chaque équipe possède ses features sans conflits constants.
+
+### Module Shared Stratifié
+
+Le dossier shared contient le code véritablement transversal utilisé par plusieurs features. Il se structure en couches avec ui pour les composants génériques, hooks pour les hooks utilitaires, utils pour les fonctions pures, et types pour les types communs.
+
+Le critère d'admission dans shared est strict. Un élément y entre uniquement s'il est utilisé par au moins trois features différentes et s'il ne contient aucune logique métier spécifique.
+
+Le shared reste maigre intentionnellement. Trop de code shared indique souvent un manque de cohésion dans les features ou une abstraction prématurée.
+
+### Contrat Inter-Modules
+
+Les modules communiquent via des interfaces explicites plutôt que des dépendances directes. Une feature qui a besoin de données d'une autre feature reçoit ces données via props ou context plutôt que d'importer directement.
+
+Les événements et callbacks permettent la communication inverse. Un module émet des événements que d'autres modules écoutent sans couplage direct.
+
+Les types partagés entre modules sont définis dans un fichier types de l'API publique. Ces types forment le contrat stable entre producteur et consommateur.
+
+## Anti-Patterns à Éviter
+
+### Barrel File Massif
+
+Un fichier index.ts qui ré-exporte des dizaines d'éléments avec des exports wildcard en cascade. Ce pattern détruit les performances de build et empêche le tree-shaking efficace.
+
+La solution consiste à supprimer le barrel file et utiliser des imports directs. Si un index est nécessaire, il liste explicitement les quelques exports publics essentiels.
+
+### Feature Fourre-Tout
+
+Une feature qui contient du code sans rapport direct avec son domaine. Le dossier grossit indéfiniment avec des utilitaires génériques et des composants réutilisables qui devraient être ailleurs.
+
+La solution impose une règle stricte de cohésion. Chaque élément dans une feature doit directement servir cette feature. Le code générique migre vers shared ou devient une nouvelle feature.
+
+### Import Profond
+
+Un module qui importe directement depuis les entrailles d'un autre module en contournant l'API publique. Cette pratique crée un couplage fort aux détails d'implémentation.
+
+La solution interdit les imports qui traversent plus d'un niveau dans un autre module. Si un élément interne est nécessaire, il doit être ajouté à l'API publique ou le besoin repensé.
+
+### Shared Obèse
+
+Un dossier shared qui contient la majorité du code de l'application. Les features deviennent de simples assemblages de composants shared sans logique propre.
+
+La solution remet la logique métier dans les features. Le shared se limite aux vrais utilitaires génériques sans connaissance du domaine.
+
+## Métriques de Qualité
+
+### Cohésion de Module
+
+Mesure à quel point les éléments d'un module travaillent ensemble vers un objectif commun. Une haute cohésion indique que le module a une responsabilité claire et délimitée.
+
+Indicateurs de bonne cohésion : les fichiers du module s'importent entre eux fréquemment, les modifications touchent souvent plusieurs fichiers du même module, le module peut s'expliquer en une phrase.
+
+### Couplage Inter-Modules
+
+Mesure le nombre et la profondeur des dépendances entre modules. Un faible couplage permet de modifier un module sans cascade d'impacts.
+
+Indicateurs de faible couplage : peu d'imports entre features, imports uniquement depuis les APIs publiques, pas de types partagés implicitement.
+
+### Stabilité de l'API
+
+Mesure la fréquence des changements dans l'API publique d'un module. Une API stable indique une bonne conception initiale et protège les consommateurs.
+
+Indicateurs de stabilité : peu de breaking changes dans l'historique git, interface minimaliste sans exports superflus, documentation claire du contrat.
+
+### Impact sur le Build
+
+Mesure le temps de build et la taille du bundle. L'architecture modulaire bien conçue optimise ces métriques.
+
+Indicateurs d'optimisation : temps de build raisonnable même sur gros projet, bundle final sans code mort, code splitting efficace par feature.

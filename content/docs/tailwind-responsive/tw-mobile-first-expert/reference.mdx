@@ -1,0 +1,316 @@
+---
+title: Reference Technique
+description: Documentation technique approfondie pour le design responsive mobile-first avec Tailwind CSS
+---
+
+# Reference Technique - Mobile First
+
+Documentation technique approfondie pour le design responsive mobile-first avec Tailwind CSS.
+
+---
+
+## Anatomie du Systeme Mobile-First
+
+### Principe de Cascade
+
+Le systeme mobile-first de Tailwind fonctionne par cascade ascendante :
+
+1. Les styles sans prefixe definissent l'etat de BASE (mobile)
+2. Chaque breakpoint ETEND les styles precedents
+3. Les styles des breakpoints superieurs SURCHARGENT les inferieurs
+4. Il n'y a pas de "reset" automatique entre breakpoints
+
+### Implications Pratiques
+
+- Un style defini sans prefixe persiste sur TOUS les ecrans
+- Un style `md:` s'applique a md, lg, xl ET 2xl
+- Pour cibler UNIQUEMENT un breakpoint, utiliser les variantes `max-*` (v4)
+- Toujours partir du plus petit ecran vers le plus grand
+
+---
+
+## Configuration des Breakpoints
+
+### Tailwind v3
+
+Configuration dans `tailwind.config.js` :
+
+- Les breakpoints se definissent dans `theme.screens`
+- Les valeurs par defaut utilisent des pixels
+- Possibilite d'ajouter des breakpoints personnalises (xs, 3xl)
+- Les breakpoints doivent etre ordonnes du plus petit au plus grand
+
+### Tailwind v4
+
+Configuration via CSS avec `@theme` :
+
+- Les breakpoints se definissent via `--breakpoint-*`
+- Les valeurs par defaut utilisent des rem
+- Utiliser `@theme { --breakpoint-*: initial }` pour reinitialiser
+- Conserver la meme unite (rem recommande) pour tous les breakpoints
+
+### Valeurs par Defaut Detaillees
+
+| Breakpoint | Pixels | Rem | Media Query |
+|------------|--------|-----|-------------|
+| sm | 640px | 40rem | @media (min-width: 640px) |
+| md | 768px | 48rem | @media (min-width: 768px) |
+| lg | 1024px | 64rem | @media (min-width: 1024px) |
+| xl | 1280px | 80rem | @media (min-width: 1280px) |
+| 2xl | 1536px | 96rem | @media (min-width: 1536px) |
+
+---
+
+## Patterns de Layout Responsive
+
+### Navigation Responsive
+
+Objectif : Menu hamburger sur mobile, navigation horizontale sur desktop
+
+| Element | Mobile | Desktop |
+|---------|--------|---------|
+| Container | `flex flex-col` | `md:flex-row` |
+| Bouton hamburger | Visible | `md:hidden` |
+| Liste navigation | `hidden` | `md:flex` |
+
+### Grilles Adaptatives
+
+Progression typique :
+
+| Breakpoint | Colonnes | Classes |
+|------------|----------|---------|
+| Mobile | 1 | `grid-cols-1` |
+| Tablette | 2 | `sm:grid-cols-2` |
+| Laptop | 3 | `lg:grid-cols-3` |
+| Desktop | 4 | `xl:grid-cols-4` |
+
+Alternative auto-fit : `grid-cols-[repeat(auto-fit,minmax(250px,1fr))]`
+
+### Sidebar Layout
+
+| Element | Mobile | Desktop |
+|---------|--------|---------|
+| Sidebar | `fixed`, cachee par defaut | `lg:relative lg:translate-x-0` |
+| Main content | `w-full` | `lg:ml-64` |
+
+### Card Layout
+
+| Element | Classes |
+|---------|---------|
+| Container | `flex flex-wrap` ou `grid` |
+| Cards | `w-full sm:w-1/2 lg:w-1/3` |
+| Gap | `gap-4 md:gap-6` |
+
+---
+
+## Container Queries en Detail
+
+### Quand Utiliser
+
+| Media Queries (breakpoints) | Container Queries |
+|----------------------------|-------------------|
+| Layout global de la page | Composants reutilisables |
+| Changements bases sur viewport | Elements qui s'adaptent a leur conteneur |
+| Elements dependant du contexte global | Widgets integres dans differents contextes |
+
+### Syntaxe et Utilisation
+
+| Action | Syntaxe |
+|--------|---------|
+| Definir un container | `@container` |
+| Nommer le container | `@container/{name}` |
+| Cibler le container | `@sm:`, `@md:`, `@lg:` |
+| Cibler container nomme | `@sm/{name}:` |
+| Valeurs arbitraires | `@[500px]:` |
+
+### Breakpoints Container
+
+| Variant | Largeur min |
+|---------|-------------|
+| `@xs` | 320px |
+| `@sm` | 384px |
+| `@md` | 448px |
+| `@lg` | 512px |
+| `@xl` | 576px |
+| `@2xl` | 672px |
+
+---
+
+## Images et Medias Responsive
+
+### Images Basiques
+
+| Classe | Effet |
+|--------|-------|
+| `w-full` | Prend toute la largeur disponible |
+| `h-auto` | Conserve le ratio d'aspect |
+| `max-w-full` | Ne depasse jamais le conteneur |
+| `object-cover` | Remplit l'espace sans deformation |
+| `object-contain` | Visible entierement, peut laisser des espaces |
+
+### Prevention du Layout Shift
+
+Solutions :
+- Utiliser `aspect-ratio` : `aspect-video`, `aspect-square`, `aspect-[16/9]`
+- Definir `width` et `height` dans le HTML
+- Placeholder avec les memes dimensions
+
+### Lazy Loading
+
+| Attribut | Usage |
+|----------|-------|
+| `loading="lazy"` | Images sous le fold |
+| `loading="eager"` | Images critiques (above the fold) |
+| `decoding="async"` | Decodage non-bloquant |
+| `fetchpriority="high"` | Images LCP |
+
+---
+
+## Typographie Responsive
+
+### Echelle de Tailles
+
+| Element | Mobile | Tablette | Desktop |
+|---------|--------|----------|---------|
+| Titres | `text-2xl` | `md:text-3xl` | `lg:text-4xl` |
+| Sous-titres | `text-xl` | `md:text-2xl` | - |
+| Corps | `text-sm` | `md:text-base` | - |
+| Legendes | `text-xs` | `md:text-sm` | - |
+
+### Typographie Fluide
+
+Pour une transition douce entre breakpoints :
+- Utiliser `clamp()` via classes arbitraires
+- Exemple : `text-[clamp(1rem,2vw,1.5rem)]`
+- Alternative : plugin `tailwindcss-fluid-type`
+
+### Line Length
+
+Pour une lisibilite optimale :
+- Limiter a 65-75 caracteres par ligne
+- Utiliser `max-w-prose` (65ch par defaut)
+- Ajuster avec `prose-sm`, `prose-lg` si necessaire
+
+---
+
+## Espacement Responsive
+
+### Padding et Margin
+
+| Taille ecran | Valeurs | Exemple |
+|--------------|---------|---------|
+| Mobile | Compactes | `p-4`, `m-2` |
+| Tablette | Moyennes | `md:p-6`, `md:m-4` |
+| Desktop | Genereuses | `lg:p-8`, `lg:m-6` |
+
+Ratios courants :
+- 4 -> 6 -> 8 (progression +50%)
+- 2 -> 4 -> 6 (progression lineaire)
+
+### Gap dans Flex/Grid
+
+`gap-2 sm:gap-4 md:gap-6 lg:gap-8`
+
+Plus serre sur mobile, plus aere sur desktop.
+
+---
+
+## Performance Mobile
+
+### Optimisations Critiques
+
+1. CSS minimal : purger les classes non utilisees
+2. Images optimisees : formats modernes, tailles appropriees
+3. Fonts : preload, font-display: swap
+4. Above the fold : prioriser le contenu visible
+5. Touch : zones de tap de 44px minimum
+
+### Metriques Cibles
+
+| Metrique | Cible |
+|----------|-------|
+| LCP (Largest Contentful Paint) | < 2.5s |
+| FID (First Input Delay) | < 100ms |
+| CLS (Cumulative Layout Shift) | < 0.1 |
+| TTFB (Time to First Byte) | < 800ms |
+
+---
+
+## Accessibilite Mobile
+
+### Zones Tactiles
+
+- Taille minimale : 44x44 pixels
+- Espacement : au moins 8px entre les cibles
+- Classes utiles : `min-h-[44px] min-w-[44px]`
+
+### Contraste et Lisibilite
+
+- Ratio minimum : 4.5:1 pour le texte normal
+- Ratio minimum : 3:1 pour le texte large (18px+)
+- Taille minimale sur mobile : 16px pour eviter le zoom iOS
+
+### Focus States
+
+- Ne jamais supprimer outline sans alternative
+- Utiliser `focus-visible:` pour les styles de focus
+- `ring` et `ring-offset` pour des indicateurs clairs
+
+---
+
+## Debugging et Outils
+
+### DevTools Responsive Mode
+
+- Toggle device toolbar (Ctrl+Shift+M)
+- Tester chaque breakpoint individuellement
+- Verifier le comportement touch vs mouse
+- Simuler differentes densites de pixels
+
+### Classes de Debug
+
+Pour visualiser les breakpoints actifs :
+
+```html
+<div class="bg-red-200 sm:bg-yellow-200 md:bg-green-200 lg:bg-blue-200 xl:bg-purple-200">
+  ...
+</div>
+```
+
+Supprimer apres debug.
+
+---
+
+## Erreurs Frequentes et Solutions
+
+### Erreur 1 : sm: pour Mobile
+
+| Probleme | Solution |
+|----------|----------|
+| Utiliser `sm:` pensant cibler les petits ecrans | Styles mobiles = SANS prefixe, `sm:` = a partir de tablette |
+
+### Erreur 2 : Styles Non Annules
+
+| Probleme | Solution |
+|----------|----------|
+| Un style mobile persiste sur desktop | Les styles se cumulent. Ajouter explicitement le style oppose au breakpoint voulu. Ex: `hidden md:block` |
+
+### Erreur 3 : Largeurs Fixes
+
+| Probleme | Solution |
+|----------|----------|
+| `w-96` qui casse sur mobile 320px | Preferer `w-full max-w-96` ou pourcentages `w-1/2`, `w-3/4` |
+
+### Erreur 4 : Viewport Meta Manquant
+
+| Probleme | Solution |
+|----------|----------|
+| Les breakpoints semblent ne pas fonctionner | Verifier `<meta name="viewport" content="width=device-width, initial-scale=1.0">` |
+
+### Erreur 5 : Scroll Horizontal
+
+| Causes | Solutions |
+|--------|-----------|
+| Elements avec largeur fixe > viewport | `overflow-x-hidden` sur le parent |
+| Padding/margin qui deborde | `max-w-full` sur les elements problematiques |
+| Position absolute sans contrainte | Verifier les margins negatifs |

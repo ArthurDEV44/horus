@@ -1,0 +1,513 @@
+---
+title: Workflows
+description: Processus détaillés pour analyser et résoudre les problèmes de dépendances et couplage.
+---
+
+# Coupling Expert - Workflows
+
+Processus détaillés pour analyser et résoudre les problèmes de dépendances et couplage.
+
+---
+
+## Table des Matières
+
+1. [Diagnostic Complet des Dépendances](#workflow-1--diagnostic-complet-des-dépendances)
+2. [Résolution de Cycle Direct](#workflow-2--résolution-de-cycle-direct)
+3. [Résolution de Cycle Indirect](#workflow-3--résolution-de-cycle-indirect)
+4. [Élimination des Barrel Files](#workflow-4--élimination-des-barrel-files)
+5. [Réduction du Couplage](#workflow-5--réduction-du-couplage)
+6. [Amélioration de la Cohésion](#workflow-6--amélioration-de-la-cohésion)
+7. [Mise en Place de la Prévention](#workflow-7--mise-en-place-de-la-prévention)
+
+---
+
+## Workflow 1 : Diagnostic Complet des Dépendances
+
+### Phase 1 : Collecte d'Informations
+
+<DiagnosticContext>
+Questions à poser :
+- Symptôme principal : erreur, lenteur, comportement inattendu ?
+- Taille du projet : nombre de fichiers TypeScript/JavaScript ?
+- Bundler utilisé : Vite, Webpack, autre ?
+- Structure actuelle : feature-based, layer-based, autre ?
+- Déjà tenté des solutions ?
+</DiagnosticContext>
+
+### Phase 2 : Analyse Automatisée
+
+Exécute les outils dans l'ordre :
+
+**Étape 1 : Détection des cycles avec dpdm**
+
+```bash
+npx dpdm ./src/main.ts --no-warning --no-tree
+```
+
+Capture :
+- Nombre total de cycles
+- Liste des fichiers impliqués
+- Profondeur des cycles
+
+**Étape 2 : Visualisation avec madge**
+
+```bash
+npx madge --circular --extensions ts,tsx ./src
+npx madge --image deps.svg --extensions ts,tsx ./src
+```
+
+Capture :
+- Graphe visuel des dépendances
+- Cycles en rouge dans le graphe
+
+**Étape 3 : Analyse des barrel files**
+
+Recherche les fichiers index.ts :
+- Nombre de réexports par barrel
+- Barrels impliqués dans des cycles
+
+### Phase 3 : Classification des Problèmes
+
+Catégorise chaque problème trouvé :
+
+| ID | Type | Fichiers | Sévérité | Cause Probable |
+|----|------|----------|----------|----------------|
+| C1 | Cycle direct | A.ts ↔ B.ts | Critique | Responsabilités mélangées |
+| C2 | Cycle via barrel | X → index → Y | Haute | Import depuis index.ts |
+| C3 | Couplage élevé | Service.ts | Moyenne | God class |
+
+### Phase 4 : Rapport de Diagnostic
+
+<DiagnosticReport>
+**Résumé**
+- Cycles directs : N
+- Cycles indirects : N
+- Barrel files problématiques : N
+- Modules à couplage élevé : N
+
+**Priorités de Résolution**
+1. [Critique] Cycle A-B causant erreur runtime
+2. [Haute] Cycles via barrel files (perf HMR)
+3. [Moyenne] Réduction couplage ServiceX
+
+**Effort Estimé**
+- Quick wins (< 1h) : N
+- Refactoring moyen (1-4h) : N
+- Refactoring majeur (> 4h) : N
+</DiagnosticReport>
+
+---
+
+## Workflow 2 : Résolution de Cycle Direct
+
+### Phase 1 : Analyse du Cycle
+
+Identifie les fichiers impliqués :
+
+<CycleAnalysis>
+Fichier A : [chemin]
+- Exporte : [liste des exports]
+- Importe de B : [quoi exactement]
+- Utilise B pour : [raison]
+
+Fichier B : [chemin]
+- Exporte : [liste des exports]
+- Importe de A : [quoi exactement]
+- Utilise A pour : [raison]
+
+Dépendance commune identifiée : [oui/non, quoi]
+</CycleAnalysis>
+
+### Phase 2 : Choix de la Stratégie
+
+Évalue quelle stratégie appliquer :
+
+| Situation | Stratégie Recommandée |
+|-----------|----------------------|
+| Code commun utilisé par les deux | Extraction module commun |
+| A utilise B pour un type/interface | Déplacer le type dans fichier dédié |
+| Dépendance créée en dur | Injection de dépendance |
+| Communication bidirectionnelle | Event bus / médiateur |
+| Import pour un seul usage ponctuel | Lazy import dynamique |
+
+### Phase 3 : Extraction de Module Commun
+
+1. **Identifier le code à extraire**
+   - Types/interfaces partagés
+   - Fonctions utilitaires communes
+   - Constantes partagées
+
+2. **Créer le nouveau module**
+   - Nommer selon la responsabilité
+   - Placer dans un dossier approprié (shared/, common/)
+
+3. **Déplacer le code**
+   - Couper le code des fichiers A et B
+   - Coller dans le nouveau module
+   - Exporter ce qui est nécessaire
+
+4. **Mettre à jour les imports**
+   - A importe depuis le nouveau module
+   - B importe depuis le nouveau module
+   - Supprimer les imports croisés A ↔ B
+
+5. **Vérifier**
+   - Réexécuter dpdm/madge
+   - Tester le build
+   - Tester le runtime
+
+### Phase 4 : Inversion de Dépendance
+
+1. **Créer l'interface**
+   - Fichier dédié (ex: `types.ts` ou `interfaces/`)
+   - Définir le contrat minimal
+
+2. **Adapter le module dépendant**
+   - Dépendre de l'interface, pas de l'implémentation
+   - Recevoir l'implémentation par injection
+
+3. **Configurer l'injection**
+   - Au point d'entrée (main, app)
+   - Ou via container DI
+
+### Phase 5 : Validation
+
+Checklist :
+
+- [ ] `dpdm` ne détecte plus de cycle entre A et B
+- [ ] `madge --circular` ne liste plus ces fichiers
+- [ ] Build réussi
+- [ ] Tests passent
+- [ ] HMR fonctionne
+
+---
+
+## Workflow 3 : Résolution de Cycle Indirect
+
+### Phase 1 : Tracer la Chaîne Complète
+
+Pour un cycle A → B → C → A :
+
+<ChainAnalysis>
+Chaîne de dépendances :
+1. A importe B pour : [raison]
+2. B importe C pour : [raison]
+3. C importe A pour : [raison] ← point de fermeture
+
+Maillon le plus faible : [X]
+Raison : [la dépendance la moins nécessaire]
+</ChainAnalysis>
+
+### Phase 2 : Identifier le Maillon à Casser
+
+Le maillon à casser est généralement :
+- La dépendance la moins justifiée
+- Celle qui peut être remplacée par une abstraction
+- Celle qui crée un couplage inattendu (layer violation)
+
+### Phase 3 : Appliquer la Solution
+
+Selon le maillon identifié :
+
+**Si C → A est le maillon faible :**
+- Pourquoi C a-t-il besoin de A ?
+- Peut-on extraire ce dont C a besoin dans un module D ?
+- Peut-on inverser la dépendance ?
+
+**Si c'est une violation de layer :**
+- Infrastructure ne doit pas importer UI
+- Réorganiser selon les layers appropriés
+
+### Phase 4 : Refactoring Incrémental
+
+Procède par étapes :
+
+1. Casser le cycle au maillon identifié
+2. Vérifier que le cycle est résolu
+3. Passer au cycle suivant s'il y en a d'autres
+4. Éviter de créer de nouveaux cycles
+
+---
+
+## Workflow 4 : Élimination des Barrel Files
+
+### Phase 1 : Inventaire des Barrel Files
+
+Liste tous les fichiers index.ts/index.js :
+
+<BarrelInventory>
+| Fichier | Réexports | Impliqué dans cycle | Impact perf |
+|---------|-----------|---------------------|-------------|
+| components/index.ts | 25 | Oui | Élevé |
+| utils/index.ts | 10 | Non | Moyen |
+| hooks/index.ts | 8 | Oui | Moyen |
+</BarrelInventory>
+
+### Phase 2 : Prioriser
+
+Ordre de traitement :
+1. Barrels impliqués dans des cycles
+2. Barrels avec beaucoup de réexports (> 10)
+3. Barrels dans des chemins critiques
+
+### Phase 3 : Migration Progressive
+
+Pour chaque barrel :
+
+1. **Identifier les consommateurs**
+   - Rechercher tous les imports depuis ce barrel
+   - Lister les exports réellement utilisés
+
+2. **Convertir les imports**
+
+   Pour chaque fichier consommateur :
+   ```typescript
+   // Avant
+   import { Button, Modal } from '@/components';
+
+   // Après
+   import { Button } from '@/components/Button';
+   import { Modal } from '@/components/Modal';
+   ```
+
+3. **Mettre à jour les path aliases si nécessaire**
+
+   Dans tsconfig.json :
+   ```json
+   {
+     "paths": {
+       "@/components/*": ["src/components/*"]
+     }
+   }
+   ```
+
+4. **Supprimer le barrel**
+   - Une fois tous les imports migrés
+   - Supprimer le fichier index.ts
+
+### Phase 4 : Automatisation
+
+Configurer les outils pour prévenir les nouveaux barrels :
+
+```json
+// .eslintrc
+{
+  "plugins": ["barrel-files"],
+  "rules": {
+    "barrel-files/avoid-barrel-files": "error",
+    "barrel-files/avoid-importing-barrel-files": "error"
+  }
+}
+```
+
+---
+
+## Workflow 5 : Réduction du Couplage
+
+### Phase 1 : Mesure Initiale
+
+Exécute une analyse de couplage :
+
+<CouplingMetrics>
+Module : [nom]
+- CBO (Coupling Between Objects) : [valeur]
+- Ce (Efferent Coupling) : [valeur]
+- Ca (Afferent Coupling) : [valeur]
+- Dépendances directes : [liste]
+</CouplingMetrics>
+
+### Phase 2 : Identification des Causes
+
+Pour chaque module à couplage élevé :
+
+| Cause | Indicateur | Solution |
+|-------|------------|----------|
+| Trop de responsabilités | Beaucoup d'imports variés | SRP - diviser |
+| Dépendances concrètes | Import de classes | DIP - interfaces |
+| Accès aux internes | Utilise des propriétés privées | Encapsulation |
+| Couplage temporel | Ordre d'appel important | Médiation |
+
+### Phase 3 : Refactoring par Stratégie
+
+**Stratégie 1 : Division du Module**
+
+Si le module fait trop de choses :
+1. Identifier les responsabilités distinctes
+2. Créer un module par responsabilité
+3. Déplacer le code approprié
+4. Mettre à jour les imports
+
+**Stratégie 2 : Introduction d'Interfaces**
+
+Si le couplage est vers des implémentations :
+1. Extraire une interface du contrat utilisé
+2. Faire dépendre le client de l'interface
+3. Injecter l'implémentation
+
+**Stratégie 3 : Médiation**
+
+Si les modules communiquent trop directement :
+1. Introduire un médiateur/event bus
+2. Les modules publient/souscrivent aux événements
+3. Plus de dépendance directe
+
+### Phase 4 : Mesure Finale
+
+Réexécuter les métriques :
+- CBO doit avoir diminué
+- Les dépendances doivent être plus ciblées
+
+---
+
+## Workflow 6 : Amélioration de la Cohésion
+
+### Phase 1 : Analyse de Cohésion
+
+Pour chaque classe/module suspect :
+
+<CohesionAnalysis>
+Classe : [nom]
+- Nombre de méthodes : [N]
+- Nombre d'attributs : [N]
+- Méthodes utilisant chaque attribut :
+  - attr1 : utilisé par [m1, m2]
+  - attr2 : utilisé par [m3, m4]
+  - attr3 : utilisé par [m5] seul
+- Groupes de méthodes identifiés : [N]
+</CohesionAnalysis>
+
+### Phase 2 : Identification des Clusters
+
+Groupe les méthodes par :
+1. Attributs partagés
+2. Fonctionnalité commune
+3. Acteur/stakeholder concerné
+
+Si plusieurs clusters distincts → la classe devrait être divisée.
+
+### Phase 3 : Extraction de Classes
+
+Pour chaque cluster identifié :
+
+1. **Créer la nouvelle classe**
+   - Nommer selon la responsabilité
+   - Déplacer les attributs associés
+   - Déplacer les méthodes associées
+
+2. **Établir les relations**
+   - Composition : la classe originale contient la nouvelle
+   - Ou remplacement : utiliser directement la nouvelle
+
+3. **Migrer les dépendants**
+   - Mettre à jour les imports
+   - Ajuster les appels
+
+### Phase 4 : Validation
+
+Vérifier que :
+- [ ] Chaque nouvelle classe a une responsabilité claire
+- [ ] Le nom de chaque classe décrit bien son rôle
+- [ ] LCOM a diminué
+- [ ] Les tests passent
+
+---
+
+## Workflow 7 : Mise en Place de la Prévention
+
+### Phase 1 : Configuration ESLint
+
+```json
+{
+  "plugins": ["import"],
+  "rules": {
+    "import/no-cycle": ["error", { "maxDepth": 5 }]
+  }
+}
+```
+
+**Note** : Cette règle est coûteuse. Configurer pour git hooks uniquement.
+
+### Phase 2 : Git Hooks (Husky)
+
+```json
+// package.json
+{
+  "scripts": {
+    "check:cycles": "dpdm ./src/main.ts --exit-code circular"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run check:cycles"
+    }
+  }
+}
+```
+
+### Phase 3 : CI/CD Pipeline
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm ci
+      - run: npx dpdm ./src/main.ts --exit-code circular
+      - run: npx madge --circular --extensions ts ./src
+```
+
+### Phase 4 : Documentation des Règles
+
+Créer un fichier `ARCHITECTURE.md` :
+
+```markdown
+# Règles de Dépendances
+
+## Layers
+- UI → Application → Domain → Infrastructure ✓
+- Pas de dépendances inverses
+
+## Modules
+- Pas de barrel files dans le code applicatif
+- Imports directs vers les fichiers sources
+
+## Vérification
+- Pre-commit : dpdm vérifie les cycles
+- CI : madge génère le graphe
+```
+
+### Phase 5 : Monitoring
+
+Configurer des métriques dans le temps :
+- Nombre de cycles (doit rester à 0)
+- Temps de build (doit rester stable ou diminuer)
+- CBO moyen des modules
+
+---
+
+## Checklist Générale
+
+### Avant Refactoring
+
+- [ ] Diagnostic complet effectué
+- [ ] Problèmes priorisés
+- [ ] Stratégie choisie
+- [ ] Tests existants passent
+
+### Pendant Refactoring
+
+- [ ] Un changement à la fois
+- [ ] Vérification après chaque étape
+- [ ] Commits atomiques
+- [ ] Tests toujours verts
+
+### Après Refactoring
+
+- [ ] Aucun cycle restant
+- [ ] Build réussi
+- [ ] HMR fonctionnel
+- [ ] Tests passent
+- [ ] Performance stable ou améliorée
+- [ ] Prévention mise en place

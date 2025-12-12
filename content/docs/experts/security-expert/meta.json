@@ -1,0 +1,10 @@
+{
+  "title": "Security Expert",
+  "description": "Expert Cybersecurite - OWASP Top 10, Audit, Supply Chain, CSP",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

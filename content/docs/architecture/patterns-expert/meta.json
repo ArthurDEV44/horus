@@ -1,0 +1,6 @@
+{
+  "title": "Patterns Expert",
+  "description": "Applique les design patterns React et backend (Container/Presentational, Composition, Hooks, Factory, Repository)",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Container Queries Expert",
+  "description": "Expert container queries Tailwind CSS v4 - @container, @lg:, @md:, @sm:, named containers",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

@@ -1,0 +1,525 @@
+---
+title: Workflows
+description: Processus detailles et cas d'usage pour le systeme de breakpoints Tailwind CSS
+---
+
+# Workflows - Breakpoints
+
+Processus detailles et cas d'usage pour le systeme de breakpoints Tailwind CSS.
+
+---
+
+## Workflow 1 : Ajout d'un Breakpoint xs (Extra Small)
+
+### Contexte
+
+L'utilisateur souhaite ajouter un breakpoint xs pour cibler les tres petits ecrans (< 640px) avec des styles specifiques.
+
+### Processus
+
+**Phase 1 - Analyse**
+
+1. Identifier la version de Tailwind (v3 ou v4)
+2. Determiner la valeur souhaitee pour xs (ex: 480px = 30rem)
+3. Verifier qu'aucun breakpoint xs n'existe deja
+4. Evaluer l'impact sur les styles existants
+
+**Phase 2 - Configuration v4**
+
+```css
+@theme {
+  --breakpoint-xs: 30rem;
+}
+```
+
+**Phase 3 - Configuration v3**
+
+```js
+module.exports = {
+  theme: {
+    extend: {
+      screens: {
+        'xs': '480px',
+      },
+    },
+  },
+}
+```
+
+S'assurer que xs est liste AVANT sm.
+
+**Phase 4 - Utilisation**
+
+- Appliquer `xs:` sur les elements concernes
+- Rappel : `xs:` s'active a 480px et AU-DESSUS
+- Pour cibler SOUS xs, utiliser `max-xs:` ou pas de prefixe
+
+**Phase 5 - Validation**
+
+1. Tester a 320px, 480px, 640px
+2. Confirmer la cascade correcte
+3. Verifier qu'aucun style existant n'est casse
+
+---
+
+## Workflow 2 : Ajout d'un Breakpoint 3xl (Triple Extra Large)
+
+### Contexte
+
+L'utilisateur veut optimiser l'affichage sur tres grands ecrans (4K, ultrawide).
+
+### Processus
+
+**Phase 1 - Analyse**
+
+1. Determiner la valeur cible (1920px = 120rem typiquement)
+2. Evaluer les cas d'usage (max-width container, layout multi-colonnes)
+3. Verifier la coherence avec le design system
+
+**Phase 2 - Configuration v4**
+
+```css
+@theme {
+  --breakpoint-3xl: 120rem;
+}
+```
+
+Optionnel : ajouter 4xl si necessaire
+
+**Phase 3 - Configuration v3**
+
+```js
+theme: {
+  extend: {
+    screens: {
+      '3xl': '1920px',
+    },
+  },
+}
+```
+
+**Phase 4 - Utilisation Typique**
+
+| Usage | Classes |
+|-------|---------|
+| Container max-width | `max-w-screen-3xl` |
+| Grilles etendues | `3xl:grid-cols-6` |
+| Espacements genereux | `3xl:px-16` |
+| Typographie adaptee | `3xl:text-xl` |
+
+**Phase 5 - Test**
+
+1. Tester sur ecran 1920px+
+2. Simuler dans DevTools avec largeur personnalisee
+3. Verifier le comportement sur moniteurs ultrawide
+
+---
+
+## Workflow 3 : Remplacement Complet des Breakpoints
+
+### Contexte
+
+L'utilisateur souhaite utiliser une nomenclature personnalisee (tablet, laptop, desktop) au lieu de sm/md/lg.
+
+### Processus
+
+**Phase 1 - Planification**
+
+1. Definir les nouveaux noms et valeurs
+2. Documenter la correspondance avec les anciens breakpoints
+3. Planifier la migration des classes existantes
+
+**Phase 2 - Configuration v4**
+
+```css
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-tablet: 48rem;
+  --breakpoint-laptop: 64rem;
+  --breakpoint-desktop: 80rem;
+}
+```
+
+**Phase 3 - Configuration v3**
+
+```js
+module.exports = {
+  theme: {
+    screens: {
+      'tablet': '768px',
+      'laptop': '1024px',
+      'desktop': '1280px',
+    },
+  },
+}
+```
+
+**Phase 4 - Migration du Code**
+
+1. Rechercher toutes les occurrences `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
+2. Remplacer par les nouveaux prefixes
+3. Mettre a jour la documentation
+
+**Phase 5 - Validation**
+
+1. Verifier que toutes les anciennes classes sont migrees
+2. Tester le rendu a chaque nouveau breakpoint
+3. Confirmer l'absence de classes orphelines
+
+---
+
+## Workflow 4 : Ciblage d'une Plage Specifique avec Range
+
+### Contexte
+
+L'utilisateur veut appliquer un style uniquement pour les tablettes (768px a 1023px).
+
+### Processus
+
+**Phase 1 - Identification de la Plage**
+
+- Tablettes = md a lg (768px -> 1023px)
+- Syntaxe requise : `md:max-lg:`
+
+**Phase 2 - Application**
+
+```html
+<div class="md:max-lg:grid-cols-2">...</div>
+```
+
+Verifications :
+- Style n'est PAS actif sur mobile (< 768px)
+- Style n'est PAS actif sur desktop (>= 1024px)
+
+**Phase 3 - Cas Complexes**
+
+Si besoin de plusieurs ranges :
+
+| Cible | Syntaxe |
+|-------|---------|
+| Mobiles larges | `sm:max-md:` |
+| Tablettes | `md:max-lg:` |
+| Laptops | `lg:max-xl:` |
+
+**Phase 4 - Alternatives**
+
+Si le range est utilise frequemment :
+1. Considerer un breakpoint personnalise
+2. Ou creer une classe composite avec `@apply` (v3)
+
+**Phase 5 - Test**
+
+Tester aux limites : 767px, 768px, 1023px, 1024px
+
+---
+
+## Workflow 5 : Utilisation de Breakpoints Arbitraires
+
+### Contexte
+
+Le design requiert un ajustement specifique a 850px, valeur non prevue dans les breakpoints standard.
+
+### Processus
+
+**Phase 1 - Evaluation**
+
+Questions a se poser :
+1. Ce breakpoint sera-t-il utilise une seule fois ?
+2. D'autres elements necessitent-ils cette valeur ?
+3. Si usage multiple -> considerer un breakpoint configure
+
+**Phase 2 - Implementation Ponctuelle**
+
+```html
+<div class="min-[850px]:flex-row">...</div>
+<div class="max-[850px]:flex-col">...</div>
+```
+
+**Phase 3 - Combinaison avec Range**
+
+```html
+<div class="min-[600px]:max-[850px]:bg-yellow-100">...</div>
+```
+
+**Phase 4 - Decision de Promotion**
+
+Si le breakpoint arbitraire est utilise 3+ fois :
+1. Ajouter dans @theme ou config
+2. Remplacer les arbitraires par le nouveau prefixe
+3. Documenter l'usage
+
+**Phase 5 - Nettoyage**
+
+1. Rechercher tous les `min-[850px]` et `max-[850px]`
+2. Confirmer la coherence d'utilisation
+3. Migrer si necessaire
+
+---
+
+## Workflow 6 : Migration de Tailwind v3 vers v4
+
+### Contexte
+
+L'utilisateur met a jour son projet de v3 vers v4 et doit migrer ses breakpoints personnalises.
+
+### Processus
+
+**Phase 1 - Audit v3**
+
+1. Ouvrir tailwind.config.js
+2. Identifier tous les breakpoints dans `theme.screens`
+3. Noter les valeurs et unites utilisees
+4. Lister les breakpoints extend
+
+**Phase 2 - Conversion des Valeurs**
+
+| Pixels | Rem |
+|--------|-----|
+| 480px | 30rem |
+| 640px | 40rem |
+| 768px | 48rem |
+| 1024px | 64rem |
+| 1280px | 80rem |
+| 1920px | 120rem |
+
+**Phase 3 - Creation @theme**
+
+```css
+@import "tailwindcss";
+
+@theme {
+  --breakpoint-xs: 30rem;
+  /* autres breakpoints */
+}
+```
+
+**Phase 4 - Gestion des Max-Width**
+
+- En v3 : possible de definir max-width par defaut
+- En v4 : retire, utiliser les variantes `max-*`
+- Mettre a jour les classes concernees
+
+**Phase 5 - Validation**
+
+1. Comparer le CSS genere v3 vs v4
+2. Tester chaque breakpoint
+3. Verifier l'ordre des media queries
+4. Corriger les ecarts
+
+**Phase 6 - Nettoyage**
+
+1. Supprimer la config screens de tailwind.config.js
+2. Documenter les nouveaux breakpoints
+3. Mettre a jour le README
+
+---
+
+## Workflow 7 : Debug des Problemes de Breakpoints
+
+### Contexte
+
+Les breakpoints ne fonctionnent pas comme prevu dans le projet.
+
+### Processus
+
+**Phase 1 - Symptomes Courants**
+
+Identifier le probleme :
+- Style actif sur mauvais ecrans
+- Style jamais actif
+- Ordre de cascade incorrect
+- Breakpoint personnalise ignore
+
+**Phase 2 - Verifications Basiques**
+
+1. Viewport meta present dans HTML ?
+2. Tailwind compile et charge ?
+3. Classes incluses dans content (purge) ?
+4. Pas de CSS custom conflictuel ?
+
+**Phase 3 - Inspection DevTools**
+
+1. Ouvrir Device Toolbar
+2. Definir une largeur precise (ex: 768px)
+3. Inspecter l'element problematique
+4. Verifier les styles appliques/barres
+5. Chercher la media query dans les styles calcules
+
+**Phase 4 - Verification Configuration**
+
+1. Examiner @theme ou tailwind.config.js
+2. Confirmer les valeurs des breakpoints
+3. Verifier l'uniformite des unites
+4. S'assurer de l'ordre croissant
+
+**Phase 5 - Test CSS Genere**
+
+1. Ouvrir le fichier CSS compile
+2. Rechercher le breakpoint problematique
+3. Verifier la media query generee
+4. Confirmer l'ordre par rapport aux autres breakpoints
+
+**Phase 6 - Resolution**
+
+| Cause | Solution |
+|-------|----------|
+| Unites mixees | Uniformiser en rem |
+| Ordre incorrect | Reordonner config |
+| Purge excessive | Ajouter au content |
+| Meta manquant | Ajouter viewport |
+
+---
+
+## Workflow 8 : Configuration pour un Design System
+
+### Contexte
+
+L'equipe definit un design system avec des breakpoints standardises pour tous les projets.
+
+### Processus
+
+**Phase 1 - Definition des Breakpoints**
+
+1. Analyser les appareils cibles des projets
+2. Definir 5-7 breakpoints maximum
+3. Choisir des noms explicites
+4. Documenter chaque breakpoint
+
+Exemple de definition :
+
+| Nom | Valeur | Cible |
+|-----|--------|-------|
+| mobile | 0-479px | Base, pas de prefixe |
+| mobile-lg | 480px (30rem) | Mobiles larges |
+| tablet | 768px (48rem) | Tablettes |
+| laptop | 1024px (64rem) | Laptops |
+| desktop | 1280px (80rem) | Desktops |
+| desktop-lg | 1536px (96rem) | Grands ecrans |
+
+**Phase 2 - Configuration Partagee v4**
+
+```css
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-mobile-lg: 30rem;
+  --breakpoint-tablet: 48rem;
+  --breakpoint-laptop: 64rem;
+  --breakpoint-desktop: 80rem;
+  --breakpoint-desktop-lg: 96rem;
+}
+```
+
+**Phase 3 - Configuration Partagee v3**
+
+Creer un preset Tailwind et publier dans un package npm.
+
+**Phase 4 - Documentation**
+
+1. Tableau des breakpoints avec valeurs
+2. Guidelines d'utilisation
+3. Exemples pour chaque breakpoint
+4. Patterns recommandes
+
+**Phase 5 - Enforcement**
+
+1. Configurer ESLint/Stylelint
+2. Detecter les breakpoints arbitraires non autorises
+3. Alerter sur les deviations du design system
+
+---
+
+## Cas d'Usage Speciaux
+
+### Cas 1 : Breakpoints Bases sur la Hauteur
+
+**Contexte** : Adapter le layout selon la hauteur de l'ecran
+
+**Configuration v3** :
+
+```js
+screens: {
+  'tall': { 'raw': '(min-height: 800px)' },
+  'short': { 'raw': '(max-height: 600px)' }
+}
+```
+
+**Utilisation** :
+- `tall:py-16` -> padding vertical genereux si ecran haut
+- `short:py-4` -> padding reduit si ecran court
+
+Note : Non directement supporte en v4 @theme, utiliser CSS custom.
+
+### Cas 2 : Breakpoints Print
+
+**Contexte** : Styles specifiques pour l'impression
+
+Tailwind inclut la variante `print:` par defaut :
+- `print:hidden` -> masquer a l'impression
+- `print:text-black` -> texte noir
+- `print:bg-white` -> fond blanc
+
+Pas besoin de configurer un breakpoint.
+
+### Cas 3 : Breakpoints pour Dark Mode Responsive
+
+**Contexte** : Combiner breakpoint et dark mode
+
+Syntaxe : `dark:md:bg-gray-800` ou `md:dark:bg-gray-800`
+
+Exemple :
+
+```html
+<div class="bg-white dark:bg-gray-900 md:bg-gray-100 md:dark:bg-gray-800">...</div>
+```
+
+### Cas 4 : Orientation Viewport
+
+**Contexte** : Adapter selon portrait/paysage
+
+Variantes disponibles :
+- `portrait:` -> orientation portrait
+- `landscape:` -> orientation paysage
+
+Combinaison avec breakpoints :
+- `md:landscape:grid-cols-3`
+- `portrait:flex-col`
+
+Utile pour tablettes notamment.
+
+---
+
+## Checklist de Configuration
+
+### Avant de Modifier les Breakpoints
+
+- [ ] Version Tailwind identifiee (v3 vs v4)
+- [ ] Breakpoints actuels documentes
+- [ ] Cas d'usage pour les nouveaux breakpoints justifies
+- [ ] Impact sur les styles existants evalue
+- [ ] Nomenclature coherente choisie
+
+### Apres Modification
+
+- [ ] Unites uniformes (rem recommande)
+- [ ] Ordre croissant verifie
+- [ ] CSS regenere
+- [ ] Chaque breakpoint teste
+- [ ] Documentation mise a jour
+- [ ] Equipe informee des changements
+
+---
+
+## Ressources et References
+
+### Documentation Officielle
+
+- Tailwind CSS Responsive Design
+- Tailwind CSS Customizing Screens
+- Tailwind CSS Configuration
+
+### Outils
+
+- Chrome DevTools Device Mode
+- Firefox Responsive Design Mode
+- Tailwind Play (tailwindcss.com/play)
+- Responsively App

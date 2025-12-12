@@ -1,0 +1,464 @@
+---
+title: Reference Technique
+description: Documentation technique approfondie pour l'espacement avec Tailwind CSS
+---
+
+# Reference Technique - Spacing Expert
+
+Documentation technique approfondie pour l'espacement avec Tailwind CSS.
+
+---
+
+## Architecture du Systeme d'Espacement
+
+### Principe de Base
+
+Tailwind v4 utilise une variable CSS unique pour l'espacement :
+`--spacing: 0.25rem` (4px)
+
+Toutes les classes d'espacement sont calculees dynamiquement :
+- `p-4` → padding: calc(var(--spacing) * 4) = 1rem = 16px
+- `m-8` → margin: calc(var(--spacing) * 8) = 2rem = 32px
+
+**Avantage v4** : n'importe quelle valeur numerique fonctionne (p-13, m-17).
+
+### Systeme 8-Point Grid
+
+Standard de l'industrie recommande par Apple et Google.
+
+**Principes :**
+- Tous les espacements sont multiples de 8 (ou 4 pour le micro)
+- Assure la coherence visuelle
+- Facilite la communication designers/developpeurs
+- Scale correctement sur Android (x0.75, x1.5)
+
+**Valeurs cles (en px) :**
+4, 8, 12, 16, 24, 32, 40, 48, 64, 80, 96
+
+**Correspondance Tailwind :**
+1=4px, 2=8px, 3=12px, 4=16px, 6=24px, 8=32px, 10=40px, 12=48px
+
+---
+
+## Padding en Detail
+
+### Toutes les Classes
+
+| Classe | Propriete CSS | Effet |
+|--------|---------------|-------|
+| `p-{n}` | padding | Tous cotes |
+| `px-{n}` | padding-left, padding-right | Horizontal |
+| `py-{n}` | padding-top, padding-bottom | Vertical |
+| `pt-{n}` | padding-top | Haut |
+| `pr-{n}` | padding-right | Droite |
+| `pb-{n}` | padding-bottom | Bas |
+| `pl-{n}` | padding-left | Gauche |
+| `ps-{n}` | padding-inline-start | Debut inline (RTL-aware) |
+| `pe-{n}` | padding-inline-end | Fin inline (RTL-aware) |
+
+### Valeurs Speciales
+
+| Classe | Valeur |
+|--------|--------|
+| `p-px` | 1px |
+| `p-0.5` | 0.125rem (2px) |
+| `p-1.5` | 0.375rem (6px) |
+| `p-2.5` | 0.625rem (10px) |
+| `p-3.5` | 0.875rem (14px) |
+
+### Usage RTL/LTR
+
+`ps-*` et `pe-*` respectent la direction du texte :
+
+**LTR (left-to-right) :**
+- `ps-4` → padding-left: 1rem
+- `pe-4` → padding-right: 1rem
+
+**RTL (right-to-left) :**
+- `ps-4` → padding-right: 1rem
+- `pe-4` → padding-left: 1rem
+
+Preferer ps/pe pour les interfaces internationalisees.
+
+---
+
+## Margin en Detail
+
+### Toutes les Classes
+
+| Classe | Propriete CSS | Effet |
+|--------|---------------|-------|
+| `m-{n}` | margin | Tous cotes |
+| `mx-{n}` | margin-left, margin-right | Horizontal |
+| `my-{n}` | margin-top, margin-bottom | Vertical |
+| `mt-{n}` | margin-top | Haut |
+| `mr-{n}` | margin-right | Droite |
+| `mb-{n}` | margin-bottom | Bas |
+| `ml-{n}` | margin-left | Gauche |
+| `ms-{n}` | margin-inline-start | Debut inline |
+| `me-{n}` | margin-inline-end | Fin inline |
+
+### Margin Auto
+
+| Classe | Effet |
+|--------|-------|
+| `m-auto` | margin: auto (tous cotes) |
+| `mx-auto` | Centrage horizontal |
+| `my-auto` | Centrage vertical (si hauteur definie) |
+| `mt-auto` | Push vers le bas |
+| `mb-auto` | Push vers le haut |
+| `ml-auto` | Push vers la droite |
+| `mr-auto` | Push vers la gauche |
+| `ms-auto` | Push vers la fin inline |
+| `me-auto` | Push vers le debut inline |
+
+### Negative Margin
+
+Syntaxe : prefixer le nom avec un tiret
+
+| Classe | Valeur |
+|--------|--------|
+| `-m-4` | margin: -1rem |
+| `-mt-8` | margin-top: -2rem |
+| `-mx-2` | margin-left: -0.5rem; margin-right: -0.5rem |
+
+**Cas d'usage :**
+- Annuler le padding d'un parent
+- Faire deborder un element de son container
+- Superposer des elements
+
+Attention : eviter les negative margins complexes, preferer d'autres solutions.
+
+---
+
+## Gap en Detail
+
+### Fonctionnement
+
+Gap cree de l'espace ENTRE les enfants directs d'un container flex ou grid.
+
+**Avantages sur margin :**
+- Pas de margin sur le premier/dernier element
+- Fonctionne avec flex-wrap
+- Une seule declaration sur le parent
+- Pas d'effets de bord avec margin collapse
+
+### Classes Gap
+
+| Classe | Propriete CSS | Effet |
+|--------|---------------|-------|
+| `gap-{n}` | gap | Rows et columns |
+| `gap-x-{n}` | column-gap | Entre colonnes |
+| `gap-y-{n}` | row-gap | Entre rangees |
+
+### Support Navigateur
+
+- **Grid gap** : support universel (98%+)
+- **Flexbox gap** : support moderne (96%+)
+
+Pour navigateurs anciens : fallback avec space-* ou margin.
+
+---
+
+## Space Between en Detail
+
+### Fonctionnement
+
+Space-* ajoute des margins aux enfants sauf le premier (ou dernier avec reverse).
+
+**Implementation interne :**
+- Selecteur : `> * + *` (tous les enfants sauf le premier)
+- Ajoute margin-left (space-x) ou margin-top (space-y)
+
+**Limites :**
+- Ne fonctionne pas bien avec flex-wrap
+- Problemes si les enfants sont dans un ordre custom
+- Ne gere pas les grids
+
+### Classes Space
+
+| Classe | Effet |
+|--------|-------|
+| `space-x-{n}` | margin-left sur enfants (sauf premier) |
+| `space-y-{n}` | margin-top sur enfants (sauf premier) |
+| `space-x-reverse` | Applique margin-right au lieu de left |
+| `space-y-reverse` | Applique margin-bottom au lieu de top |
+
+### Quand Utiliser Space vs Gap
+
+**Preferer `gap-*` :**
+- Container flex ou grid
+- Layout avec wrap
+- Layout complexe multi-colonnes
+- Contenu dynamique
+
+**Utiliser `space-*` seulement si :**
+- Layout lineaire simple sans flex/grid
+- Fallback pour anciens navigateurs
+- Cas tres basiques
+
+Regle generale : `gap-*` est le choix moderne et recommande.
+
+---
+
+## Echelle d'Espacement Complete
+
+### Valeurs Standard
+
+| Classe | rem | px | Usage typique |
+|--------|-----|-----|---------------|
+| 0 | 0 | 0 | Reset |
+| px | - | 1px | Bordures fines |
+| 0.5 | 0.125 | 2 | Micro-ajustement |
+| 1 | 0.25 | 4 | Tres petit |
+| 1.5 | 0.375 | 6 | Petit ajuste |
+| 2 | 0.5 | 8 | Petit |
+| 2.5 | 0.625 | 10 | Petit ajuste |
+| 3 | 0.75 | 12 | Moyen-petit |
+| 3.5 | 0.875 | 14 | Moyen-petit ajuste |
+| 4 | 1 | 16 | Standard |
+| 5 | 1.25 | 20 | Standard+ |
+| 6 | 1.5 | 24 | Moyen |
+| 8 | 2 | 32 | Large |
+| 10 | 2.5 | 40 | Tres large |
+| 12 | 3 | 48 | Extra large |
+| 16 | 4 | 64 | XXL |
+| 20 | 5 | 80 | Section |
+| 24 | 6 | 96 | Section+ |
+| 32 | 8 | 128 | Page+ |
+| 40 | 10 | 160 | Hero+ |
+| 48 | 12 | 192 | Massive+ |
+| 64 | 16 | 256 | Max+ |
+| 96 | 24 | 384 | Maximum |
+
+### Valeurs Fractionnaires
+
+Pour width et autres proprietes basees sur l'espace :
+
+| Classe | Valeur |
+|--------|--------|
+| `*-1/2` | 50% |
+| `*-1/3` | 33.333% |
+| `*-2/3` | 66.667% |
+| `*-1/4` | 25% |
+| `*-3/4` | 75% |
+| `*-full` | 100% |
+
+---
+
+## Fluid Spacing avec clamp()
+
+### Syntaxe de Base
+
+`clamp(minimum, prefere, maximum)`
+
+Exemple :
+`clamp(1rem, 4vw, 2rem)`
+- Minimum : 1rem (16px)
+- Prefere : 4vw (4% de la largeur viewport)
+- Maximum : 2rem (32px)
+
+Le browser choisit la valeur preferee, contrainte par min/max.
+
+### Application dans Tailwind
+
+**Valeurs arbitraires :**
+```
+p-[clamp(1rem,3vw,2rem)]
+gap-[clamp(1rem,2vw+0.5rem,3rem)]
+m-[clamp(0.5rem,1vw,1rem)]
+```
+
+**Config personnalisee (v3) :**
+```javascript
+spacing: {
+  'fluid-sm': 'clamp(0.5rem, 1vw, 1rem)',
+  'fluid-md': 'clamp(1rem, 3vw, 2rem)',
+  'fluid-lg': 'clamp(2rem, 5vw, 4rem)',
+}
+```
+
+**En v4 avec @theme :**
+```css
+@theme {
+  --spacing-fluid-sm: clamp(0.5rem, 1vw, 1rem);
+  --spacing-fluid-md: clamp(1rem, 3vw, 2rem);
+}
+```
+
+### Calcul des Valeurs Fluid
+
+Formule pour pente fluide :
+`prefere = (max - min) / (viewportMax - viewportMin) * 100vw + intercept`
+
+Outils recommandes :
+- Utopia (utopia.fyi) : generateur de fluid spacing
+- fluid.tw : plugin Tailwind automatique
+- Calculateurs en ligne
+
+### Plugins Fluid
+
+**fluid-tailwind (fluid.tw) :**
+- Syntaxe ~: modifier (ex: `~p-4 ~p-8`)
+- Genere clamp() entre breakpoints
+- Respect WCAG 1.4.4 automatique
+- Support container queries
+
+**tailwind-clamp :**
+- Syntax `clamp-[start]-[end]`
+- Compatible Tailwind v3 et v4
+- Valeurs personnalisables
+
+---
+
+## Rythme Vertical
+
+### Principes
+
+Le rythme vertical assure une harmonie dans l'espacement vertical de la page.
+
+**Regles :**
+- Line-height en multiples de la baseline (8px typiquement)
+- Margins verticaux coherents
+- Padding vertical aligne sur la grille
+
+Formule : tous les espacements verticaux = multiples de la baseline
+
+### Implementation
+
+Avec une baseline de 8px (`p-2`) :
+
+| Element | Classes |
+|---------|---------|
+| Paragraphes | `mb-4` (16px = 2 × baseline) |
+| Sections | `py-8 md:py-12 lg:py-16` |
+| Headlines | `mb-6` pour h1, `mb-4` pour h2, `mb-2` pour h3 |
+
+Validation : verifier visuellement avec une grille 8px overlay
+
+---
+
+## Patterns d'Espacement Courants
+
+### Container de Page
+
+**Padding horizontal responsive :**
+`px-4 sm:px-6 lg:px-8`
+
+**Avec max-width :**
+`container mx-auto px-4 md:px-6 lg:px-8`
+
+**Sections de page :**
+`py-12 md:py-16 lg:py-24`
+
+### Cards et Composants
+
+| Element | Classes |
+|---------|---------|
+| Card standard | `p-4 md:p-6` |
+| Card header | `px-4 py-3 md:px-6 md:py-4` |
+| Card body | `p-4 md:p-6` |
+| Card footer | `px-4 py-3 md:px-6 md:py-4` |
+| Gap entre cards | `gap-4 md:gap-6 lg:gap-8` |
+
+### Formulaires
+
+| Element | Classes |
+|---------|---------|
+| Espacement vertical entre champs | `space-y-4` ou `gap-4` |
+| Label vers input | `mb-1` ou `mb-2` |
+| Groupes de champs | `space-y-6` entre groupes |
+| Boutons | `mt-6` ou `mt-8` pour separer de la derniere section |
+
+### Navigation
+
+| Element | Classes |
+|---------|---------|
+| Liens horizontaux | `gap-4 md:gap-6 lg:gap-8` |
+| Padding du nav | `py-3 px-4 md:py-4 md:px-6` |
+| Dropdown items | `py-2 px-4` |
+| Mobile menu items | `py-3 px-4` |
+
+### Listes et Stacks
+
+| Element | Classes |
+|---------|---------|
+| Liste simple | `space-y-2` |
+| Liste avec separateurs | `divide-y` (pas besoin de space) |
+| Stack de contenu | `space-y-4 md:space-y-6` |
+| Grid de cards | `grid gap-4 md:gap-6` |
+
+---
+
+## Debugging Espacement
+
+### Visualisation
+
+Techniques de debug :
+
+| Technique | Methode |
+|-----------|---------|
+| Outliner tous les elements | `* { outline: 1px solid red; }` |
+| Classes de debug Tailwind | `ring-1 ring-red-500` pour voir les limites |
+| Background semi-transparent | `bg-blue-500/20` pour voir les zones |
+| DevTools | Computed tab → box model → hover pour visualiser |
+
+### Problemes Courants
+
+**Margin collapse :**
+- Margins verticaux adjacents fusionnent
+- Solution : utiliser padding ou flex/grid (gap ne collapse pas)
+
+**Overflow cache par padding :**
+- Container overflow-hidden coupe le contenu padde
+- Verifier la combinaison overflow + padding
+
+**Espacement inconsistant :**
+- Verifier l'echelle utilisee
+- Auditer avec DevTools computed styles
+- Centraliser les tokens de design
+
+---
+
+## Personnalisation v4
+
+### Modifier l'Echelle de Base
+
+Changer la base du spacing :
+
+```css
+@theme {
+  --spacing: 0.25rem;  /* defaut */
+}
+
+@theme {
+  --spacing: 1px;  /* base de 1px au lieu de 4px */
+}
+```
+
+Ajouter des valeurs custom :
+
+```css
+@theme {
+  --spacing-18: 4.5rem;
+  --spacing-88: 22rem;
+}
+```
+
+Utilisation : `p-18`, `m-88`
+
+### Design Tokens CSS Variables
+
+Tailwind v4 expose tous les tokens en CSS variables :
+`--spacing-0`, `--spacing-1`, `--spacing-2`, etc.
+
+Utilisables directement dans du CSS custom :
+
+```css
+.custom-component {
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-8);
+}
+```
+
+Facilite l'integration avec d'autres outils.

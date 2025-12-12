@@ -1,0 +1,669 @@
+---
+title: Reference
+description: Glossaire technique des formats d'images, Core Web Vitals, attributs de chargement, responsive images, compression, alt text et Schema.org ImageObject.
+---
+
+# SEO Image Expert - Reference Technique
+
+## Glossaire des Formats d'Images
+
+### AVIF (AV1 Image File Format)
+
+Format moderne base sur le codec video AV1. Offre la meilleure compression disponible en 2025.
+
+**Caracteristiques** :
+- Compression : 50% meilleure que JPEG, 20% meilleure que WebP
+- Support : Chrome 85+, Firefox 93+, Safari 16.4+, Edge 121+
+- Transparence : Oui (canal alpha)
+- Animation : Oui
+- HDR : Oui (10-bit, 12-bit)
+- Encodage : Plus lent que WebP/JPEG
+
+**Cas d'usage** : Images photographiques, hero images, contenus ou la compression maximale est prioritaire.
+
+**Exemple de reduction** : 560 KB (original) → 101 KB (AVIF)
+
+### WebP
+
+Format developpe par Google, excellent compromis qualite/compression/compatibilite.
+
+**Caracteristiques** :
+- Compression : 25-34% meilleure que JPEG, 26% meilleure que PNG (lossless)
+- Support : Universel (tous navigateurs modernes)
+- Transparence : Oui
+- Animation : Oui (remplace GIF)
+- Encodage : Rapide
+
+**Cas d'usage** : Format par defaut recommande, excellent fallback pour AVIF.
+
+### JPEG XL
+
+Format emergent offrant des performances proches d'AVIF avec des fonctionnalites avancees.
+
+**Caracteristiques** :
+- Compression progressive
+- Recompression lossless de JPEG existants
+- Support HDR et wide gamut
+- Support navigateur : En progression (Chrome flag, Safari 17+)
+
+**Cas d'usage** : A surveiller pour adoption future.
+
+### Formats Legacy
+
+**JPEG** : Standard photographique, compression lossy. Utiliser comme fallback final.
+
+**PNG** : Graphiques avec transparence, compression lossless. Preferer WebP.
+
+**GIF** : Animations simples. Preferer WebP ou AVIF anime pour de meilleures performances.
+
+---
+
+## Core Web Vitals et Images
+
+### LCP (Largest Contentful Paint)
+
+**Definition** : Temps de rendu du plus grand element visible dans le viewport.
+
+**Seuils** :
+- Bon : ≤ 2.5s
+- A ameliorer : 2.5s - 4s
+- Mauvais : > 4s
+
+**Elements LCP consideres** :
+- `<img>` elements
+- `<image>` dans SVG
+- `<video>` poster ou premiere frame
+- Elements avec `background-image: url()`
+- Blocs de texte contenant du texte
+
+**Impact images sur LCP** :
+- L'image hero est souvent l'element LCP
+- Le temps de decouverte + telechargement + rendu determine le LCP
+- fetchpriority="high" accelere la priorisation reseau
+
+### CLS (Cumulative Layout Shift)
+
+**Definition** : Somme des decalages de layout inattendus.
+
+**Seuils** :
+- Bon : ≤ 0.1
+- A ameliorer : 0.1 - 0.25
+- Mauvais : > 0.25
+
+**Causes CLS liees aux images** :
+- Images sans dimensions width/height
+- Images chargees dynamiquement sans espace reserve
+- Aspect ratio non respecte
+- Lazy loading mal configure
+
+**Prevention** :
+- Definir width et height sur tous les `<img>`
+- Utiliser aspect-ratio CSS
+- Reserver l'espace avec placeholder
+
+---
+
+## Attributs de Chargement
+
+### loading (Lazy Loading Natif)
+
+**Valeurs** :
+- `lazy` : Differer le chargement jusqu'a proximite du viewport
+- `eager` : Chargement immediat (defaut)
+
+**Comportement** :
+- Le navigateur determine "proximite" (generalement ~1250px avant viewport)
+- Cout runtime quasi-nul
+- Fonctionne sur Chrome, Firefox, Safari, Edge
+
+**Bonnes pratiques** :
+- `loading="lazy"` sur toutes images below-the-fold
+- Ne JAMAIS lazy-loader l'image LCP
+- Pas de fallback JS necessaire
+
+### fetchpriority
+
+**Valeurs** :
+- `high` : Priorite elevee reseau
+- `low` : Priorite basse
+- `auto` : Navigateur decide (defaut)
+
+**Impact mesure** : Amelioration LCP de 0.5 a 2 secondes sur image hero.
+
+**Bonnes pratiques** :
+- `fetchpriority="high"` uniquement sur l'image LCP (1 par page)
+- Ne pas combiner avec `loading="lazy"`
+- Utile aussi sur `<link rel="preload">`
+
+### decoding
+
+**Valeurs** :
+- `async` : Decodage asynchrone (ne bloque pas le rendu)
+- `sync` : Decodage synchrone
+- `auto` : Navigateur decide (defaut)
+
+**Bonnes pratiques** :
+- `decoding="async"` sur images non-critiques
+- Laissez `auto` pour l'image LCP
+
+---
+
+## Responsive Images
+
+### srcset
+
+**Syntaxe** :
+```html
+<img
+  src="image-800w.jpg"
+  srcset="image-400w.jpg 400w,
+          image-800w.jpg 800w,
+          image-1200w.jpg 1200w,
+          image-1600w.jpg 1600w"
+  sizes="(max-width: 600px) 100vw,
+         (max-width: 1200px) 50vw,
+         800px"
+  alt="Description"
+>
+```
+
+**Descripteurs** :
+- `w` (width) : Largeur intrinseque de l'image en pixels
+- `x` (density) : Densite de pixel (1x, 2x, 3x)
+
+**Selection navigateur** : Basee sur taille viewport, densite ecran, zoom, vitesse reseau.
+
+### sizes
+
+**Syntaxe** : Media conditions avec tailles cibles.
+
+**Exemple** :
+- `(max-width: 600px) 100vw` : Sur mobile, image occupe 100% viewport
+- `(max-width: 1200px) 50vw` : Sur tablette, 50% viewport
+- `800px` : Par defaut, 800 pixels
+
+**Bonnes pratiques** :
+- Correspondre aux breakpoints du design
+- Eviter les images oversized sur mobile
+- Tester avec DevTools Network panel
+
+### Art Direction avec picture
+
+**Usage** : Servir des images differentes selon le contexte (pas juste des tailles differentes).
+
+```html
+<picture>
+  <source
+    media="(min-width: 1200px)"
+    srcset="landscape.avif"
+    type="image/avif"
+  >
+  <source
+    media="(min-width: 1200px)"
+    srcset="landscape.webp"
+    type="image/webp"
+  >
+  <source
+    media="(max-width: 1199px)"
+    srcset="portrait.avif"
+    type="image/avif"
+  >
+  <source
+    media="(max-width: 1199px)"
+    srcset="portrait.webp"
+    type="image/webp"
+  >
+  <img src="fallback.jpg" alt="Description">
+</picture>
+```
+
+**Cas d'usage** :
+- Cropping different mobile/desktop
+- Image differente pour orientation
+- Versions simplifiees pour petits ecrans
+
+---
+
+## Compression et Qualite
+
+### Parametres Recommandes
+
+| Format | Qualite Recommandee | Notes |
+|--------|---------------------|-------|
+| AVIF | 50-70% | Compression tres efficace |
+| WebP | 75-85% | Bon equilibre |
+| JPEG | 75-85% | Standard |
+| PNG | N/A (lossless) | Utiliser pour graphiques uniquement |
+
+### Techniques de Compression
+
+**Lossy** (avec perte) :
+- Reduit la taille significativement
+- Perte de qualite imperceptible a 75-85%
+- Recommande pour photographies
+
+**Lossless** (sans perte) :
+- Preserve 100% de la qualite
+- Reduction de taille limitee
+- Recommande pour logos, graphiques, texte
+
+### Outils de Compression
+
+**Squoosh (Google)** :
+- Web app : squoosh.app
+- Traitement local (privacy)
+- Comparaison codecs visuelle
+- Parametres : MozJPG pour JPEG, OxiPNG pour PNG
+- Methode resize : Lanczos3
+- Limitation : 1 image a la fois
+
+**Sharp (Node.js)** :
+- Automatisation build pipeline
+- Haute performance
+- Formats : JPEG, PNG, WebP, AVIF, GIF, TIFF
+- Ideal pour CI/CD
+
+**ImageMagick** :
+- CLI puissant
+- Batch processing
+- Large support formats
+
+---
+
+## Alt Text - Guide Complet
+
+### Regles de Redaction
+
+<alt-rules>
+1. Maximum 125 caracteres (coupure lecteurs d'ecran)
+2. Decrire le contenu ET le contexte
+3. Ne pas commencer par "Image de..." ou "Photo de..."
+4. Inclure les mots-cles naturellement (pas de stuffing)
+5. Ponctuation finale pour les phrases completes
+</alt-rules>
+
+### Types d'Images et Alt Text
+
+| Type d'Image | Traitement Alt |
+|--------------|----------------|
+| Contenu editorial | Alt descriptif complet |
+| Produit e-commerce | Nom produit + caracteristiques distinctives |
+| Graphique/Diagramme | Description des donnees cles |
+| Icone fonctionnelle | Action qu'elle declenche |
+| Image decorative | alt="" (vide) |
+| Logo | Nom de l'entreprise |
+| Lien image | Destination du lien |
+
+### Exemples Avant/Apres
+
+**Mauvais** : `alt="image"` / `alt="photo.jpg"` / `alt=""`(sur image de contenu)
+
+**Mediocre** : `alt="Image d'un homme qui travaille sur son ordinateur"`
+
+**Bon** : `alt="Developpeur utilisant Next.js sur MacBook Pro dans un espace de coworking"`
+
+**Optimise SEO** : `alt="Villa de luxe avec piscine a debordement sur la Cote d'Azur, vue mer panoramique"`
+
+### Considerations IA Vision
+
+Les modeles vision-langage (CLIP, Gemini Vision) analysent :
+1. Objets et logos detectes visuellement
+2. Texte OCR dans l'image
+3. Fusion avec l'alt text fourni
+
+**Implication** : L'alt text complete l'analyse visuelle, ne la remplace pas.
+
+---
+
+## Schema.org ImageObject
+
+### Proprietes Completes
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "ImageObject",
+  "contentUrl": "https://example.com/images/photo.jpg",
+  "url": "https://example.com/photo-page",
+  "name": "Titre descriptif de l'image",
+  "description": "Description longue et detaillee de l'image",
+  "caption": "Legende affichee sous l'image",
+  "width": {
+    "@type": "QuantitativeValue",
+    "value": 1920,
+    "unitCode": "E37"
+  },
+  "height": {
+    "@type": "QuantitativeValue",
+    "value": 1080,
+    "unitCode": "E37"
+  },
+  "encodingFormat": "image/jpeg",
+  "contentSize": "245 KB",
+  "uploadDate": "2025-01-15",
+  "datePublished": "2025-01-15",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "acquireLicensePage": "https://example.com/license-info",
+  "creditText": "Photo par Jean Dupont",
+  "creator": {
+    "@type": "Person",
+    "name": "Jean Dupont",
+    "url": "https://jeandupont.com"
+  },
+  "copyrightNotice": "© 2025 Example Company",
+  "copyrightHolder": {
+    "@type": "Organization",
+    "name": "Example Company"
+  },
+  "thumbnailUrl": "https://example.com/images/photo-thumb.jpg",
+  "representativeOfPage": true
+}
+```
+
+### Proprietes Nouvelles 2025
+
+Google a ajoute le support pour :
+- `creditText` : Attribution visible dans Google Images
+- `copyrightNotice` : Mention de copyright
+- `creator` : Createur de l'image
+
+Ces proprietes permettent d'obtenir le badge "Licensable" dans Google Images.
+
+### Integration avec Article
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Titre de l'article",
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://example.com/article-image.jpg",
+    "width": 1200,
+    "height": 630,
+    "caption": "Description de l'image",
+    "creditText": "Photographe"
+  },
+  "author": {...},
+  "publisher": {...}
+}
+```
+
+### Integration avec Product
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Nom du produit",
+  "image": [
+    {
+      "@type": "ImageObject",
+      "url": "https://example.com/product-front.jpg",
+      "width": 1200,
+      "height": 1200
+    },
+    {
+      "@type": "ImageObject",
+      "url": "https://example.com/product-side.jpg",
+      "width": 1200,
+      "height": 1200
+    }
+  ],
+  "offers": {...}
+}
+```
+
+---
+
+## Next.js Image Configuration
+
+### next.config.js Complet
+
+```javascript
+module.exports = {
+  images: {
+    // Formats modernes prioritaires
+    formats: ['image/avif', 'image/webp'],
+
+    // Breakpoints pour images pleine largeur
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+
+    // Tailles pour images avec sizes < 100vw
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+
+    // Sources distantes autorisees
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.sanity.io',
+        pathname: '/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cloudinary.com',
+      },
+    ],
+
+    // Loader personnalise (optionnel)
+    // loader: 'custom',
+    // loaderFile: './lib/image-loader.js',
+
+    // Desactiver l'optimisation (deconseille)
+    // unoptimized: true,
+
+    // Duree de cache minimale (secondes)
+    minimumCacheTTL: 60,
+
+    // Qualite par defaut
+    // quality: 75, // defaut
+  },
+}
+```
+
+### Props du Composant Image
+
+| Prop | Type | Description |
+|------|------|-------------|
+| src | string/StaticImport | Source de l'image (requis) |
+| width | number | Largeur en pixels (requis sauf fill) |
+| height | number | Hauteur en pixels (requis sauf fill) |
+| alt | string | Texte alternatif (requis) |
+| fill | boolean | Remplir le conteneur parent |
+| priority | boolean | Precharger (LCP image) - deprecie v16 |
+| preload | boolean | Precharger (Next.js 16+) |
+| loading | 'lazy'/'eager' | Strategie de chargement |
+| placeholder | 'blur'/'empty' | Placeholder pendant chargement |
+| blurDataURL | string | Data URL pour blur (remote images) |
+| quality | number | Qualite 1-100 (defaut 75) |
+| sizes | string | Indication tailles responsives |
+| style | CSSProperties | Styles inline |
+| className | string | Classes CSS |
+
+### Generation blurDataURL
+
+Avec plaiceholder :
+```javascript
+import { getPlaiceholder } from 'plaiceholder';
+
+const { base64 } = await getPlaiceholder('/path/to/image.jpg');
+// Resultat : data:image/jpeg;base64,...
+```
+
+Avec Sharp :
+```javascript
+import sharp from 'sharp';
+
+const buffer = await sharp('image.jpg')
+  .resize(10, 10, { fit: 'inside' })
+  .jpeg({ quality: 50 })
+  .toBuffer();
+const base64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+```
+
+---
+
+## CDN et Cache
+
+### Cloudflare Images
+
+**Transformation via URL** :
+```
+https://example.com/cdn-cgi/image/f=auto,quality=85,width=800/image.jpg
+```
+
+**Parametres principaux** :
+- `f=auto` : Format automatique (AVIF > WebP > original)
+- `quality=1-100` : Qualite compression
+- `width` / `height` : Redimensionnement
+- `fit=scale-down|contain|cover|crop|pad`
+- `gravity=auto|face|...` : Point focal pour crop
+
+**Cache** :
+- Chaque transformation unique cachee 30 jours
+- Tiered Cache pour meilleur hit ratio
+- Integration R2 pour stockage origin
+
+### Headers de Cache Recommandes
+
+```
+Cache-Control: public, max-age=31536000, immutable
+```
+
+Pour images avec hash dans le nom (ex: image-abc123.jpg).
+
+Pour images sans hash :
+```
+Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+```
+
+---
+
+## Outils de Diagnostic
+
+### PageSpeed Insights
+
+**Audits lies aux images** :
+- "Properly size images"
+- "Serve images in next-gen formats"
+- "Efficiently encode images"
+- "Defer offscreen images"
+- "Image elements do not have explicit width and height"
+
+**Interpretation** :
+- Lab Data : Environnement controle, reproductible
+- Field Data (CrUX) : Donnees reelles utilisateurs
+
+### Lighthouse
+
+**Audits 2025** (v12+) :
+- Migration vers "insights" au lieu d'audits separes
+- `cls-culprits-insight` regroupe les causes de CLS
+
+**Commande CLI** :
+```bash
+lighthouse https://example.com --only-categories=performance
+```
+
+### Chrome DevTools
+
+**Network Panel** :
+- Filtrer par "Img" pour voir uniquement les images
+- Colonne "Size" : taille transferee vs taille decompressees
+- "Initiator" : voir qui demande l'image
+
+**Performance Panel** :
+- Identifier l'element LCP
+- Voir le timing de chargement des images
+- Detecter les layout shifts
+
+**Coverage Panel** :
+- Identifier les images chargees mais non affichees
+
+---
+
+## FAQ Technique
+
+### Q: Quand utiliser AVIF vs WebP ?
+
+AVIF est preferable quand :
+- La compression maximale est prioritaire
+- Le temps d'encodage n'est pas critique
+- Les utilisateurs ont des navigateurs modernes
+
+WebP est preferable quand :
+- La compatibilite universelle est requise
+- L'encodage doit etre rapide
+- C'est le fallback apres AVIF
+
+### Q: fetchpriority ou preload pour l'image LCP ?
+
+fetchpriority est recommande car :
+- Syntaxe plus simple (`fetchpriority="high"` sur l'img)
+- Pas besoin de link preload separe
+- Moins de risque de double-fetch
+
+preload reste utile si l'image n'est pas dans le HTML initial.
+
+### Q: Faut-il lazy-loader les images above-the-fold ?
+
+Non. Les images visibles au chargement initial ne doivent pas etre lazy-loaded :
+- L'image LCP ne doit JAMAIS etre lazy
+- Les images above-the-fold doivent etre eager ou auto
+
+### Q: Quelle taille pour un blurDataURL ?
+
+- Image source : ~10x10 pixels
+- Taille base64 finale : < 1 KB idealement
+- Qualite JPEG : 50% suffit
+- Trop grand = impact performance inverse
+
+### Q: Les dimensions CSS suffisent-elles pour eviter le CLS ?
+
+Non. Les attributs HTML width/height sont requis :
+- Le navigateur reserve l'espace avant CSS
+- CSS peut etre bloque/lent
+- aspect-ratio CSS est un complement, pas un remplacement
+
+### Q: Comment gerer les images Sanity avec Next.js ?
+
+Configuration remotePatterns :
+```javascript
+remotePatterns: [
+  {
+    protocol: 'https',
+    hostname: 'cdn.sanity.io',
+    pathname: '/images/**',
+  },
+]
+```
+
+Utiliser le helper Sanity pour generer les URLs avec parametres de transformation.
+
+---
+
+## Ressources Externes
+
+### Documentation Officielle
+
+- [Google Images Best Practices](https://developers.google.com/search/docs/appearance/google-images)
+- [web.dev - LCP optimization](https://web.dev/articles/lcp)
+- [web.dev - Responsive images](https://web.dev/articles/responsive-images)
+- [Schema.org ImageObject](https://schema.org/ImageObject)
+- [Next.js Image Component](https://nextjs.org/docs/app/api-reference/components/image)
+- [MDN Responsive Images](https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images)
+
+### Outils
+
+- [Squoosh](https://squoosh.app/)
+- [PageSpeed Insights](https://pagespeed.web.dev/)
+- [Rich Results Test](https://search.google.com/test/rich-results)
+- [Schema Markup Validator](https://validator.schema.org/)
+- [Can I Use](https://caniuse.com/) - Support navigateur AVIF/WebP
+
+### Articles de Reference
+
+- Google Search Central Blog
+- web.dev Performance articles
+- Vercel Blog (Next.js image optimization)
+- Cloudflare Blog (Image optimization)

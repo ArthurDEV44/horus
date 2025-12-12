@@ -1,0 +1,482 @@
+---
+title: Reference
+description: Documentation technique Clerk - Glossaire, Architecture, Sessions, Organizations, RBAC, Webhooks, Security
+---
+
+# Clerk Expert - Documentation Technique
+
+## Glossaire
+
+| Terme | Definition |
+|-------|------------|
+| **auth()** | Helper server-side pour acceder aux donnees d'authentification minimales |
+| **authorizedParties** | Liste des origines autorisees pour prevenir attaques CSRF |
+| **azp** | Authorized Party claim dans JWT, origine qui a genere le token |
+| **ClerkProvider** | Composant racine fournissant le contexte d'auth a l'application |
+| **clerkMiddleware** | Middleware Next.js pour integrer l'auth dans les requetes |
+| **Core 2** | Version majeure du SDK Clerk (v5 pour @clerk/nextjs) |
+| **createRouteMatcher** | Helper pour definir des patterns de routes a proteger |
+| **currentUser()** | Helper server-side retournant les donnees utilisateur completes |
+| **Data Access Layer** | Pattern centralisant la verification auth pour eviter bypass |
+| **has()** | Methode pour verifier roles et permissions |
+| **Inactivity Timeout** | Duree d'inactivite avant expiration session |
+| **JWT** | JSON Web Token, token court-terme (60s) pour les sessions |
+| **Maximum Lifetime** | Duree maximale d'une session, peu importe l'activite |
+| **MFA** | Multi-Factor Authentication |
+| **Organization** | Entite multi-tenant pour B2B (equipes, entreprises) |
+| **Permission** | Privilege granulaire assignable a un role |
+| **protect()** | Methode d'auth() pour proteger et rediriger automatiquement |
+| **publicMetadata** | Donnees utilisateur visibles publiquement |
+| **Role** | Ensemble de permissions (admin, member, custom) |
+| **Session Token** | JWT court-terme representant une session active |
+| **setActive()** | Remplacant de setSession() pour activer session/org |
+| **SignIn/SignUp** | Composants prebuilt d'authentification |
+| **SSO** | Single Sign-On (Google, GitHub, etc.) |
+| **Svix** | Service tiers utilise par Clerk pour les webhooks |
+| **Testing Token** | Token special pour bypass bot detection en tests |
+| **useAuth()** | Hook client-side pour etat d'authentification |
+| **useUser()** | Hook client-side pour donnees utilisateur |
+| **UserButton** | Composant prebuilt pour menu utilisateur |
+
+---
+
+## Architecture Clerk
+
+### Flux d'Authentification
+
+```
+Utilisateur → SignIn/SignUp → Clerk Backend
+                                    ↓
+                            Session creee
+                                    ↓
+                            JWT genere (60s)
+                                    ↓
+                            Cookie __session
+                                    ↓
+                            Middleware verifie
+                                    ↓
+                            auth() disponible
+```
+
+### Hierarchie des Composants
+
+```
+ClerkProvider (layout.tsx)
+├── ClerkLoaded
+│   └── Application authentifiee
+├── ClerkLoading
+│   └── Skeleton/Loading state
+├── SignedIn
+│   └── Contenu pour utilisateurs connectes
+├── SignedOut
+│   └── Contenu pour visiteurs
+└── RedirectToSignIn / RedirectToSignUp
+```
+
+### Session Token Flow
+
+| Etape | Description |
+|-------|-------------|
+| 1. Auth | Utilisateur s'authentifie via Clerk |
+| 2. Session | Session persistante creee cote serveur |
+| 3. JWT | Token JWT genere (60s lifetime) |
+| 4. Cookie | Token stocke dans cookie __session |
+| 5. Refresh | SDKs Clerk refreshent automatiquement avant expiration |
+| 6. Validation | Chaque requete valide le token via middleware |
+
+---
+
+## Server-Side vs Client-Side
+
+### Helpers Server-Side
+
+| Helper | Usage | Context |
+|--------|-------|---------|
+| `auth()` | Donnees auth minimales + protect() | Server Components, Route Handlers, Actions |
+| `currentUser()` | Donnees utilisateur completes | Server Components, Route Handlers, Actions |
+
+### Hooks Client-Side
+
+| Hook | Usage | Context |
+|------|-------|---------|
+| `useAuth()` | Etat d'auth et tokens | Client Components |
+| `useUser()` | Donnees utilisateur | Client Components |
+| `useOrganization()` | Organisation active | Client Components |
+| `useOrganizationList()` | Liste des orgs | Client Components |
+| `useSession()` | Session active | Client Components |
+| `useSignIn()` | Controle SignIn | Client Components |
+| `useSignUp()` | Controle SignUp | Client Components |
+
+### Quand Utiliser Quoi
+
+| Besoin | Server | Client |
+|--------|--------|--------|
+| Verifier si connecte | `auth().isAuthenticated` | `useAuth().isSignedIn` |
+| Obtenir userId | `auth().userId` | `useAuth().userId` |
+| Donnees user completes | `currentUser()` | `useUser().user` |
+| Verifier permission | `auth().has()` | `useAuth().has()` |
+| Proteger et redirect | `auth.protect()` | N/A (redirect depuis server) |
+| Organisation active | `auth().orgId` | `useOrganization()` |
+
+---
+
+## Middleware Configuration
+
+### clerkMiddleware Basique
+
+| Option | Description | Defaut |
+|--------|-------------|--------|
+| `debug` | Active logs de debug | false |
+| `clockSkewInMs` | Tolerance validation token | 5000ms |
+| `domain` | Domaine pour deployments satellites | undefined |
+| `isSatellite` | Mode satellite (multi-domaine) | false |
+| `signInUrl` | URL page de connexion | /sign-in |
+| `signUpUrl` | URL page d'inscription | /sign-up |
+| `afterSignInUrl` | Redirect apres connexion | / |
+| `afterSignUpUrl` | Redirect apres inscription | / |
+
+### createRouteMatcher Patterns
+
+| Pattern | Match |
+|---------|-------|
+| `'/dashboard'` | Route exacte /dashboard |
+| `'/dashboard(.*)'` | /dashboard et tous les enfants |
+| `'/api/(.*)'` | Toutes les routes API |
+| `'/admin/:path*'` | /admin et parametres dynamiques |
+
+### Protection Strategies
+
+| Methode | Comportement | Usage |
+|---------|--------------|-------|
+| `auth.protect()` | Redirect vers sign-in si non-auth | Pages protegees standard |
+| `auth().isAuthenticated` | Retourne boolean | Logique conditionnelle custom |
+| `auth.protect({ role: 'admin' })` | Verifie role organization | Pages admin org |
+| `auth.protect({ permission: 'x' })` | Verifie permission | Acces granulaire |
+
+---
+
+## Organizations et RBAC
+
+### Roles par Defaut
+
+| Role | Key | Permissions |
+|------|-----|-------------|
+| Admin | `org:admin` | Toutes les permissions systeme |
+| Member | `org:member` | Lecture membres, lecture billing |
+
+### Format Permissions Custom
+
+```
+org:<feature>:<action>
+
+Exemples:
+org:invoices:create
+org:projects:delete
+org:reports:export
+org:settings:manage
+```
+
+### Verification Permissions
+
+| Methode | Context | Usage |
+|---------|---------|-------|
+| `auth().has({ permission: 'org:x:y' })` | Server | Verification permission |
+| `auth().has({ role: 'org:admin' })` | Server | Verification role |
+| `useAuth().has({ permission: 'x' })` | Client | Verification permission |
+| `<Protect permission="x">` | JSX | Rendu conditionnel |
+
+### Limites
+
+| Element | Limite |
+|---------|--------|
+| Custom roles par instance | 10 |
+| Custom permissions | Selon plan |
+| Role names | org:xxx (prefixe obligatoire) |
+
+---
+
+## Session Management
+
+### Configuration Dashboard
+
+| Setting | Description | Defaut |
+|---------|-------------|--------|
+| Maximum Lifetime | Duree max session | 7 jours |
+| Inactivity Timeout | Expiration si inactif | Desactive |
+
+### Contraintes
+
+- Maximum Lifetime ET/OU Inactivity doivent etre actives
+- Chrome limite cookies a 400 jours max
+- Tokens JWT valides 60 secondes
+- Refresh automatique par les SDKs
+
+### Custom Claims
+
+| Type | Visibilite | Usage |
+|------|------------|-------|
+| `publicMetadata` | Token JWT | Donnees accessibles partout |
+| `privateMetadata` | Backend only | Donnees sensibles |
+| `unsafeMetadata` | Modifiable client | Preferences non-critiques |
+
+### Taille Token
+
+| Recommandation | Raison |
+|----------------|--------|
+| Claims < 1.2KB | Cookie limite a 4KB total |
+| Stocker en DB | Donnees volumineuses externes |
+
+---
+
+## Webhooks
+
+### Events Principaux
+
+| Event | Trigger |
+|-------|---------|
+| `user.created` | Nouvel utilisateur |
+| `user.updated` | Modification utilisateur |
+| `user.deleted` | Suppression utilisateur |
+| `session.created` | Nouvelle session |
+| `session.ended` | Fin de session |
+| `organization.created` | Nouvelle organisation |
+| `organization.updated` | Modification organisation |
+| `organization.deleted` | Suppression organisation |
+| `organizationMembership.created` | Nouveau membre |
+| `organizationMembership.updated` | Modification membership |
+| `organizationMembership.deleted` | Suppression membre |
+| `organizationInvitation.created` | Invitation envoyee |
+| `organizationInvitation.accepted` | Invitation acceptee |
+
+### Verification Signature
+
+| Package | Usage |
+|---------|-------|
+| `svix` | Verification signature Svix |
+
+### Headers Requis
+
+| Header | Description |
+|--------|-------------|
+| `svix-id` | ID unique du webhook |
+| `svix-timestamp` | Timestamp du webhook |
+| `svix-signature` | Signature a verifier |
+
+---
+
+## Theming et Customization
+
+### Methodes de Customization
+
+| Methode | Complexite | Flexibilite |
+|---------|------------|-------------|
+| Theme preset | Faible | Faible |
+| Variables CSS | Moyenne | Moyenne |
+| Appearance prop | Moyenne | Haute |
+| Clerk Elements | Haute | Totale |
+
+### Themes Built-in
+
+| Theme | Description |
+|-------|-------------|
+| Default | Theme Clerk standard |
+| Dark | Mode sombre |
+| shadcn | Compatible shadcn/ui |
+| Simple | Minimaliste, facile a personnaliser |
+
+### Variables CSS Principales
+
+| Variable | Description |
+|----------|-------------|
+| `--cl-color-primary` | Couleur principale |
+| `--cl-color-danger` | Couleur erreur |
+| `--cl-color-success` | Couleur succes |
+| `--cl-color-warning` | Couleur warning |
+| `--cl-font-family` | Police principale |
+| `--cl-radius` | Border radius |
+
+### Appearance Prop Structure
+
+| Property | Description |
+|----------|-------------|
+| `baseTheme` | Theme de base (dark, etc.) |
+| `variables` | Override variables |
+| `elements` | Override styles elements specifiques |
+| `layout` | Options de layout |
+
+---
+
+## Testing
+
+### Strategies
+
+| Strategie | Usage | Limitation |
+|-----------|-------|------------|
+| Mock auth | Tests unitaires | Pas de vraie auth |
+| Testing Tokens | Integration | 60s lifetime |
+| Session Tokens | E2E | Necessite user reel |
+
+### Testing Tokens
+
+| Aspect | Valeur |
+|--------|--------|
+| Lifetime | 60 secondes |
+| Usage | Query param `__clerk_testing_token` |
+| Scope | Instance specifique |
+| Bot detection | Bypass |
+
+### Mocking Vitest
+
+| Mock | Retour |
+|------|--------|
+| `auth()` | `{ userId: 'test-id' }` |
+| `useAuth()` | `{ isSignedIn: true, userId: 'test-id' }` |
+| `useUser()` | `{ user: { id: 'test-id', ... } }` |
+| `ClerkProvider` | Wrapper transparent |
+
+---
+
+## Security Best Practices
+
+### Defense in Depth
+
+| Layer | Implementation |
+|-------|----------------|
+| Middleware | clerkMiddleware pour routes |
+| Components | auth.protect() dans pages |
+| Data Access | verifySession() dans DAL |
+| Actions | Validation + auth check |
+| API Routes | Token verification |
+
+### CVE-2025-29927 Mitigation
+
+| Action | Description |
+|--------|-------------|
+| Upgrade Next.js | Version 15.2.3+ minimum |
+| DAL Pattern | Ne pas se fier qu'au middleware |
+| Auth partout | Verifier dans chaque endpoint |
+
+### JWT Validation
+
+| Check | Description |
+|-------|-------------|
+| Signature | Verifier avec cle publique |
+| Expiration | Token < 60s age |
+| Issuer | Clerk issuer valide |
+| Audience | Si configure, verifier aud |
+| azp | Verifier authorizedParties |
+
+### Variables d'Environnement
+
+| Variable | Sensibilite | Prefixe |
+|----------|-------------|---------|
+| `CLERK_SECRET_KEY` | Secrete | Aucun (server-only) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Publique | NEXT_PUBLIC_ |
+| `CLERK_WEBHOOK_SECRET` | Secrete | Aucun (server-only) |
+
+---
+
+## Migration et Upgrade
+
+### Core 1 vers Core 2 (SDK v5)
+
+| Breaking Change | Action |
+|-----------------|--------|
+| `setSession(session)` | `setActive({ session })` |
+| `Organization.create('name')` | `Organization.create({ name })` |
+| `User.update({ password })` | `User.updatePassword({ currentPassword, newPassword })` |
+| Response shape | `{ data, totalCount }` au lieu de data direct |
+| `authMiddleware` | `clerkMiddleware` (deprecation) |
+
+### CLI Upgrade
+
+| Commande | Description |
+|----------|-------------|
+| `npx @clerk/upgrade` | Scan et suggestions automatiques |
+
+### Checklist Migration
+
+| Etape | Description |
+|-------|-------------|
+| 1 | Backup du code existant |
+| 2 | Update vers derniere version Core 1 |
+| 3 | Executer npx @clerk/upgrade |
+| 4 | Appliquer les changements suggeres |
+| 5 | Migrer authMiddleware vers clerkMiddleware |
+| 6 | Tester toutes les fonctionnalites auth |
+| 7 | Verifier webhooks |
+| 8 | Deploy staging puis production |
+
+---
+
+## Troubleshooting
+
+### Erreurs Courantes
+
+| Erreur | Cause | Solution |
+|--------|-------|----------|
+| "CLERK_SECRET_KEY missing" | Env var non definie | Ajouter dans .env.local |
+| "Invalid API key" | Mauvaise cle | Verifier Dashboard Clerk |
+| "Token expired" | JWT > 60s | Refresh automatique, verifier reseau |
+| "Unauthorized" | Pas de session | Verifier middleware config |
+| "Organization not found" | orgId invalide | Verifier org active |
+
+### Debug Mode
+
+| Activation | Description |
+|------------|-------------|
+| `clerkMiddleware({ debug: true })` | Logs middleware |
+| Dashboard Clerk → Logs | Historique requetes |
+| Network tab | Inspecter cookies et headers |
+
+### Verification Checklist
+
+| Check | Comment |
+|-------|---------|
+| Env vars | Verifier .env.local |
+| Middleware | Fichier present et exporte |
+| Provider | ClerkProvider dans layout root |
+| Matcher | Config matcher correcte |
+| Version | SDK compatible avec Next.js |
+
+---
+
+## Ressources Officielles
+
+### Documentation
+
+| Sujet | URL |
+|-------|-----|
+| Quickstart Next.js | clerk.com/docs/nextjs/getting-started/quickstart |
+| clerkMiddleware | clerk.com/docs/reference/nextjs/clerk-middleware |
+| auth() Reference | clerk.com/docs/reference/nextjs/app-router/auth |
+| Organizations | clerk.com/docs/organizations/roles-permissions |
+| Webhooks | clerk.com/docs/webhooks |
+| Security | clerk.com/docs/guides/secure |
+| Testing | clerk.com/docs/guides/development/testing/overview |
+| Upgrade Guides | clerk.com/docs/guides/development/upgrading/overview |
+
+### FAQ
+
+**Comment proteger toutes les routes sauf certaines ?**
+
+Definir les routes publiques avec createRouteMatcher et inverser la logique.
+
+**Comment synchroniser les utilisateurs Clerk avec ma database ?**
+
+1. Configurer un webhook pour `user.created`, `user.updated`, `user.deleted`
+2. Verifier la signature Svix dans le Route Handler
+3. Upsert/delete dans votre database selon l'event
+
+**Quelle est la difference entre auth() et currentUser() ?**
+
+- `auth()` : Donnees minimales (userId, orgId), methodes (protect, has, redirectToSignIn)
+- `currentUser()` : Donnees utilisateur completes (email, name, metadata, etc.)
+
+**Comment configurer le timeout de session ?**
+
+Dans le Dashboard Clerk → Sessions, activer "Maximum lifetime" et/ou "Inactivity timeout".
+
+**Pourquoi mon middleware ne protege pas les routes ?**
+
+Verifier : nom du fichier (middleware.ts ou proxy.ts), matcher, et que auth.protect() est appele.

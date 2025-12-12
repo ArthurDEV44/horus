@@ -1,0 +1,660 @@
+---
+title: Reference
+description: Documentation détaillée des design patterns React et Backend
+---
+
+# Patterns Expert - Documentation de Référence
+
+Documentation détaillée des design patterns React et Backend.
+
+---
+
+## Table des Matières
+
+1. [Container/Presentational Pattern](#1-containerpresentational-pattern)
+2. [Composition & Compound Components](#2-composition--compound-components)
+3. [Custom Hooks Pattern](#3-custom-hooks-pattern)
+4. [Factory Pattern](#4-factory-pattern)
+5. [Repository Pattern](#5-repository-pattern)
+6. [Combinaisons de Patterns](#6-combinaisons-de-patterns)
+
+---
+
+## 1. Container/Presentational Pattern
+
+### Concept Fondamental
+
+Séparation entre :
+- **Container** : Gère l'état, les effets, le data fetching
+- **Presentational** : Affiche l'UI basée uniquement sur les props
+
+### Évolution avec les Hooks (2025)
+
+| Époque | Approche |
+|--------|----------|
+| Pre-Hooks | Classe Container + Functional Presentational |
+| Hooks classique | Container HOC + Presentational |
+| Moderne | Custom Hook + Presentational (Container implicite) |
+
+### Structure Classique
+
+```
+UserListContainer/
+├── UserListContainer.tsx    # Logique, état, fetch
+├── UserList.tsx             # UI pure
+└── index.ts                 # Export du Container
+```
+
+Le Container :
+- Gère useState, useEffect
+- Appelle les APIs
+- Transforme les données
+- Passe les props au Presentational
+
+Le Presentational :
+- Reçoit uniquement des props
+- Aucun hook d'état
+- Aucun effet secondaire
+- 100% testable avec props mockées
+
+### Structure Moderne (Hook-based)
+
+```
+UserList/
+├── useUserList.ts           # Hook = Container logic
+├── UserList.tsx             # UI pure
+└── index.ts
+```
+
+Le Hook remplace le Container :
+- Même logique (état, fetch, transformations)
+- Retourne `{ data, loading, error, actions }`
+- Réutilisable dans plusieurs composants
+
+Le Composant :
+- Appelle le hook directement
+- Ou reçoit les données en props (variante pure)
+
+### Quand Choisir Chaque Approche
+
+**Container Explicite :**
+- Logique partagée entre plusieurs UI différentes
+- Besoin de tester le composant UI isolément
+- Équipe préférant la séparation visuelle dans les fichiers
+
+**Hook Direct :**
+- Logique spécifique à un seul composant
+- Simplicité et réduction du boilerplate
+- Composition de hooks plus naturelle
+
+### Critères de Qualité
+
+Le Presentational est valide si :
+- Aucun useState, useEffect, useMemo avec logique métier
+- Aucun appel API direct
+- Testable avec des props statiques
+- Réutilisable avec différentes sources de données
+
+---
+
+## 2. Composition & Compound Components
+
+### Concept Fondamental
+
+Créer des composants qui fonctionnent ensemble, partageant un état implicite, tout en offrant une flexibilité de composition au consumer.
+
+### Pattern Compound Components
+
+Structure type avec Context :
+
+```
+Modal/
+├── Modal.tsx            # Parent avec Context Provider
+├── ModalHeader.tsx      # Enfant consommant le Context
+├── ModalBody.tsx
+├── ModalFooter.tsx
+├── ModalContext.ts      # Context partagé
+└── index.ts             # Export avec static properties
+```
+
+**Parent (Provider) :**
+- Gère l'état partagé (isOpen, onClose, etc.)
+- Wrap les children avec le Context Provider
+- Expose les composants enfants en static properties
+
+**Enfants (Consumers) :**
+- Accèdent au Context partagé via useContext
+- Fonctionnent uniquement dans le contexte du Parent
+- Peuvent être réarrangés librement
+
+**Usage Consumer :**
+```jsx
+<Modal>
+  <Modal.Header>Titre</Modal.Header>
+  <Modal.Body>Contenu</Modal.Body>
+  <Modal.Footer>
+    <Button onClick={close}>Fermer</Button>
+  </Modal.Footer>
+</Modal>
+```
+
+### Techniques d'Implémentation
+
+#### Via Context API (Recommandé)
+
+- Créer un Context avec l'état partagé
+- Le Parent est le Provider
+- Les Enfants consomment via useContext
+- Flexible, pas de collision de props
+
+#### Via React.cloneElement
+
+- Le Parent clone les enfants et injecte des props
+- Plus simple pour des cas basiques
+- Risque de collision de props
+- Moins flexible que Context
+
+#### Via Static Properties
+
+- Assigner les enfants comme propriétés du Parent
+- `Modal.Header = ModalHeader`
+- Import unique du Parent
+- Pattern très lisible
+
+### Cas d'Usage Typiques
+
+| Composant | Éléments Composés |
+|-----------|-------------------|
+| Modal | Header, Body, Footer, CloseButton |
+| Tabs | TabList, Tab, TabPanels, TabPanel |
+| Accordion | Item, Header, Panel |
+| Dropdown | Trigger, Menu, MenuItem |
+| Form | Field, Label, Input, Error, Submit |
+| Card | Header, Body, Footer, Image |
+
+### Render Props (Variante)
+
+Quand le consumer doit contrôler le rendu :
+
+Le composant expose une fonction comme enfant :
+```jsx
+<DataFetcher url="/api/users">
+  {({ data, loading, error }) => (
+    loading ? <Spinner /> : <UserList users={data} />
+  )}
+</DataFetcher>
+```
+
+**Usages :**
+- Flexibilité maximale du rendu
+- Inversion de contrôle
+- Partage de logique avec liberté totale sur l'UI
+
+**Note 2025 :** Les Custom Hooks ont largement remplacé ce pattern pour la plupart des cas.
+
+### Critères de Qualité
+
+Le Compound Component est valide si :
+- Les enfants fonctionnent dans n'importe quel ordre
+- L'état est partagé sans props drilling
+- L'API est intuitive et auto-documentée
+- Chaque enfant a une responsabilité claire
+
+---
+
+## 3. Custom Hooks Pattern
+
+### Concept Fondamental
+
+Extraire la logique stateful dans des fonctions réutilisables préfixées par `use`.
+
+### Règles Fondamentales
+
+1. **Préfixe `use`** : Obligatoire pour que React reconnaisse le hook
+2. **Top-level uniquement** : Jamais dans des conditions ou boucles
+3. **Ordre constant** : Les hooks s'exécutent toujours dans le même ordre
+4. **Composabilité** : Un hook peut appeler d'autres hooks
+
+### Anatomie d'un Custom Hook
+
+Structure de retour recommandée :
+
+```typescript
+interface UseUserReturn {
+  // État
+  user: User | null;
+  loading: boolean;
+  error: Error | null;
+
+  // Actions
+  refetch: () => void;
+  updateUser: (data: Partial<User>) => Promise<void>;
+}
+
+function useUser(userId: string): UseUserReturn {
+  // Implémentation...
+}
+```
+
+**Retourner :**
+- **État** : Données, flags de chargement, erreurs
+- **Actions** : Fonctions pour modifier l'état
+
+### Catégories de Custom Hooks
+
+#### Hooks de Data Fetching
+
+Gèrent le cycle de vie des requêtes :
+- État loading/error/data
+- Refetch, invalidation
+- Cache et optimistic updates
+
+Exemples : `useUser`, `usePosts`, `useQuery`
+
+#### Hooks d'État Local
+
+Encapsulent une logique d'état complexe :
+- Toggle, counter, form fields
+- Historique (undo/redo)
+- Debounce, throttle
+
+Exemples : `useToggle`, `useCounter`, `useDebounce`
+
+#### Hooks de Side Effects
+
+Gèrent les interactions avec l'extérieur :
+- LocalStorage, SessionStorage
+- Event listeners (resize, scroll, keyboard)
+- Clipboard, geolocation
+
+Exemples : `useLocalStorage`, `useEventListener`, `useClipboard`
+
+#### Hooks de Composition
+
+Combinent plusieurs hooks :
+- Orchestrent des hooks existants
+- Créent des abstractions de plus haut niveau
+
+Exemple : `useAuth` qui combine `useUser`, `useToken`, `usePermissions`
+
+### Patterns de Composition
+
+#### Hook qui utilise d'autres hooks
+
+```typescript
+function useUserProfile(userId: string) {
+  const user = useUser(userId);
+  const posts = usePosts(userId);
+  const followers = useFollowers(userId);
+
+  return {
+    user: user.data,
+    posts: posts.data,
+    followers: followers.data,
+    loading: user.loading || posts.loading || followers.loading,
+  };
+}
+```
+
+#### Hook avec configuration
+
+```typescript
+function useFetch<T>(url: string, options?: UseFetchOptions): UseFetchReturn<T> {
+  const {
+    enabled = true,
+    refetchInterval,
+    transform
+  } = options ?? {};
+
+  // Implémentation...
+}
+```
+
+### Anti-patterns à Éviter
+
+| Anti-pattern | Problème | Solution |
+|-------------|----------|----------|
+| God Hook | Trop de responsabilités | Diviser en hooks plus petits |
+| useEffect overuse | Effets non nécessaires | Dériver l'état, utiliser événements |
+| Dépendances manquantes | Bugs de stale closure | Respecter les règles ESLint |
+| État dupliqué | Source de vérité multiple | Single source of truth |
+
+### Critères de Qualité
+
+Le Custom Hook est valide si :
+- Nom clair décrivant ce qu'il fait
+- Une seule responsabilité
+- Interface de retour cohérente
+- Testable unitairement
+- Documenté (types TypeScript)
+
+---
+
+## 4. Factory Pattern
+
+### Concept Fondamental
+
+Déléguer la création d'objets à une fonction/classe spécialisée, cachant les détails d'instanciation au client.
+
+### Variantes
+
+#### Simple Factory
+
+Une fonction qui crée et retourne un objet basé sur des paramètres.
+
+```typescript
+function createNotification(type: 'email' | 'sms' | 'push'): Notification {
+  switch (type) {
+    case 'email': return new EmailNotification();
+    case 'sms': return new SmsNotification();
+    case 'push': return new PushNotification();
+  }
+}
+```
+
+**Usage :**
+- Création conditionnelle simple
+- Peu de types différents
+- Configuration centralisée
+
+#### Factory Method
+
+Définit une interface de création, laissant les sous-classes décider de l'implémentation.
+
+```typescript
+abstract class NotificationFactory {
+  abstract createNotification(): Notification;
+
+  send(message: string): void {
+    const notification = this.createNotification();
+    notification.send(message);
+  }
+}
+
+class EmailNotificationFactory extends NotificationFactory {
+  createNotification(): Notification {
+    return new EmailNotification();
+  }
+}
+```
+
+**Usage :**
+- Framework définissant le squelette
+- Sous-classes personnalisant la création
+- Open/Closed Principle respecté
+
+#### Abstract Factory
+
+Crée des familles d'objets liés sans spécifier leurs classes concrètes.
+
+```typescript
+interface UIFactory {
+  createButton(): Button;
+  createInput(): Input;
+  createModal(): Modal;
+}
+
+class MaterialUIFactory implements UIFactory {
+  createButton(): Button { return new MaterialButton(); }
+  createInput(): Input { return new MaterialInput(); }
+  createModal(): Modal { return new MaterialModal(); }
+}
+
+class AntDesignFactory implements UIFactory {
+  createButton(): Button { return new AntButton(); }
+  createInput(): Input { return new AntInput(); }
+  createModal(): Modal { return new AntModal(); }
+}
+```
+
+**Usage :**
+- Familles de produits cohérentes
+- Thèmes ou plateformes différentes
+- Consistance garantie entre objets liés
+
+### Intégration avec Dependency Injection
+
+La Factory s'intègre naturellement avec la DI :
+
+1. **Factory comme dépendance injectée**
+   - Le service reçoit la factory, pas les objets créés
+   - Peut créer des instances à la demande
+
+2. **Factory avec configuration**
+   - Container DI configure la factory
+   - Factory utilise cette config pour créer
+
+3. **Factory pour objets avec runtime dependencies**
+   - Certains paramètres connus seulement à l'exécution
+   - Factory injectée, paramètres passés à `create()`
+
+### Quand Utiliser
+
+| Situation | Pattern Recommandé |
+|-----------|-------------------|
+| 2-3 types, stable | Simple Factory |
+| Types extensibles | Factory Method |
+| Familles d'objets liés | Abstract Factory |
+| Config connue au runtime | Factory + Config |
+| Objets complexes avec builder | Factory + Builder |
+
+### Critères de Qualité
+
+La Factory est valide si :
+- Client ignore les classes concrètes
+- Ajout d'un nouveau type = nouvelle classe, pas modification
+- Logique de création centralisée
+- Configuration et création séparées
+
+---
+
+## 5. Repository Pattern
+
+### Concept Fondamental
+
+Abstraire l'accès aux données derrière une interface, découplant la logique métier de la source de données.
+
+### Structure de Base
+
+```
+repositories/
+├── interfaces/
+│   └── IUserRepository.ts     # Contrat
+├── implementations/
+│   ├── UserRepository.ts      # Implémentation DB
+│   └── InMemoryUserRepository.ts  # Pour tests
+└── index.ts
+```
+
+### Interface Repository
+
+Définit le contrat d'accès aux données :
+
+```typescript
+interface IUserRepository {
+  findById(id: string): Promise<User | null>;
+  findAll(): Promise<User[]>;
+  findByEmail(email: string): Promise<User | null>;
+  save(user: User): Promise<User>;
+  delete(id: string): Promise<void>;
+}
+```
+
+**Principes :**
+- Méthodes orientées domaine, pas ORM
+- Retourne des entités du domaine
+- Pas d'exposition des détails (QueryBuilder, SQL)
+
+### Generic Repository
+
+Classe de base réutilisable :
+
+```typescript
+interface IGenericRepository<T, ID> {
+  findById(id: ID): Promise<T | null>;
+  findAll(): Promise<T[]>;
+  save(entity: T): Promise<T>;
+  delete(id: ID): Promise<void>;
+}
+
+abstract class GenericRepository<T, ID> implements IGenericRepository<T, ID> {
+  // Implémentation générique...
+}
+
+class UserRepository extends GenericRepository<User, string> {
+  // Méthodes spécifiques à User
+  findByEmail(email: string): Promise<User | null> {
+    // Implémentation...
+  }
+}
+```
+
+**Avantages :**
+- CRUD réutilisable
+- Méthodes spécifiques par entité
+- Respect Open/Closed
+
+**Attention :**
+- Ne pas exposer le QueryBuilder
+- Éviter les méthodes trop génériques
+
+### Implémentations Multiples
+
+```typescript
+// Production - Base de données
+class PostgresUserRepository implements IUserRepository {
+  constructor(private db: DatabaseConnection) {}
+  // Implémente avec vraies requêtes SQL
+}
+
+// Tests - Mémoire
+class InMemoryUserRepository implements IUserRepository {
+  private users: Map<string, User> = new Map();
+  // Implémente avec Map en mémoire
+}
+
+// Cache - Redis + DB
+class CachedUserRepository implements IUserRepository {
+  constructor(
+    private cache: ICache,
+    private db: IUserRepository
+  ) {}
+  // Vérifie cache, sinon DB
+}
+```
+
+### Unit of Work (Pattern Complémentaire)
+
+Gère les transactions impliquant plusieurs repositories :
+
+```typescript
+interface IUnitOfWork {
+  users: IUserRepository;
+  orders: IOrderRepository;
+
+  beginTransaction(): Promise<void>;
+  commit(): Promise<void>;
+  rollback(): Promise<void>;
+}
+```
+
+**Usage :**
+- Opérations atomiques multi-entités
+- Rollback en cas d'erreur
+- Consistance transactionnelle
+
+### Erreurs Communes
+
+| Erreur | Problème | Solution |
+|--------|----------|----------|
+| Leaky Abstraction | ORM/SQL exposé | Retourner uniquement des entités domaine |
+| God Repository | Trop de méthodes | Un repository par aggregate |
+| N+1 Queries | Performance | Méthodes spécifiques avec includes |
+| Logique dans Repository | Responsabilité mélangée | Repository = accès données seulement |
+
+### Critères de Qualité
+
+Le Repository est valide si :
+- Changement de DB = nouvelle implémentation, pas de refactoring métier
+- Testable avec implémentation in-memory
+- Interface stable, indépendante de l'ORM
+- Méthodes orientées domaine, pas technique
+
+---
+
+## 6. Combinaisons de Patterns
+
+### Container/Presentational + Custom Hook
+
+```
+UserProfile/
+├── useUserProfile.ts      # Custom Hook (ex-Container)
+├── UserProfile.tsx        # Presentational
+└── index.ts
+```
+
+Le hook encapsule ce que faisait le Container.
+
+### Compound Components + Custom Hook
+
+```
+Accordion/
+├── useAccordion.ts        # Logique partagée
+├── AccordionContext.ts    # Context avec le hook
+├── Accordion.tsx          # Parent + Provider
+├── AccordionItem.tsx      # Enfant
+└── index.ts
+```
+
+Le hook alimente le Context utilisé par les Compound Components.
+
+### Factory + Repository
+
+```typescript
+class RepositoryFactory {
+  constructor(private config: DatabaseConfig) {}
+
+  createUserRepository(): IUserRepository {
+    if (this.config.type === 'postgres') {
+      return new PostgresUserRepository(this.config);
+    }
+    return new MongoUserRepository(this.config);
+  }
+}
+```
+
+La Factory crée le bon Repository selon la configuration.
+
+### Repository + Dependency Injection
+
+```typescript
+// Enregistrement dans le container
+container.bind<IUserRepository>(TYPES.UserRepository)
+  .to(PostgresUserRepository)
+  .inSingletonScope();
+
+// Injection dans le service
+class UserService {
+  constructor(
+    @inject(TYPES.UserRepository)
+    private userRepository: IUserRepository
+  ) {}
+}
+```
+
+Le container DI gère l'injection du Repository dans les services.
+
+---
+
+## Ressources
+
+### Documentation Officielle
+- [React Patterns - patterns.dev](https://www.patterns.dev/react/)
+- [Kent C. Dodds - Compound Components](https://kentcdodds.com/blog/compound-components-with-react-hooks)
+- [Refactoring Guru - Factory Method](https://refactoring.guru/design-patterns/factory-method/typescript/example)
+
+### Articles 2025
+- [Container/Presentational Pattern - patterns.dev](https://www.patterns.dev/react/presentational-container-pattern/)
+- [Repository Pattern with TypeScript - LogRocket](https://blog.logrocket.com/exploring-repository-pattern-typescript-node/)
+- [React Design Patterns 2025 - Telerik](https://www.telerik.com/blogs/react-design-patterns-best-practices)
+- [Advanced React Hooks 2025 - dev.to](https://dev.to/tahamjp/advanced-react-hooks-in-2025-patterns-you-should-know-2e4n)

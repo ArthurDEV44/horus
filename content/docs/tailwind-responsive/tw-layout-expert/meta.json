@@ -1,0 +1,10 @@
+{
+  "title": "Layout Expert",
+  "description": "Expert layouts Tailwind CSS - Flexbox (flex, justify, items, gap), Grid (grid-cols, grid-rows, place-items), container responsive",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

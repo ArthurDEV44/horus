@@ -1,0 +1,6 @@
+{
+  "title": "State Expert",
+  "description": "Gestion d'état React (Context, Zustand, TanStack Query), résolution prop drilling, optimisation re-renders. Use when designing state architecture or fixing performance.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

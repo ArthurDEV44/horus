@@ -1,0 +1,557 @@
+---
+title: Types Expert - Workflows
+description: Processus détaillés pour le design de types, la résolution d'erreurs et les migrations TypeScript.
+---
+
+# Types Expert - Workflows
+
+Processus détaillés pour le design de types, la résolution d'erreurs et les migrations TypeScript.
+
+---
+
+## Table des Matières
+
+1. [Design de Types pour un Domaine](#workflow-1--design-de-types-pour-un-domaine)
+2. [Résolution d'Erreurs de Type](#workflow-2--résolution-derreurs-de-type)
+3. [Migration any vers Types Stricts](#workflow-3--migration-any-vers-types-stricts)
+4. [Création de Types Utilitaires](#workflow-4--création-de-types-utilitaires)
+5. [Typage de Fonctions Génériques](#workflow-5--typage-de-fonctions-génériques)
+6. [Typage d'API et Réponses](#workflow-6--typage-dapi-et-réponses)
+
+---
+
+## Workflow 1 : Design de Types pour un Domaine
+
+### Phase 1 : Analyse du Domaine
+
+Identifier les entités et leurs relations :
+
+<DomainAnalysis>
+**Entités principales :**
+- [ ] Lister toutes les entités (User, Order, Product, etc.)
+- [ ] Identifier les propriétés de chaque entité
+- [ ] Noter les propriétés optionnelles vs requises
+
+**Relations :**
+- [ ] 1:1, 1:N, N:N entre entités
+- [ ] Références (ID vs objet complet)
+- [ ] Hiérarchies d'héritage
+
+**États et Variants :**
+- [ ] Statuts possibles (pending, active, etc.)
+- [ ] Variations de l'entité selon le contexte
+</DomainAnalysis>
+
+### Phase 2 : Choix Interface vs Type
+
+Pour chaque entité, décider :
+
+| Critère | → Interface | → Type |
+|---------|-------------|--------|
+| Objet simple extensible | ✅ | |
+| Union de variantes | | ✅ |
+| API publique de lib | ✅ | |
+| Mapped/Conditional | | ✅ |
+| Héritage avec extends | ✅ | |
+
+### Phase 3 : Définir les Types de Base
+
+```
+types/
+├── entities/
+│   ├── user.ts
+│   ├── order.ts
+│   └── product.ts
+├── dtos/
+│   ├── user.dto.ts
+│   └── order.dto.ts
+├── enums/
+│   └── status.ts
+└── index.ts
+```
+
+**Structure d'un fichier entité :**
+
+1. Type de base complet
+2. Types dérivés (Create, Update, Public)
+3. Discriminated union si variants
+
+### Phase 4 : Définir les DTOs
+
+Distinguer les types selon l'usage :
+
+| DTO | Usage | Dérivation |
+|-----|-------|------------|
+| `CreateUserDTO` | Création | `Omit<User, "id" \| "createdAt">` |
+| `UpdateUserDTO` | Mise à jour | `Partial<Omit<User, "id">> & Pick<User, "id">` |
+| `PublicUserDTO` | Réponse API | `Omit<User, "password">` |
+
+### Phase 5 : Ajouter les Contraintes
+
+- `readonly` pour les propriétés immuables
+- `?` pour les optionnelles
+- Branded types pour les IDs critiques
+- Validation des valeurs littérales
+
+### Phase 6 : Validation
+
+Checklist :
+- [ ] Tous les types exportés
+- [ ] Pas de duplication
+- [ ] Relations cohérentes
+- [ ] Documentation avec JSDoc si nécessaire
+
+---
+
+## Workflow 2 : Résolution d'Erreurs de Type
+
+### Phase 1 : Analyser le Message d'Erreur
+
+Extraire les informations clés :
+
+<ErrorAnalysis>
+**Code d'erreur :** TS[XXXX]
+**Message :** [texte complet]
+**Fichier/Ligne :** [location]
+**Type attendu :** [type]
+**Type reçu :** [type]
+</ErrorAnalysis>
+
+### Phase 2 : Identifier la Cause
+
+| Code | Signification | Cause Commune |
+|------|---------------|---------------|
+| TS2322 | Type not assignable | Incompatibilité de type |
+| TS2339 | Property doesn't exist | Propriété manquante |
+| TS2345 | Argument type mismatch | Mauvais paramètre |
+| TS2531 | Object possibly null | Null non géré |
+| TS2571 | Object is unknown | Narrowing manquant |
+| TS7006 | Implicit any | Type non spécifié |
+
+### Phase 3 : Stratégies de Résolution
+
+**TS2322 - Type not assignable :**
+
+1. Vérifier si les types sont vraiment compatibles
+2. Si union → narrower le type avant usage
+3. Si propriétés manquantes → ajouter ou rendre optionnelles
+4. Dernier recours → assertion (avec prudence)
+
+**TS2531 - Possibly null/undefined :**
+
+Options :
+- Optional chaining : `obj?.property`
+- Nullish coalescing : `value ?? default`
+- Guard explicite : `if (obj !== null) { ... }`
+- Non-null assertion : `obj!.property` (déconseillé)
+
+**TS2571 - Object is unknown :**
+
+Toujours narrower avant usage :
+```typescript
+if (typeof value === "string") { ... }
+if (value instanceof SomeClass) { ... }
+if (isMyType(value)) { ... }  // Custom type guard
+```
+
+### Phase 4 : Appliquer la Correction
+
+1. Correction minimale (ne pas sur-corriger)
+2. Préserver la type safety
+3. Éviter les assertions abusives
+4. Vérifier l'impact sur le reste du code
+
+### Phase 5 : Prévention
+
+Si l'erreur est récurrente :
+- Créer un type utilitaire
+- Ajouter un type guard réutilisable
+- Documenter le pattern
+
+---
+
+## Workflow 3 : Migration any vers Types Stricts
+
+### Phase 1 : Inventaire
+
+Trouver tous les `any` dans le projet :
+
+```bash
+# Via grep
+grep -r ": any" src/
+grep -r "as any" src/
+
+# Via ESLint
+eslint --rule "@typescript-eslint/no-explicit-any: error" src/
+```
+
+Catégoriser :
+- `any` explicites (`: any`)
+- `any` implicites (noImplicitAny off)
+- Assertions `as any`
+
+### Phase 2 : Classification par Risque
+
+| Risque | Critère | Priorité |
+|--------|---------|----------|
+| Élevé | Fonction publique, paramètre API | 1 |
+| Moyen | Logique métier interne | 2 |
+| Faible | Utilitaires, tests | 3 |
+
+### Phase 3 : Migration Progressive
+
+Pour chaque `any` :
+
+**Étape 1 : Remplacer par `unknown`**
+
+```typescript
+// Avant
+function process(data: any) { ... }
+
+// Après (temporaire)
+function process(data: unknown) { ... }
+```
+
+Cela force à identifier les usages.
+
+**Étape 2 : Identifier le vrai type**
+
+Analyser comment `data` est utilisé :
+- Quelles propriétés sont accédées ?
+- Quelles méthodes sont appelées ?
+- Dans quels contextes est-il passé ?
+
+**Étape 3 : Définir le type approprié**
+
+```typescript
+// Type final
+interface ProcessData {
+  id: string;
+  values: number[];
+}
+
+function process(data: ProcessData) { ... }
+```
+
+**Étape 4 : Ajouter les type guards si nécessaire**
+
+```typescript
+function isProcessData(value: unknown): value is ProcessData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    "values" in value
+  );
+}
+```
+
+### Phase 4 : Gérer les Librairies Sans Types
+
+Options :
+1. Chercher des types existants (`@types/lib`)
+2. Créer un fichier `.d.ts` avec les types nécessaires
+3. Utiliser un module declaration minimal
+
+### Phase 5 : Validation
+
+- [ ] Aucun `any` explicite restant
+- [ ] `noImplicitAny: true` dans tsconfig
+- [ ] Build sans erreur
+- [ ] Tests passent
+
+---
+
+## Workflow 4 : Création de Types Utilitaires
+
+### Phase 1 : Identifier le Besoin
+
+Signaux qu'un type utilitaire est nécessaire :
+- Pattern répété dans le code
+- Transformation de type récurrente
+- Besoin partagé entre plusieurs modules
+
+### Phase 2 : Conception
+
+**Questions :**
+- Quel est l'input (type générique) ?
+- Quelle transformation appliquer ?
+- Quelles contraintes sur le générique ?
+- Quel nom descriptif ?
+
+### Phase 3 : Patterns Courants
+
+**Rendre des propriétés spécifiques optionnelles :**
+
+```typescript
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+// Usage
+type UserWithOptionalEmail = PartialBy<User, "email">;
+```
+
+**Rendre des propriétés requises :**
+
+```typescript
+type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+```
+
+**Deep Partial :**
+
+```typescript
+type DeepPartial<T> = T extends object
+  ? { [P in keyof T]?: DeepPartial<T[P]> }
+  : T;
+```
+
+**Nullable :**
+
+```typescript
+type Nullable<T> = T | null;
+type NullableFields<T> = { [K in keyof T]: T[K] | null };
+```
+
+**Promisify :**
+
+```typescript
+type Promisify<T> = {
+  [K in keyof T]: T[K] extends (...args: infer A) => infer R
+    ? (...args: A) => Promise<R>
+    : T[K];
+};
+```
+
+### Phase 4 : Tests de Type
+
+Vérifier le comportement avec des types de test :
+
+```typescript
+// Test cases
+type TestPartialBy = PartialBy<{ a: string; b: number }, "a">;
+//   ^? { b: number; a?: string }
+
+// Ensure assignability
+const test: TestPartialBy = { b: 1 };  // OK, a est optionnel
+```
+
+### Phase 5 : Documentation
+
+Ajouter JSDoc :
+
+```typescript
+/**
+ * Makes specified properties optional
+ * @template T - The base type
+ * @template K - Keys to make optional
+ * @example
+ * type Result = PartialBy<User, "email" | "phone">;
+ */
+type PartialBy<T, K extends keyof T> = ...
+```
+
+---
+
+## Workflow 5 : Typage de Fonctions Génériques
+
+### Phase 1 : Analyser la Fonction
+
+Questions :
+- Quels sont les inputs ?
+- Quel est l'output ?
+- Y a-t-il une relation entre input et output ?
+- Le type peut-il être inféré de l'usage ?
+
+### Phase 2 : Définir les Paramètres Génériques
+
+**Un seul type :**
+```typescript
+function identity<T>(value: T): T
+```
+
+**Multiples types :**
+```typescript
+function merge<T, U>(a: T, b: U): T & U
+```
+
+**Avec contrainte :**
+```typescript
+function getProperty<T, K extends keyof T>(obj: T, key: K): T[K]
+```
+
+**Avec défaut :**
+```typescript
+function createState<T = string>(initial: T): [T, (v: T) => void]
+```
+
+### Phase 3 : Gérer les Overloads
+
+Quand la signature varie selon les paramètres :
+
+```typescript
+// Overload signatures
+function parse(input: string): object;
+function parse(input: string, reviver: Function): object;
+function parse(input: Buffer): object;
+
+// Implementation
+function parse(input: string | Buffer, reviver?: Function): object {
+  // ...
+}
+```
+
+### Phase 4 : Inférence Optimale
+
+Préférer l'inférence aux annotations quand possible :
+
+```typescript
+// Bon : T inféré de l'argument
+function first<T>(arr: T[]): T | undefined {
+  return arr[0];
+}
+
+const result = first([1, 2, 3]);  // number | undefined
+```
+
+### Phase 5 : Validation
+
+- [ ] Types inférés correctement sans annotation
+- [ ] Contraintes respectées
+- [ ] Erreurs claires si mauvais usage
+- [ ] IntelliSense informatif
+
+---
+
+## Workflow 6 : Typage d'API et Réponses
+
+### Phase 1 : Définir les Endpoints
+
+```typescript
+type Endpoints = {
+  "GET /users": { response: User[]; params: never };
+  "GET /users/:id": { response: User; params: { id: string } };
+  "POST /users": { response: User; body: CreateUserDTO };
+  "PUT /users/:id": { response: User; params: { id: string }; body: UpdateUserDTO };
+  "DELETE /users/:id": { response: void; params: { id: string } };
+};
+```
+
+### Phase 2 : Types de Réponse
+
+**Réponse avec statuts :**
+
+```typescript
+type ApiResponse<T> =
+  | { status: "success"; data: T }
+  | { status: "error"; error: { code: string; message: string } };
+```
+
+**Avec pagination :**
+
+```typescript
+type PaginatedResponse<T> = {
+  data: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+  };
+};
+```
+
+### Phase 3 : Type-Safe Fetch Wrapper
+
+```typescript
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+
+type ApiConfig<E extends keyof Endpoints> = {
+  endpoint: E;
+  params?: Endpoints[E] extends { params: infer P } ? P : never;
+  body?: Endpoints[E] extends { body: infer B } ? B : never;
+};
+
+async function api<E extends keyof Endpoints>(
+  config: ApiConfig<E>
+): Promise<Endpoints[E]["response"]> {
+  // Implementation
+}
+
+// Usage type-safe
+const users = await api({ endpoint: "GET /users" });
+//    ^? User[]
+
+const user = await api({
+  endpoint: "GET /users/:id",
+  params: { id: "123" }
+});
+//    ^? User
+```
+
+### Phase 4 : Gestion des Erreurs
+
+```typescript
+type ApiError = {
+  code: string;
+  message: string;
+  details?: Record<string, string[]>;
+};
+
+type Result<T, E = ApiError> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+async function safeApi<E extends keyof Endpoints>(
+  config: ApiConfig<E>
+): Promise<Result<Endpoints[E]["response"]>> {
+  try {
+    const data = await api(config);
+    return { ok: true, value: data };
+  } catch (error) {
+    return { ok: false, error: error as ApiError };
+  }
+}
+```
+
+### Phase 5 : Validation Runtime
+
+Combiner avec Zod pour validation :
+
+```typescript
+import { z } from "zod";
+
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+});
+
+type User = z.infer<typeof UserSchema>;
+
+// Validation au runtime
+const response = await fetch("/api/users/123");
+const data = UserSchema.parse(await response.json());
+```
+
+---
+
+## Checklist Générale
+
+### Avant d'Écrire des Types
+
+- [ ] Comprendre le domaine/besoin
+- [ ] Identifier les cas limites
+- [ ] Choisir interface vs type
+
+### Pendant l'Écriture
+
+- [ ] Préférer l'inférence aux annotations
+- [ ] Utiliser les contraintes appropriées
+- [ ] Éviter any, préférer unknown
+- [ ] Nommer les types clairement
+
+### Après l'Écriture
+
+- [ ] Types exportés correctement
+- [ ] IntelliSense utile
+- [ ] Pas d'assertion abusive
+- [ ] Documentation si complexe

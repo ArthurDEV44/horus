@@ -1,0 +1,726 @@
+---
+title: Workflows
+description: Processus Architecture Logicielle - Audit, Refactoring Clean Architecture, Detection Hard Coding, Scalabilite
+---
+
+# Architect Expert - Workflows
+
+## Workflow 1 : Audit Architectural Complet
+
+### Objectif
+Analyser l'ensemble d'une codebase et produire un rapport d'audit avec recommandations priorisees.
+
+### Etapes
+
+#### 1.1 Preparation et Contexte
+
+<Actions>
+- Lire package.json : identifier la stack (frameworks, libs, versions)
+- Analyser la structure de repertoires (tree ou exploration manuelle)
+- Identifier le type d'application (SPA, SSR, API, monorepo)
+- Reperer les fichiers de configuration cles
+</Actions>
+
+<Output>
+Fiche d'identite du projet avec stack technique et architecture globale.
+</Output>
+
+#### 1.2 Analyse de la Structure
+
+<Actions>
+- Evaluer l'organisation des repertoires contre les conventions du framework
+- Identifier les patterns architecturaux utilises (ou leur absence)
+- Verifier la separation des concerns (UI, logique, data)
+- Detecter les inconsistances de structure
+</Actions>
+
+<AnalysisChecklist>
+- [ ] Structure coherente avec le framework (app/ pour Next.js, etc.)
+- [ ] Separation claire des couches
+- [ ] Conventions de nommage respectees
+- [ ] Pas de fichiers orphelins ou mal places
+</AnalysisChecklist>
+
+#### 1.3 Evaluation SOLID
+
+<Actions>
+Pour chaque principe, analyser un echantillon representatif :
+
+**SRP** : Identifier les fichiers avec responsabilites multiples
+- Fichiers > 200 lignes
+- Composants avec logique metier ET UI complexe
+- Services faisant trop de choses
+
+**OCP** : Verifier l'extensibilite
+- Presence de conditionnels sur types
+- Possibilite d'ajouter sans modifier
+
+**LSP** : Coherence des interfaces
+- Composants variants respectent l'interface de base
+- Pas de props ignorees dans les implementations
+
+**ISP** : Granularite des interfaces
+- Props interfaces pas trop larges
+- Types specifiques plutot que generiques
+
+**DIP** : Inversion des dependances
+- Imports d'abstractions vs implementations
+- Utilisation de DI (Context, props, constructeur)
+</Actions>
+
+<Output>
+Score SOLID avec violations identifiees et localisees.
+</Output>
+
+#### 1.4 Detection des Anti-patterns
+
+<Actions>
+Rechercher systematiquement :
+
+**God Objects** :
+- Fichiers > 400 lignes
+- Classes/composants avec > 10 methodes publiques
+
+**Hard Coding** :
+- URLs en dur (grep "http")
+- Credentials (grep "password|secret|api_key")
+- Magic numbers (nombres sans constante)
+
+**Code Mort** :
+- Exports non utilises
+- Fonctions jamais appelees
+- Code commente
+
+**Duplication** :
+- Patterns de code repetes
+- Fonctions similaires dans plusieurs fichiers
+
+**Couplage Excessif** :
+- Imports profonds (../../../)
+- Dependances circulaires
+- Modules trop interconnectes
+</Actions>
+
+<Output>
+Liste des anti-patterns avec localisation et severite.
+</Output>
+
+#### 1.5 Analyse des Dependances
+
+<Actions>
+- Lister les dependances et leurs versions
+- Identifier les dependances obsoletes ou vulnerables
+- Evaluer le couplage aux dependances externes
+- Verifier l'absence de dependances inutilisees
+</Actions>
+
+<Tools>
+- pnpm outdated
+- pnpm audit
+- Analyse manuelle des imports
+</Tools>
+
+#### 1.6 Generation du Rapport
+
+<Actions>
+- Compiler les observations par categorie
+- Classer par criticite (Critique, Eleve, Moyen, Faible)
+- Rediger des recommandations actionnables
+- Creer un plan d'action priorise
+</Actions>
+
+<Output>
+Fichier ARCHITECTURE_AUDIT.md a la racine du projet.
+</Output>
+
+---
+
+## Workflow 2 : Refactoring vers Clean Architecture
+
+### Objectif
+Migrer progressivement une codebase vers une architecture en couches propre.
+
+### Etapes
+
+#### 2.1 Evaluation de l'Existant
+
+<ContextQuestions>
+- Quelle est l'architecture actuelle ? (MVC, pas d'architecture, mixte)
+- Ou se trouve la logique metier ? (dispersee, centralisee)
+- Quelles sont les contraintes ? (temps, equipe, risque)
+- Quel est le niveau de couverture de tests ?
+</ContextQuestions>
+
+<Analysis>
+Cartographier les flux de donnees actuels :
+- Entrees (UI, API, events)
+- Traitements (ou est la logique)
+- Sorties (DB, APIs externes, UI)
+</Analysis>
+
+#### 2.2 Definition de l'Architecture Cible
+
+<Decisions>
+| Aspect | Decision |
+|--------|----------|
+| Couches | Domain, Application, Infrastructure, Presentation |
+| Structure | Par feature ou par couche ? |
+| Injection | Context, props, ou librairie DI ? |
+| Validation | Zod dans quel layer ? |
+| Erreurs | Domain errors, Application errors |
+</Decisions>
+
+<target-structure>
+```
+src/
+├── domain/
+│   ├── entities/
+│   ├── value-objects/
+│   ├── repositories/     # Interfaces
+│   └── services/         # Domain services
+├── application/
+│   ├── use-cases/
+│   ├── dtos/
+│   └── interfaces/       # Ports
+├── infrastructure/
+│   ├── persistence/      # Repository implementations
+│   └── external/         # External services
+└── presentation/
+    ├── components/
+    └── pages/
+```
+</target-structure>
+
+#### 2.3 Extraction du Domain
+
+<Steps>
+1. Identifier les entites metier cles
+2. Extraire les entites en fichiers separes dans domain/entities/
+3. Identifier les value objects (Email, Money, etc.)
+4. Definir les interfaces de repository
+5. Extraire la logique metier pure dans le domain
+</Steps>
+
+<Validation>
+- [ ] Entities n'importent rien de l'infrastructure
+- [ ] Value objects sont immutables
+- [ ] Logique metier dans le domain, pas dans les controllers
+</Validation>
+
+#### 2.4 Creation de la Couche Application
+
+<Steps>
+1. Identifier les use cases (actions utilisateur)
+2. Creer un fichier par use case
+3. Definir les DTOs d'entree/sortie
+4. Injecter les repositories via interfaces
+5. Orchestrer les appels au domain
+</Steps>
+
+<Pattern>
+```typescript
+// application/use-cases/create-user.ts
+interface CreateUserInput { ... }
+interface CreateUserOutput { ... }
+
+class CreateUserUseCase {
+  constructor(private userRepo: UserRepository) {}
+
+  async execute(input: CreateUserInput): Promise<CreateUserOutput> {
+    // Validation
+    // Appel domain
+    // Retour DTO
+  }
+}
+```
+</Pattern>
+
+#### 2.5 Implementation de l'Infrastructure
+
+<Steps>
+1. Implementer les repositories (Prisma, API, etc.)
+2. Creer les adapters pour services externes
+3. Configurer l'injection de dependances
+4. Mapper entre DTOs infra et domain
+</Steps>
+
+<Boundaries>
+- Infrastructure n'expose jamais ses types internes
+- Toujours mapper vers types domain
+- Erreurs converties en exceptions domain
+</Boundaries>
+
+#### 2.6 Adaptation de la Presentation
+
+<Steps>
+1. Controllers/Pages appellent les use cases
+2. Composants recoivent des ViewModels (pas des entites)
+3. Forms utilisent les DTOs d'input
+4. Separation UI pure et logique
+</Steps>
+
+<integration-nextjs>
+- Server Components : peuvent appeler use cases directement
+- Client Components : via hooks qui encapsulent les appels
+- Server Actions : wrappent les use cases pour mutations
+</integration-nextjs>
+
+#### 2.7 Validation de la Migration
+
+<AnalysisChecklist>
+- [ ] Build sans erreur
+- [ ] Tests passent
+- [ ] Pas d'import domain → infrastructure
+- [ ] Pas d'import application → presentation
+- [ ] Logique metier uniquement dans domain
+- [ ] Use cases orchestrent sans logique metier
+</AnalysisChecklist>
+
+---
+
+## Workflow 3 : Detection et Correction du Hard Coding
+
+### Objectif
+Identifier et externaliser toutes les valeurs hardcodees.
+
+### Etapes
+
+#### 3.1 Inventaire des Valeurs Hardcodees
+
+<search-patterns>
+| Type | Pattern de recherche |
+|------|---------------------|
+| URLs | `grep -rn "http:/\|https://" --include="*.ts"` |
+| Emails | `grep -rn "@.*\\.com\|@.*\\.fr" --include="*.ts"` |
+| Credentials | `grep -rn "password\|secret\|api_key\|token" --include="*.ts"` |
+| Ports | `grep -rn ":3000\|:8080\|:5432" --include="*.ts"` |
+| IPs | `grep -rn "[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+" --include="*.ts"` |
+| Magic numbers | `grep -rn "= [0-9]\\{2,\\}" --include="*.ts"` |
+</search-patterns>
+
+<Exclusions>
+Ignorer :
+- node_modules/
+- Fichiers de test (*.test.ts, *.spec.ts)
+- Fichiers de configuration documentes
+- Constantes dans des fichiers dedies
+</Exclusions>
+
+#### 3.2 Classification des Trouvailles
+
+<Categories>
+| Categorie | Priorite | Externalisation |
+|-----------|----------|-----------------|
+| Secrets (API keys, passwords) | Critique | Env vars secrets |
+| URLs d'API | Haute | Env vars publiques |
+| Config serveur (ports, hosts) | Moyenne | Env vars |
+| Feature flags | Moyenne | Config externe |
+| Magic numbers metier | Basse | Constantes nommees |
+| Strings UI | Basse | i18n si multilingue |
+</Categories>
+
+#### 3.3 Plan d'Externalisation
+
+<Actions>
+Pour chaque valeur identifiee :
+
+1. **Secrets** :
+   - Creer variable dans .env.local (dev)
+   - Documenter dans .env.example
+   - Configurer dans le service de secrets (prod)
+   - Utiliser `process.env.SECRET_NAME` server-only
+
+2. **Config publique** :
+   - Prefixer NEXT_PUBLIC_ si accessible client
+   - Creer fichier config/constants.ts pour les derives
+
+3. **Magic numbers** :
+   - Creer fichier constants.ts dans le module concerne
+   - Nommer explicitement : `MAX_RETRY_COUNT = 3`
+   - Documenter la raison de la valeur
+</Actions>
+
+#### 3.4 Implementation
+
+<Steps>
+1. Creer/mettre a jour .env.example avec toutes les variables
+2. Creer lib/config.ts pour centraliser l'acces aux configs
+3. Creer les fichiers de constantes par domaine
+4. Remplacer chaque valeur hardcodee
+5. Valider que l'application fonctionne
+</Steps>
+
+<Validation>
+- [ ] Plus de secrets dans le code
+- [ ] .env.example documente toutes les variables
+- [ ] Build fonctionne avec .env.example (valeurs par defaut)
+- [ ] Pas de NEXT_PUBLIC_ pour des secrets
+</Validation>
+
+---
+
+## Workflow 4 : Evaluation de la Scalabilite
+
+### Objectif
+Determiner si l'architecture actuelle peut supporter la croissance.
+
+### Etapes
+
+#### 4.1 Definition des Axes de Croissance
+
+<ContextQuestions>
+- Croissance utilisateurs : x10, x100, x1000 ?
+- Croissance donnees : volume attendu ?
+- Croissance equipe : plus de developpeurs ?
+- Croissance fonctionnelle : nouvelles features ?
+- Croissance geographique : multi-region ?
+</ContextQuestions>
+
+#### 4.2 Analyse de la Scalabilite Technique
+
+<Evaluation>
+| Aspect | Questions | Indicateurs |
+|--------|-----------|-------------|
+| **Stateless** | L'app stocke-t-elle de l'etat en memoire ? | Sessions server-side, caches locaux |
+| **Database** | Schema optimise ? Indexes ? | Queries N+1, full table scans |
+| **Caching** | Strategie de cache ? | Temps de reponse, invalidation |
+| **Async** | Operations longues async ? | Timeouts, queues |
+| **Resources** | Utilisation CPU/memoire ? | Pics, fuites memoire |
+</Evaluation>
+
+#### 4.3 Analyse de la Scalabilite Organisationnelle
+
+<Evaluation>
+| Aspect | Questions | Indicateurs |
+|--------|-----------|-------------|
+| **Modularite** | Equipes peuvent travailler en parallele ? | Conflicts git, blocages |
+| **Onboarding** | Temps pour nouveau dev productif ? | Complexite, documentation |
+| **Testabilite** | Tests rapides et fiables ? | Couverture, temps CI |
+| **Deploiement** | Deploiements independants possibles ? | Monorepo, micro-frontends |
+</Evaluation>
+
+#### 4.4 Identification des Goulots
+
+<Bottlenecks>
+| Type | Symptomes | Detection |
+|------|-----------|-----------|
+| **CPU** | Latence haute, CPU 100% | Profiling, monitoring |
+| **Memory** | OOM errors, GC frequent | Heap dumps, memory profiling |
+| **Database** | Queries lentes, connections pool epuise | Slow query log, connection metrics |
+| **Network** | Latence inter-services | Tracing distribue |
+| **Code** | Modules geants, refactoring risque | Analyse statique |
+</Bottlenecks>
+
+#### 4.5 Recommandations
+
+<Output>
+Pour chaque goulot identifie :
+
+1. Description du probleme
+2. Impact sur la scalabilite
+3. Solutions possibles (court/moyen/long terme)
+4. Trade-offs de chaque solution
+5. Priorite recommandee
+</Output>
+
+---
+
+## Workflow 5 : Plan d'Action Post-Audit
+
+### Objectif
+Transformer un rapport d'audit en plan actionnable et priorise.
+
+### Etapes
+
+#### 5.1 Consolidation des Problemes
+
+<Actions>
+Depuis le rapport d'audit, creer une liste unifiee :
+- Tous les problemes identifies
+- Severite de chaque probleme
+- Effort estime (T-shirt sizing: S, M, L, XL)
+- Dependances entre problemes
+</Actions>
+
+#### 5.2 Matrice de Priorisation
+
+<Framework>
+Utiliser la matrice Impact/Effort :
+
+```
+         Impact Eleve
+              │
+     Quick    │    Strategic
+     Wins     │    Initiatives
+              │
+─────────────┼─────────────
+              │
+     Fill     │    Major
+     Ins      │    Projects
+              │
+         Impact Faible
+
+Effort Faible ──────── Effort Eleve
+```
+
+| Quadrant | Action |
+|----------|--------|
+| Quick Wins | Faire en premier |
+| Strategic | Planifier soigneusement |
+| Fill Ins | Si temps disponible |
+| Major Projects | Questionner la necessite |
+</Framework>
+
+#### 5.3 Sequencement
+
+<Considerations>
+- Dependances : certains refactorings en prerequis d'autres
+- Risque : commencer par les moins risques pour gagner confiance
+- Valeur : delivrer de la valeur incrementalement
+- Tests : avoir des tests avant refactoring majeur
+</Considerations>
+
+<Phases>
+**Phase 0 : Fondations**
+- Mettre en place les tests manquants
+- Corriger les problemes critiques de securite
+- Stabiliser le build et CI
+
+**Phase 1 : Quick Wins**
+- Corrections faciles a fort impact
+- Dette technique isolee
+- Ameliorations de DX
+
+**Phase 2 : Structure**
+- Reorganisation des repertoires
+- Extraction de modules
+- Introduction des patterns
+
+**Phase 3 : Architecture**
+- Refactoring vers architecture cible
+- Separation des couches
+- Introduction DI
+</Phases>
+
+---
+
+## Workflow 6 : Review d'Architecture Pre-Implementation
+
+### Objectif
+Valider une proposition d'architecture avant implementation.
+
+### Etapes
+
+#### 6.1 Comprehension de la Proposition
+
+<ContextQuestions>
+- Quel probleme cette architecture resout-elle ?
+- Quels sont les cas d'usage principaux ?
+- Quelles sont les contraintes (perf, scalabilite, equipe) ?
+- Quelle est l'architecture existante ?
+</ContextQuestions>
+
+#### 6.2 Evaluation des Choix
+
+<AnalysisChecklist>
+Pour chaque decision architecturale :
+
+- [ ] Le probleme est-il bien compris ?
+- [ ] Les alternatives ont-elles ete considerees ?
+- [ ] Les trade-offs sont-ils explicites ?
+- [ ] La complexite est-elle justifiee ?
+- [ ] L'equipe a-t-elle les competences ?
+</AnalysisChecklist>
+
+#### 6.3 Analyse des Risques
+
+<risk-categories>
+| Risque | Questions |
+|--------|-----------|
+| **Technique** | Tech non maitrisee ? Single point of failure ? |
+| **Complexite** | Over-engineering ? Maintenance difficile ? |
+| **Performance** | Bottlenecks previsibles ? Latence acceptable ? |
+| **Securite** | Surface d'attaque ? Donnees sensibles ? |
+| **Operationnel** | Deploiement complexe ? Monitoring possible ? |
+</risk-categories>
+
+#### 6.4 Recommandations
+
+<Output>
+1. Points forts de la proposition
+2. Points de vigilance
+3. Suggestions d'amelioration
+4. Questions a clarifier avant implementation
+5. Decision : Approuve / A revoir / Rejete
+</Output>
+
+---
+
+## Arbres de Decision
+
+### Choisir une Architecture
+
+```
+Quelle est la taille de l'equipe ?
+├── 1-3 devs
+│   └── Monolithe modulaire ou Clean Architecture simple
+├── 4-10 devs
+│   └── Modularite forte, possibilite de split futur
+└── > 10 devs
+    └── Considerer micro-services ou micro-frontends
+
+Le domaine est-il complexe ?
+├── Simple (CRUD)
+│   └── Architecture en couches basique suffit
+├── Moyen (logique metier)
+│   └── Clean Architecture
+└── Complexe (regles metier riches)
+    └── DDD avec Bounded Contexts
+```
+
+### Decomposer un Monolithe
+
+```
+Le monolithe pose-t-il vraiment probleme ?
+├── Non
+│   └── Ne pas decomposer (YAGNI)
+└── Oui
+    └── Quel est le probleme principal ?
+        ├── Performance
+        │   └── Optimiser d'abord, puis considerer split
+        ├── Deployments couples
+        │   └── Micro-frontends ou services
+        ├── Equipes se bloquent
+        │   └── Modularite interne d'abord
+        └── Codebase incomprehensible
+            └── Clean Architecture dans le monolithe
+```
+
+### Introduire un Nouveau Pattern
+
+```
+Le pattern resout-il un probleme reel ?
+├── Non
+│   └── Ne pas introduire (complexite gratuite)
+└── Oui
+    └── L'equipe connait-elle le pattern ?
+        ├── Non
+        │   └── Formation d'abord, puis introduction progressive
+        └── Oui
+            └── Le benefice justifie-t-il le cout ?
+                ├── Non
+                │   └── Solution plus simple existe ?
+                └── Oui
+                    └── Introduire incrementalement avec POC
+```
+
+---
+
+## Scenarios de Depannage
+
+### L'Architecture Devient Incoherente
+
+<Symptoms>
+- Chaque dev fait differemment
+- Patterns melanges sans logique
+- Nouvelles features ne "rentrent" nulle part
+</Symptoms>
+
+<Diagnostic>
+1. Existe-t-il une documentation d'architecture ?
+2. L'equipe est-elle alignee sur les conventions ?
+3. Y a-t-il des templates ou exemples ?
+4. La review de code verifie-t-elle l'architecture ?
+</Diagnostic>
+
+<Resolution>
+1. Documenter l'architecture cible (ADR)
+2. Creer des templates pour nouveaux modules
+3. Renforcer la review de code
+4. Sessions d'alignement equipe
+5. Linting architectural (dependency-cruiser)
+</Resolution>
+
+### Refactoring qui Casse Tout
+
+<Symptoms>
+- Refactoring entraine des regressions
+- Tests echouent apres changements
+- Effets de bord inattendus
+</Symptoms>
+
+<Diagnostic>
+1. Le code avait-il des tests avant refactoring ?
+2. Le refactoring etait-il atomique ou massif ?
+3. Les dependances etaient-elles connues ?
+</Diagnostic>
+
+<Resolution>
+1. Toujours ecrire des tests AVANT de refactorer
+2. Refactorer par petites etapes (commits atomiques)
+3. Utiliser les outils de refactoring de l'IDE
+4. Feature flags pour changements risques
+5. Revenir en arriere si necessaire (git revert)
+</Resolution>
+
+### Dette Technique Paralysante
+
+<Symptoms>
+- Chaque feature prend de plus en plus de temps
+- Peur de toucher au code
+- Bugs recurrents
+- Devs frustres
+</Symptoms>
+
+<Diagnostic>
+1. Quelle est l'ampleur de la dette ?
+2. Ou est-elle concentree ?
+3. Quel est l'impact business ?
+</Diagnostic>
+
+<Resolution>
+1. Cartographier la dette (audit)
+2. Negocier du temps dedie (20% rule)
+3. "Boy Scout Rule" : toujours ameliorer un peu
+4. Refactoring opportuniste lors des features
+5. Si extreme : considerer rewrite partiel
+</Resolution>
+
+---
+
+## Checklist Pre-Production Architecturale
+
+### Structure et Organisation
+
+- [ ] Structure de repertoires coherente et documentee
+- [ ] Separation des concerns respectee
+- [ ] Pas de dependances circulaires
+- [ ] Modules correctement decouples
+
+### Qualite du Code
+
+- [ ] Pas de fichiers > 400 lignes
+- [ ] Pas de fonctions > 50 lignes
+- [ ] Nommage explicite et coherent
+- [ ] TypeScript strict mode sans `any`
+
+### Securite Architecturale
+
+- [ ] Secrets externalises (env vars)
+- [ ] Pas de hard coding de credentials
+- [ ] Validation aux frontieres
+- [ ] Separation des privileges
+
+### Maintenabilite
+
+- [ ] Documentation architecture presente
+- [ ] Tests couvrent la logique metier
+- [ ] Erreurs tracees et loggees
+- [ ] Onboarding dev < 1 semaine
+
+### Scalabilite
+
+- [ ] Application stateless
+- [ ] Cache strategies definies
+- [ ] Database indexee correctement
+- [ ] Pas de single points of failure evidents

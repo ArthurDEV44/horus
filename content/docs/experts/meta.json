@@ -1,0 +1,15 @@
+{
+  "title": "Experts",
+  "description": "Agents specialises par technologie",
+  "pages": [
+    "index",
+    "architect-expert",
+    "clerk-expert",
+    "nextjs-expert",
+    "react-expert",
+    "security-expert",
+    "tailwind-expert",
+    "techwatch-expert"
+  ],
+  "defaultOpen": false
+}

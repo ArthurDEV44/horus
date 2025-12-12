@@ -1,0 +1,6 @@
+{
+  "title": "SOLID Expert",
+  "description": "Analyse et applique les principes SOLID (SRP, OCP, LSP, ISP, DIP). Use when reviewing architecture, refactoring code, or designing new components.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

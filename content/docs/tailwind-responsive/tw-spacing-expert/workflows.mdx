@@ -1,0 +1,542 @@
+---
+title: Workflows
+description: Processus detailles et cas d'usage pour l'espacement avec Tailwind CSS
+---
+
+# Workflows - Spacing Expert
+
+Processus detailles et cas d'usage pour l'espacement avec Tailwind CSS.
+
+---
+
+## Workflow 1 : Mise en Place d'un Systeme d'Espacement Coherent
+
+### Contexte
+
+L'utilisateur demarre un projet et veut etablir un systeme d'espacement uniforme base sur le 8pt grid.
+
+### Processus
+
+**Phase 1 - Analyse du Projet**
+
+1. Identifier le type de projet (marketing, app, dashboard)
+2. Evaluer les tailles d'ecran cibles
+3. Determiner le niveau de densite souhaite (compact, standard, spacieux)
+4. Verifier les guidelines de design existantes
+
+**Phase 2 - Definition de l'Echelle**
+
+Choisir une progression basee sur le 8pt grid :
+
+| Categorie | Valeurs |
+|-----------|---------|
+| Micro | 4px (`p-1`), 8px (`p-2`) |
+| Petit | 12px (`p-3`), 16px (`p-4`) |
+| Moyen | 24px (`p-6`), 32px (`p-8`) |
+| Large | 48px (`p-12`), 64px (`p-16`) |
+| Sections | 96px (`p-24`), 128px (`p-32`) |
+
+**Phase 3 - Application par Contexte**
+
+Definir les regles par type d'element :
+
+| Type | Classes |
+|------|---------|
+| Cards | `p-4 md:p-6` |
+| Boutons | `px-4 py-2` ou `px-6 py-3` |
+| Inputs | `px-3 py-2` |
+| Container | `px-4 md:px-6 lg:px-8` |
+| Sections | `py-12 md:py-16 lg:py-24` |
+| Gap grilles | `gap-4 md:gap-6` |
+
+**Phase 4 - Documentation**
+
+1. Creer un guide des espacements
+2. Lister les tokens utilises
+3. Fournir des exemples visuels
+4. Partager avec l'equipe
+
+**Phase 5 - Validation**
+
+1. Auditer les composants existants
+2. Verifier la coherence cross-page
+3. Tester sur differentes tailles d'ecran
+4. Ajuster si necessaire
+
+---
+
+## Workflow 2 : Espacement d'une Grille de Cards
+
+### Contexte
+
+L'utilisateur veut creer une grille de cards avec un espacement uniforme et responsive.
+
+### Processus
+
+**Phase 1 - Choix de la Methode**
+
+| Option | Recommandation |
+|--------|----------------|
+| Grid + gap | Recommande |
+| Flex + gap | Alternative |
+| Flex + negative margin | Fallback ancien |
+
+Choisir grid + gap pour simplicite et fiabilite.
+
+**Phase 2 - Structure du Container**
+
+Container grid :
+`grid gap-4 md:gap-6 lg:gap-8`
+
+Colonnes responsive :
+`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
+
+**Phase 3 - Espacement des Cards**
+
+| Element | Classes |
+|---------|---------|
+| Padding interne | `p-4 md:p-6` |
+| Header (si separe) | `p-4 md:p-6 border-b` |
+| Content (si separe) | `p-4 md:p-6` |
+
+**Phase 4 - Responsive Adjustments**
+
+| Breakpoint | Gap | Padding |
+|------------|-----|---------|
+| Mobile | `gap-4` | `p-4` |
+| Tablette | `md:gap-6` | `md:p-6` |
+| Desktop | `lg:gap-8` (optionnel) | - |
+
+**Phase 5 - Gestion du Container Parent**
+
+Wrapper avec padding :
+`px-4 md:px-6 lg:px-8`
+
+Le gap s'applique entre cards, le padding s'applique autour de la grille.
+
+**Phase 6 - Validation**
+
+1. Verifier l'alignement sur tous les breakpoints
+2. Confirmer que le gap est uniforme
+3. S'assurer que le padding des cards est coherent
+
+---
+
+## Workflow 3 : Creation d'un Rythme Vertical pour une Page
+
+### Contexte
+
+L'utilisateur veut etablir un rythme vertical harmonieux sur une landing page.
+
+### Processus
+
+**Phase 1 - Definir la Baseline**
+
+- Standard : 8px (0.5rem)
+- Alternative : 4px pour plus de finesse
+
+Tailwind par defaut utilise 4px comme unite de base.
+
+**Phase 2 - Spacing des Sections**
+
+| Transition | Classes |
+|------------|---------|
+| Hero → Section | `py-16 md:py-24 lg:py-32` |
+| Section → Section | `py-12 md:py-16 lg:py-24` |
+| Sous-sections | `py-8 md:py-12` |
+
+**Phase 3 - Spacing du Contenu**
+
+| Element | Classes |
+|---------|---------|
+| H1 | `mb-6 md:mb-8` |
+| H2 | `mb-4 md:mb-6` |
+| H3 | `mb-3 md:mb-4` |
+| Paragraphe | `mb-4` |
+| Dernier paragraphe | `mb-0` |
+| Entre items liste | `space-y-2` |
+| Apres liste | `mb-4 md:mb-6` |
+
+**Phase 4 - Spacing des Composants**
+
+| Element | Classes |
+|---------|---------|
+| CTA sections | `mt-8 md:mt-12` pour separer du contenu precedent |
+| Testimonials/Cards | `gap-6 md:gap-8` entre les elements |
+
+**Phase 5 - Verification Visuelle**
+
+1. Activer une grille 8px en overlay
+2. Verifier l'alignement des elements
+3. Ajuster les valeurs pour respecter la grille
+4. Tester sur mobile (rythme peut etre plus serre)
+
+**Phase 6 - Responsive Considerations**
+
+Le rythme peut changer entre mobile et desktop :
+- Mobile : plus compact (`py-8`, `mb-4`)
+- Desktop : plus aere (`py-16`, `mb-6`)
+
+---
+
+## Workflow 4 : Migration de space-* vers gap-*
+
+### Contexte
+
+L'utilisateur a un projet existant utilisant space-* et veut migrer vers gap-* pour plus de fiabilite.
+
+### Processus
+
+**Phase 1 - Audit du Code**
+
+1. Rechercher toutes les occurrences de `space-x-*` et `space-y-*`
+2. Identifier les contextes (flex, non-flex, wrap)
+3. Noter les valeurs utilisees
+4. Lister les problemes connus (wrap bugs, etc.)
+
+**Phase 2 - Preparation des Parents**
+
+Pour chaque parent avec space-* :
+1. Verifier s'il a deja flex ou grid
+2. Si non, ajouter flex (pour les layouts lineaires)
+3. Determiner la direction (`flex-col` pour space-y, `flex-row` pour space-x)
+
+**Phase 3 - Conversion**
+
+| Avant | Apres |
+|-------|-------|
+| `space-y-4` sur parent flex-col | `gap-4` sur parent |
+| `space-x-4` sur parent flex-row | `gap-4` sur parent |
+| `space-y-*` sur parent grid | `gap-y-*` ou `gap-*` |
+
+**Phase 4 - Cas Speciaux**
+
+**Layout qui wrap :**
+`space-x-*` a des bugs avec flex-wrap. Remplacer par `gap-*` qui fonctionne correctement.
+
+**Reverse layouts :**
+`space-x-reverse` → non necessaire avec gap. Supprimer les classes reverse.
+
+**Phase 5 - Test et Validation**
+
+1. Verifier visuellement chaque composant modifie
+2. Tester les cas de wrap
+3. Confirmer sur tous les breakpoints
+4. Verifier qu'aucun espacement n'a change
+
+**Phase 6 - Cleanup**
+
+1. Supprimer les classes space-* devenues inutiles
+2. Documenter le changement
+3. Mettre a jour les guidelines de l'equipe
+
+---
+
+## Workflow 5 : Implementation du Fluid Spacing
+
+### Contexte
+
+L'utilisateur veut un espacement qui s'adapte fluidement entre les breakpoints sans sauts abrupts.
+
+### Processus
+
+**Phase 1 - Evaluer le Besoin**
+
+Questions :
+1. Quels elements beneficient du fluid spacing ?
+2. Quelle plage de tailles (min/max) ?
+3. Utiliser un plugin ou arbitraire ?
+
+Candidats ideaux :
+- Padding de sections
+- Gap de grilles hero
+- Margin de headlines
+
+**Phase 2 - Choix de l'Approche**
+
+| Option | Methode |
+|--------|---------|
+| Valeurs Arbitraires | `p-[clamp(1rem,3vw,2rem)]` |
+| Plugin fluid-tailwind | Syntaxe `~` : `~p-4 ~p-8` |
+| Config Personnalisee | Definir des tokens fluid dans la config |
+
+**Phase 3 - Calcul des Valeurs clamp()**
+
+Formule simplifiee : `clamp(min, preferred, max)`
+
+Exemple pour section padding :
+- Mobile min : 2rem (32px)
+- Desktop max : 6rem (96px)
+- Prefere : 5vw + 1rem
+
+Resultat : `clamp(2rem, 5vw + 1rem, 6rem)`
+
+**Phase 4 - Application**
+
+| Element | Classes |
+|---------|---------|
+| Sections de page | `py-[clamp(2rem,5vw,4rem)]` |
+| Gap de grille | `gap-[clamp(1rem,2vw,2rem)]` |
+| Margin de titres | `mb-[clamp(1rem,2vw,2rem)]` |
+
+**Phase 5 - Validation WCAG**
+
+Verifier que le texte reste lisible a 200% zoom. Le plugin fluid-tailwind inclut des checks automatiques.
+
+**Phase 6 - Test Cross-Browser**
+
+1. Verifier le support de clamp() (91%+ navigateurs)
+2. Tester sur les tailles extremes
+3. Confirmer les transitions fluides lors du resize
+
+---
+
+## Workflow 6 : Correction des Problemes d'Espacement
+
+### Contexte
+
+L'utilisateur rencontre des problemes d'espacement incoherent dans son projet.
+
+### Processus
+
+**Phase 1 - Identification du Probleme**
+
+Symptomes courants :
+- Espacement inconsistant entre elements similaires
+- Margin collapse inattendu
+- Gaps differents dans les grilles
+- Overflow cause par padding
+
+**Phase 2 - Inspection DevTools**
+
+1. Selectionner l'element problematique
+2. Onglet Computed → Box Model
+3. Visualiser margin, padding, border
+4. Comparer avec les elements attendus
+
+**Phase 3 - Diagnostic**
+
+| Probleme | Cause | Solution |
+|----------|-------|----------|
+| Margin Collapse | Margins verticaux adjacents fusionnent | Utiliser padding, ou parent flex/grid |
+| Gap incoherent | Structure differente ou margin additionnel | Confirmer gap sur parent, pas de margin sur enfants |
+| Overflow | Padding + contenu > container | Reduire padding ou utiliser overflow approprié |
+
+**Phase 4 - Resolution**
+
+**Pour margin collapse :**
+Ajouter flex ou grid au parent, utiliser gap
+
+**Pour inconsistance :**
+Auditer les classes, uniformiser les valeurs. Extraire en composants si pattern repete.
+
+**Pour overflow :**
+Reduire padding ou ajuster contenu. Utiliser `overflow-auto/hidden` si approprie.
+
+**Phase 5 - Prevention**
+
+1. Etablir un systeme d'espacement documente
+2. Utiliser gap plutot que margin entre siblings
+3. Eviter de melanger gap et margin sur meme layout
+4. Auditer regulierement les nouveaux composants
+
+---
+
+## Workflow 7 : Espacement pour Formulaires
+
+### Contexte
+
+L'utilisateur cree un formulaire et veut un espacement professionnel et accessible.
+
+### Processus
+
+**Phase 1 - Structure du Formulaire**
+
+Organisation typique :
+- Form container
+- Fieldsets/Groups
+- Label + Input pairs
+- Error messages
+- Submit section
+
+**Phase 2 - Espacement du Container**
+
+| Element | Classes |
+|---------|---------|
+| Form wrapper | `max-w-md mx-auto p-6 md:p-8` |
+| Formulaire pleine largeur | `space-y-6 md:space-y-8` |
+
+**Phase 3 - Espacement des Groupes**
+
+| Element | Classes |
+|---------|---------|
+| Entre les groupes de champs | `space-y-6` ou `gap-6` |
+| Au sein du groupe | `space-y-4` ou `gap-4` |
+
+**Phase 4 - Label vers Input**
+
+| Style | Classes |
+|-------|---------|
+| Standard | Label : `mb-1` ou `mb-2`, Input : directement apres |
+| Alternative inline | `flex items-center gap-2` |
+
+**Phase 5 - Inputs Inline (ex: ville + code postal)**
+
+Container :
+`flex flex-col sm:flex-row gap-4`
+
+Chaque input prend sa largeur appropriee avec `flex-1` ou w-specific.
+
+**Phase 6 - Error Messages**
+
+Positionnement :
+`mt-1 text-sm text-red-600`
+
+Pas de margin bottom excessif, l'erreur s'insere naturellement.
+
+**Phase 7 - Boutons de Soumission**
+
+| Element | Classes |
+|---------|---------|
+| Separation du reste | `mt-6 md:mt-8 pt-6 border-t` (optionnel) |
+| Espacement entre boutons | `flex gap-4` si plusieurs boutons |
+
+**Phase 8 - Validation**
+
+1. Verifier l'accessibilite (labels associes)
+2. Tester la navigation clavier
+3. Confirmer la lisibilite sur mobile
+4. S'assurer que les erreurs sont visibles
+
+---
+
+## Workflow 8 : Responsive Spacing Adaptatif
+
+### Contexte
+
+L'utilisateur veut adapter l'espacement de maniere significative entre mobile et desktop.
+
+### Processus
+
+**Phase 1 - Definir les Breakpoints Cibles**
+
+Standard Tailwind :
+- Mobile : base (< 640px)
+- Tablette : sm/md (640-1024px)
+- Desktop : lg/xl (1024px+)
+
+**Phase 2 - Etablir les Ratios**
+
+Approche progressive :
+- Mobile : base value (1x)
+- Tablette : 1.25x a 1.5x
+- Desktop : 1.5x a 2x
+
+Exemple avec `p-4` comme base :
+`p-4` → `md:p-5` ou `md:p-6` → `lg:p-8`
+
+**Phase 3 - Application par Type**
+
+| Type | Classes |
+|------|---------|
+| Padding de container | `px-4 md:px-6 lg:px-8` |
+| Sections | `py-8 md:py-12 lg:py-16` |
+| Gap de grilles | `gap-4 md:gap-6 lg:gap-8` |
+| Margin de titres | `mb-4 md:mb-6 lg:mb-8` |
+
+**Phase 4 - Simplification**
+
+Eviter trop de breakpoints. Souvent base + md: suffit. Ajouter lg: seulement si vraiment necessaire.
+
+| Mauvais | Mieux |
+|---------|-------|
+| `p-4 sm:p-5 md:p-6 lg:p-7 xl:p-8` | `p-4 md:p-6 lg:p-8` |
+
+**Phase 5 - Considerations Fluid**
+
+Pour transitions douces entre breakpoints, envisager clamp() au lieu de breakpoints multiples :
+
+`p-[clamp(1rem,3vw,2rem)]` remplace `p-4 md:p-6 lg:p-8`
+
+**Phase 6 - Validation**
+
+1. Tester chaque breakpoint important
+2. Verifier les transitions en redimensionnant
+3. Confirmer la lisibilite a toutes les tailles
+4. S'assurer que les touch targets sont suffisants sur mobile (44px min)
+
+---
+
+## Cas d'Usage Speciaux
+
+### Cas 1 : Espacement Asymetrique
+
+Contexte : padding different en haut et en bas
+
+| Usage | Classes |
+|-------|---------|
+| Plus de respiration en bas | `pt-4 pb-8` |
+| Cards avec CTA en bas | `pt-4 pb-6` |
+| Headers | `pt-4 pb-2` |
+| Sections hero | `pt-8 pb-16` |
+
+### Cas 2 : Annuler le Padding Parent
+
+Contexte : element doit s'etendre au-dela du padding parent
+
+**Approche negative margin :**
+- Parent : `p-4`
+- Enfant : `-mx-4` (annule le padding horizontal du parent)
+
+Usage :
+- Image pleine largeur dans une card
+- Divider qui touche les bords
+- Background qui s'etend
+
+Attention : utiliser avec parcimonie.
+
+### Cas 3 : Espacement Conditionnel
+
+Contexte : espacement different selon le contenu
+
+Approches :
+1. Classes conditionnelles via framework JS
+2. CSS :has() (support moderne)
+3. Variantes de composants
+
+Exemple avec variantes :
+- variant="compact" → `p-2 gap-2`
+- variant="default" → `p-4 gap-4`
+- variant="spacious" → `p-6 gap-6`
+
+### Cas 4 : Premiere/Derniere Exception
+
+Contexte : pas de margin sur le premier/dernier element
+
+**Avec space-* :**
+Automatiquement gere (margin sur tous sauf premier)
+
+**Avec gap-* :**
+Automatiquement gere (pas de gap aux extremites)
+
+**Si margin direct necessaire :**
+`first:mt-0 last:mb-0`
+Ou : `[&:first-child]:mt-0 [&:last-child]:mb-0`
+
+---
+
+## Ressources et References
+
+### Documentation Officielle
+
+- Tailwind CSS Margin
+- Tailwind CSS Padding
+- Tailwind CSS Gap
+- Tailwind CSS Space Between
+
+### Outils
+
+- Utopia (utopia.fyi) : generateur fluid spacing
+- fluid.tw : plugin Tailwind fluid
+- 8pt Grid Templates : alignement visuel
+- DevTools Box Model : debugging

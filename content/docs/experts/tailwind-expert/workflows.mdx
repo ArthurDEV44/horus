@@ -1,0 +1,627 @@
+---
+title: Workflows
+description: Processus detailles pour TailwindCSS - Audit, Design System, CVA, Dark Mode, Animations, Container Queries, Migration, Optimisation
+---
+
+# TailwindCSS Expert - Workflows
+
+## Workflow 1 : Audit de Configuration TailwindCSS
+
+### Objectif
+Analyser une configuration TailwindCSS existante et produire un rapport d'evaluation avec recommandations de modernisation.
+
+### Etapes
+
+#### 1.1 Reconnaissance Technique
+
+**Actions** :
+- Lire package.json : version TailwindCSS, postcss config, plugins
+- Analyser la configuration CSS (@theme, @custom-variant, @layer)
+- Verifier postcss.config.mjs : @tailwindcss/postcss ou @tailwindcss/vite
+- Identifier les fichiers CSS principaux (globals.css, theme.css)
+
+**Output** : Fiche technique avec version, configuration et architecture CSS actuelle.
+
+#### 1.2 Analyse des Design Tokens
+
+**Actions** :
+- Lister les variables @theme definies
+- Verifier la coherence des couleurs (palette, semantic)
+- Evaluer les spacing et typography tokens
+- Identifier les breakpoints custom
+
+**Output** : Inventaire des design tokens avec gaps identifies.
+
+#### 1.3 Evaluation du Dark Mode
+
+**Actions** :
+- Verifier la configuration @custom-variant dark
+- Analyser la structure des variables light/dark
+- Controler le script anti-FOUC si present
+- Tester la coherence visuelle des themes
+
+**Output** : Rapport dark mode avec recommandations de robustesse.
+
+#### 1.4 Analyse des Patterns CSS
+
+**Actions** :
+- Rechercher les @utility custom
+- Evaluer l'usage de @layer components
+- Detecter les @apply excessifs
+- Identifier les arbitrary values frequentes
+
+**Output** : Rapport des patterns avec optimisations suggerees.
+
+#### 1.5 Verification de Modernite v4
+
+**Actions** :
+- Detecter les classes depreciees (shadow-sm, rounded-sm, !important prefix)
+- Verifier la syntaxe des CSS variables (parentheses vs crochets)
+- Identifier space-* a convertir en gap
+- Controler la configuration tailwind.config.js residuelle
+
+**Output** : Liste des migrations necessaires pour full v4 compliance.
+
+---
+
+## Workflow 2 : Implementation de Design System
+
+### Objectif
+Creer ou etendre un design system coherent avec TailwindCSS v4.
+
+### Etapes
+
+#### 2.1 Definition des Besoins
+
+**Questions** :
+- Quelles couleurs de marque (primary, secondary, accent) ?
+- Quels variants de couleurs necessaires (success, warning, error) ?
+- Quelle echelle de spacing souhaitee ?
+- Quelles polices de caracteres utilisees ?
+- Faut-il un dark mode ?
+
+#### 2.2 Structure du Fichier Theme
+
+**Location** : Creer ou modifier src/app/styles/theme.css
+
+**Sections** :
+1. @custom-variant dark (si dark mode)
+2. @theme inline avec tous les tokens
+3. :root avec les valeurs light
+4. .dark avec les valeurs dark (si applicable)
+
+#### 2.3 Definition des Couleurs
+
+**Checklist** :
+- [ ] Couleurs semantic (background, foreground, surface)
+- [ ] Couleurs de marque (primary, secondary, accent)
+- [ ] Couleurs d'etat (success, warning, error, info)
+- [ ] Couleurs UI (card, border, input, ring)
+- [ ] Valeurs light et dark si applicable
+- [ ] Format OKLCH prefere pour gamut P3
+
+#### 2.4 Definition des Autres Tokens
+
+**Checklist** :
+- [ ] Fonts families (sans, serif, mono, display)
+- [ ] Breakpoints custom si necessaires
+- [ ] Radius (sm, md, lg, xl, 2xl)
+- [ ] Animations custom (--animate-*)
+- [ ] Spacing additionnel si necessaire
+
+#### 2.5 Validation
+
+**Actions** :
+- Verifier le build sans erreurs
+- Tester les utilities generees (bg-primary, text-accent)
+- Controler le dark mode toggle
+- Valider les contrastes accessibles
+
+---
+
+## Workflow 3 : Creation de Composant Styled avec CVA
+
+### Objectif
+Implementer un composant React avec variants geres par class-variance-authority.
+
+### Etapes
+
+#### 3.1 Definition du Besoin
+
+**Questions** :
+- Quel element HTML de base (button, div, input) ?
+- Quels variants necessaires (intent, size, state) ?
+- Quelles valeurs pour chaque variant ?
+- Faut-il accepter un className externe ?
+
+#### 3.2 Structure du Fichier
+
+**Location** : `src/components/ui/{component-name}.tsx`
+
+**Structure** :
+1. Imports (cva, VariantProps, cn)
+2. Definition cva avec variants
+3. Interface props etendant les attributes HTML
+4. Composant avec forwardRef si applicable
+5. Export du composant et des types
+
+#### 3.3 Implementation CVA
+
+**Pattern** :
+- Classes de base communes a tous les variants
+- Variants avec toutes les options
+- CompoundVariants si combinaisons specifiques
+- DefaultVariants pour les valeurs par defaut
+
+#### 3.4 Integration avec cn()
+
+**Checklist** :
+- [ ] Import cn depuis lib/utils
+- [ ] Fusionner cva output avec className prop
+- [ ] Permettre l'override des styles de base
+- [ ] Gerer les classes conditionnelles
+
+#### 3.5 Validation
+
+**Actions** :
+- Tester tous les variants visuellement
+- Verifier l'override par className
+- Controler le TypeScript (types inferres)
+- Tester l'accessibilite (focus, contrast)
+
+---
+
+## Workflow 4 : Implementation Dark Mode
+
+### Objectif
+Configurer un systeme de dark mode robuste avec TailwindCSS v4.
+
+### Etapes
+
+#### 4.1 Choix de la Strategie
+
+| Strategie | Usage |
+|-----------|-------|
+| Classe .dark | Controle JS, toggle manuel |
+| prefers-color-scheme | Suit le systeme OS |
+| Data attribute | Plus semantique, multi-themes |
+
+#### 4.2 Configuration @custom-variant
+
+**Location** : Ajouter dans le fichier CSS principal ou theme.css
+
+**Examples** :
+- Classe-based : `@custom-variant dark (&:where(.dark, .dark *));`
+- Media query : `@custom-variant dark (@media (prefers-color-scheme: dark));`
+- Data attribute : `@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));`
+
+#### 4.3 Definition des Variables
+
+**Structure** :
+- @theme inline pour les references : --color-background: var(--background), --color-foreground: var(--foreground), etc.
+- :root pour les valeurs light
+- .dark pour les valeurs dark
+
+#### 4.4 Prevention du Flash (FOUC)
+
+**Location** : Script inline dans app/layout.tsx, avant `</head>`
+
+**Logic** :
+1. Verifier localStorage.theme
+2. Verifier prefers-color-scheme si pas de preference
+3. Appliquer la classe .dark si necessaire
+4. Executer avant le rendu du body
+
+#### 4.5 Toggle UI
+
+**Implementation** :
+- Bouton/Switch pour changer le theme
+- Stockage dans localStorage
+- Mise a jour de la classe sur documentElement
+- Optionnel : sync avec systeme OS
+
+#### 4.6 Validation
+
+**Checklist** :
+- [ ] Pas de flash au chargement
+- [ ] Toggle fonctionne correctement
+- [ ] Preference persiste au refresh
+- [ ] Contrastes accessibles en light et dark
+- [ ] Tous les composants s'adaptent
+
+---
+
+## Workflow 5 : Creation d'Animation Custom
+
+### Objectif
+Implementer une animation CSS personnalisee avec TailwindCSS v4.
+
+### Etapes
+
+#### 5.1 Definition de l'Animation
+
+**Questions** :
+- Quel effet visuel souhaite (fade, slide, bounce, pulse) ?
+- Quelle duree et timing function ?
+- Animation infinite ou one-shot ?
+- Faut-il supporter reduced motion ?
+
+#### 5.2 Implementation dans @theme
+
+**Location** : Ajouter dans theme.css ou animations.css
+
+**Structure** :
+```css
+@theme {
+  --animate-{nom}: {nom} {duree} {timing} {iteration};
+
+  @keyframes {nom} {
+    0% { /* etat initial */ }
+    50% { /* etat intermediaire optionnel */ }
+    100% { /* etat final */ }
+  }
+}
+```
+
+#### 5.3 Optimisation Performance
+
+**Guidelines** :
+- Utiliser transform et opacity (GPU)
+- Eviter width, height, top, left (layout)
+- Definir will-change si necessaire
+- Limiter les keyframes complexes
+
+#### 5.4 Support Reduced Motion
+
+**Implementation** :
+```css
+@media (prefers-reduced-motion: reduce) {
+  .animate-{nom} {
+    animation: none !important;
+  }
+}
+```
+
+Ou utiliser les classes Tailwind : `motion-safe:animate-{nom} motion-reduce:animate-none`
+
+#### 5.5 Validation
+
+**Checklist** :
+- [ ] Animation fonctionne comme prevu
+- [ ] Performance fluide (60fps)
+- [ ] Reduced motion respecte
+- [ ] Pas d'impact sur CLS
+
+---
+
+## Workflow 6 : Configuration Container Queries
+
+### Objectif
+Implementer du responsive design base sur les containers avec TailwindCSS v4.
+
+### Etapes
+
+#### 6.1 Identification des Use Cases
+
+**Scenarios** :
+- Cards dans une grille flexible
+- Sidebar avec contenu adaptatif
+- Composants reutilisables dans differents contextes
+- Layouts avec tailles de container variables
+
+#### 6.2 Definition des Containers
+
+**Implementation** :
+- Classe @container sur le parent : `<div class="@container">`
+- Container nomme pour queries specifiques : `<div class="@container/card">`
+
+#### 6.3 Application des Container Queries
+
+| Classe | Condition |
+|--------|-----------|
+| `@sm:flex` | Container >= 384px |
+| `@md:flex` | Container >= 448px |
+| `@lg:flex` | Container >= 512px |
+| `@xl:flex` | Container >= 576px |
+| `@max-md:flex` | Container `< 448px` |
+| `@md/card:flex` | Container "card" >= 448px |
+
+#### 6.4 Pattern de Composition
+
+**Example** : Container parent avec query-based children :
+- Parent : `@container`
+- Enfant : `flex flex-col @md:flex-row @lg:grid @lg:grid-cols-3`
+
+#### 6.5 Validation
+
+**Checklist** :
+- [ ] Container queries fonctionnent
+- [ ] Responsive au resize du container (pas viewport)
+- [ ] Pas de conflit avec media queries
+- [ ] Comportement coherent dans differents contextes
+
+---
+
+## Workflow 7 : Migration tailwind.config.js vers @theme
+
+### Objectif
+Convertir une configuration JavaScript legacy vers la syntaxe CSS-first v4.
+
+### Etapes
+
+#### 7.1 Audit de l'Existant
+
+**Actions** :
+- Lire tailwind.config.js complet
+- Identifier les sections : theme.extend.colors, theme.extend.fontFamily, theme.extend.spacing, theme.extend.animation, plugins
+- Documenter les valeurs custom
+
+#### 7.2 Preparation du Fichier CSS
+
+**Location** : Creer ou modifier src/app/styles/theme.css
+
+**Structure** :
+```css
+/* Etape 1 : Custom variants */
+@custom-variant dark ...;
+
+/* Etape 2 : Theme tokens */
+@theme {
+  /* Couleurs */
+  /* Fonts */
+  /* Spacing */
+  /* Animations */
+}
+
+/* Etape 3 : Variables runtime */
+:root { }
+```
+
+#### 7.3 Conversion des Couleurs
+
+| tailwind.config.js | @theme |
+|-------------------|--------|
+| `colors: { brand: '#xxx' }` | `--color-brand: #xxx` |
+| `colors: { brand: { 500: '#xxx' } }` | `--color-brand-500: #xxx` |
+
+#### 7.4 Conversion des Autres Tokens
+
+| Type | Config JS | @theme |
+|------|-----------|--------|
+| Font | `fontFamily: { display: ['Satoshi'] }` | `--font-display: "Satoshi"` |
+| Spacing | `spacing: { '18': '4.5rem' }` | `--spacing-18: 4.5rem` |
+| Animation | `animation: { spin: 'spin 1s linear' }` | `--animate-spin: spin 1s linear` |
+| Breakpoint | `screens: { xs: '420px' }` | `--breakpoint-xs: 26.25rem` |
+
+#### 7.5 Migration des Plugins
+
+| Plugin v3 | v4 Alternative |
+|-----------|----------------|
+| @tailwindcss/forms | CSS natif ou @utility |
+| @tailwindcss/typography | `@plugin "@tailwindcss/typography"` |
+| @tailwindcss/container-queries | Built-in |
+| @tailwindcss/aspect-ratio | Built-in |
+
+#### 7.6 Nettoyage
+
+**Actions** :
+- Supprimer tailwind.config.js (ou le vider)
+- Mettre a jour les imports PostCSS
+- Tester le build complet
+- Verifier que toutes les utilities fonctionnent
+
+---
+
+## Workflow 8 : Optimisation du CSS Output
+
+### Objectif
+Reduire la taille du CSS genere et ameliorer les performances.
+
+### Etapes
+
+#### 8.1 Analyse de la Taille Actuelle
+
+**Actions** :
+- Build production : `pnpm build`
+- Mesurer la taille CSS : `wc -c .next/static/css/*.css`
+- Identifier les fichiers CSS generes
+
+#### 8.2 Audit des Classes Utilisees
+
+**Actions** :
+- Rechercher les arbitrary values frequentes
+- Identifier les @apply excessifs
+- Detecter les utilities inutilisees
+- Reperer les styles dupliques
+
+#### 8.3 Optimisations
+
+| Probleme | Solution |
+|----------|----------|
+| Arbitrary values repetees | Creer @utility ou CSS variable |
+| @apply excessif | Utiliser @layer components |
+| Classes inutilisees | Verifier le tree-shaking |
+| Animations lourdes | Simplifier les keyframes |
+
+#### 8.4 Consolidation des Tokens
+
+**Actions** :
+- Fusionner les couleurs similaires
+- Standardiser les spacing utilises
+- Reduire les breakpoints custom si excessifs
+- Utiliser les tokens existants au lieu de valeurs hardcoded
+
+#### 8.5 Validation
+
+**Metrics** :
+- Taille CSS avant : ___ KB
+- Taille CSS apres : ___ KB
+- Reduction : ___ %
+- Build time : inchange ou ameliore
+
+---
+
+## Arbres de Decision
+
+### Choix de la Methode de Styling
+
+```
+Le style est-il...
+├── Une utility reutilisable avec variants ?
+│   └── Utiliser @utility
+├── Un composant complexe avec plusieurs variants ?
+│   └── Utiliser CVA + cn()
+├── Un style de base pour un element HTML ?
+│   └── Utiliser @layer base
+├── Un composant reutilisable overridable ?
+│   └── Utiliser @layer components
+└── Un one-off style specifique ?
+    └── Classes Tailwind inline ou arbitrary value
+```
+
+### Choix du Format de Couleur
+
+```
+La couleur est-elle...
+├── Utilisee dans des gradients ?
+│   └── OKLCH (meilleure interpolation)
+├── Pour des ecrans P3 (Apple) ?
+│   └── OKLCH
+├── Besoin de compatibilite maximale ?
+│   └── Hex ou RGB
+├── Besoin de manipulation alpha ?
+│   └── OKLCH (syntaxe native) ou RGB
+└── Pas de contrainte particuliere ?
+    └── OKLCH recommande pour v4
+```
+
+### Choix entre @theme et @theme inline
+
+```
+Les valeurs sont-elles...
+├── Fixes et connues au build ?
+│   └── @theme (plus performant)
+├── Dynamiques via CSS variables ?
+│   └── @theme inline
+├── Dependantes d'un theme runtime ?
+│   └── @theme inline + :root/.dark
+└── Mix des deux ?
+    └── @theme pour fixes, @theme inline pour dynamiques
+```
+
+---
+
+## Checklist Pre-Production
+
+### Build et Configuration
+
+- [ ] `pnpm build` sans erreurs CSS
+- [ ] Pas de warnings PostCSS
+- [ ] Tree-shaking effectif (CSS minimal)
+
+### Design System
+
+- [ ] Tous les tokens definis dans @theme
+- [ ] Coherence des couleurs light/dark
+- [ ] Contrastes WCAG AA minimum
+- [ ] Fonts correctement chargees
+
+### Responsive
+
+- [ ] Mobile-first applique
+- [ ] Breakpoints custom documentes
+- [ ] Container queries fonctionnelles
+- [ ] Pas de horizontal scroll mobile
+
+### Accessibilite
+
+- [ ] Focus visible sur tous les interactifs
+- [ ] Reduced motion respecte
+- [ ] Pas de dependance a la couleur seule
+- [ ] Touch targets >= 44px
+
+### Performance
+
+- [ ] CSS `< 50KB` gzippe idealement
+- [ ] Pas de render-blocking CSS inutile
+- [ ] Animations optimisees (transform/opacity)
+
+---
+
+## Scenarios de Depannage
+
+### Les Classes Tailwind Ne S'appliquent Pas
+
+**Diagnostic** : Classes ecrites mais styles non visibles.
+
+**Causes** :
+- Fichier non inclus dans la detection automatique
+- Classes dynamiques non reconnues (string concatenation)
+- Conflit de specificite avec autre CSS
+- Cache du build
+
+**Solutions** :
+1. Verifier que le fichier est dans un path scanne
+2. Utiliser des classes completes, pas de concatenation
+3. Inspecter la specificite dans DevTools
+4. Clear le cache : `rm -rf .next && pnpm build`
+
+### Dark Mode Ne Fonctionne Pas
+
+**Diagnostic** : Toggle dark mode sans effet ou partiel.
+
+**Causes** :
+- @custom-variant dark mal configure
+- Classe .dark sur le mauvais element
+- Variables non definies pour .dark
+- Script anti-FOUC manquant
+
+**Solutions** :
+1. Verifier la syntaxe @custom-variant
+2. Appliquer .dark sur html ou body
+3. Definir toutes les variables dans `.dark { }`
+4. Ajouter le script inline dans `<head>`
+
+### Classes v3 Depreciees
+
+**Diagnostic** : Erreur ou warning sur classes comme shadow-sm, !flex.
+
+**Causes** :
+- Migration v3 → v4 incomplete
+- Code copy-paste depuis v3
+
+**Solutions** :
+1. Lancer `npx @tailwindcss/upgrade`
+2. Renommer manuellement (shadow-sm → shadow-xs)
+3. Deplacer ! a la fin (flex!)
+4. Convertir [ ] en ( ) pour CSS vars
+
+### Animation Ne S'execute Pas
+
+**Diagnostic** : Classe animate-* sans effet visuel.
+
+**Causes** :
+- @keyframes non definis
+- Animation non declaree dans @theme
+- prefers-reduced-motion active
+- Animation overwrite par autre style
+
+**Solutions** :
+1. Verifier @keyframes dans @theme ou globalement
+2. Declarer --animate-* dans @theme
+3. Verifier les media queries reduced-motion
+4. Inspecter les styles appliques dans DevTools
+
+### Container Queries Inactives
+
+**Diagnostic** : Classes @md:, @lg: sans effet.
+
+**Causes** :
+- Pas de @container sur le parent
+- Navigateur non supporte
+- Confusion avec media queries classiques
+
+**Solutions** :
+1. Ajouter `class="@container"` sur le parent
+2. Verifier le support navigateur (Chrome 105+)
+3. Utiliser @sm/@md au lieu de sm:/md: pour container

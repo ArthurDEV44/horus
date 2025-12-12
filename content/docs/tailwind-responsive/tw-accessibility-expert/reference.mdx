@@ -1,0 +1,418 @@
+---
+title: Reference Technique
+description: Documentation technique approfondie pour l'accessibilite avec Tailwind CSS
+---
+
+# Reference Technique - Accessibilite
+
+Documentation technique approfondie pour l'accessibilite avec Tailwind CSS.
+
+---
+
+## Classes Screen Reader
+
+### sr-only en Detail
+
+CSS genere par `sr-only` :
+
+```css
+position: absolute
+width: 1px
+height: 1px
+padding: 0
+margin: -1px
+overflow: hidden
+clip: rect(0, 0, 0, 0)
+white-space: nowrap
+border-width: 0
+```
+
+Cette technique masque visuellement sans utiliser `display:none` ou `visibility:hidden`, qui cacheraient aussi aux lecteurs d'ecran.
+
+### not-sr-only en Detail
+
+CSS genere par `not-sr-only` :
+
+```css
+position: static
+width: auto
+height: auto
+padding: 0
+margin: 0
+overflow: visible
+clip: auto
+white-space: normal
+```
+
+Restaure toutes les proprietes a leur etat normal.
+
+### Cas d'Usage sr-only
+
+| Cas | Implementation |
+|-----|----------------|
+| Skip links | `sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-4 focus:bg-white focus:ring-2` |
+| Labels de formulaire | `label sr-only` + input avec placeholder |
+| Boutons icones | button contient : icon + `span sr-only "Fermer"` |
+| Tableaux complexes | `caption sr-only` pour decrire le contenu du tableau |
+| Contexte supplementaire | Information importante pour la comprehension mais redondante visuellement |
+
+### Responsive sr-only
+
+| Besoin | Classes |
+|--------|---------|
+| Afficher le texte sur grands ecrans | `sr-only sm:not-sr-only` |
+| Cache sur mobile, visible sur desktop | `span sr-only lg:not-sr-only lg:inline` |
+
+---
+
+## Focus Styling Approfondi
+
+### focus: vs focus-visible:
+
+| Variant | Comportement | Support |
+|---------|--------------|---------|
+| `focus:` | S'applique a tout focus (clic, clavier, programmatique) | Tous les navigateurs |
+| `focus-visible:` | S'applique quand le navigateur juge approprie | Chrome 86+, Firefox 85+, Safari 15.4+ |
+
+Recommandation : utiliser `focus-visible:` pour les rings. Fallback : `focus:` si support ancien necessaire.
+
+### Ring vs Outline
+
+| Type | Implementation | Avantages |
+|------|----------------|-----------|
+| Ring (`ring-*`) | Via box-shadow | Plus de controle visuel, ring-offset disponible |
+| Outline (`outline-*`) | CSS outline natif | Suit mieux les formes de l'element |
+
+Recommandation :
+- Ring pour la plupart des boutons/inputs
+- Outline pour les elements avec border-radius complexes
+
+### Toutes les Classes Ring
+
+| Categorie | Classes |
+|-----------|---------|
+| Largeur | `ring-0`, `ring-1`, `ring-2`, `ring`, `ring-4`, `ring-8` |
+| Couleur | `ring-{color}-{shade}`, `ring-transparent` |
+| Offset | `ring-offset-0/1/2/4/8`, `ring-offset-{color}` |
+| Inset | `ring-inset` (ring a l'interieur) |
+
+### Toutes les Classes Outline
+
+| Categorie | Classes |
+|-----------|---------|
+| Style | `outline-none`, `outline-hidden`, `outline`, `outline-dashed`, `outline-dotted`, `outline-double` |
+| Largeur | `outline-0/1/2/4/8` |
+| Couleur | `outline-{color}-{shade}`, `outline-current`, `outline-inherit` |
+| Offset | `outline-offset-0/1/2/4/8` |
+
+### Pattern Focus Accessible
+
+| Element | Classes |
+|---------|---------|
+| Bouton standard | `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600` |
+| Alternative avec ring | `focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-600` |
+| Input | `focus:ring-2 focus:ring-blue-500 focus:border-blue-500` |
+| Link dans texte | `focus:outline-2 focus:outline-offset-1 focus:outline-current focus:rounded` |
+| Card cliquable | `focus-within:ring-2 focus-within:ring-blue-500` |
+
+### Contraste Focus WCAG
+
+| Critere | Exigence |
+|---------|----------|
+| SC 2.4.7 Focus Visible (AA) | Le focus doit etre visible |
+| SC 1.4.11 Non-text Contrast (AA) | Indicateur de focus avec contraste 3:1 |
+| SC 2.4.11 Focus Not Obscured (AA) | Le focus ne doit pas etre completement cache |
+| SC 2.4.12 Focus Not Obscured (AAA) | Aucune partie du focus ne doit etre cachee |
+
+Recommandations :
+- Ring/outline de 2px minimum
+- Couleur contrastee (blue-600, pas blue-300)
+- Offset pour separer visuellement
+
+---
+
+## Aria Variants
+
+### Variants Integres
+
+| Variant | Attribut ARIA | Usage |
+|---------|---------------|-------|
+| `aria-checked:` | `aria-checked="true"` | Checkboxes, switches |
+| `aria-disabled:` | `aria-disabled="true"` | Elements desactives |
+| `aria-expanded:` | `aria-expanded="true"` | Accordions, menus |
+| `aria-hidden:` | `aria-hidden="true"` | Contenu cache |
+| `aria-pressed:` | `aria-pressed="true"` | Toggle buttons |
+| `aria-readonly:` | `aria-readonly="true"` | Champs lecture seule |
+| `aria-required:` | `aria-required="true"` | Champs obligatoires |
+| `aria-selected:` | `aria-selected="true"` | Options selectionnees |
+
+### Valeurs Arbitraires Aria
+
+Pour d'autres etats ARIA :
+
+```
+aria-[current=page]:font-bold
+aria-[invalid=true]:border-red-500
+aria-[busy=true]:animate-pulse
+aria-[live=polite]:sr-only
+```
+
+Format : `aria-[attribute=value]:utility`
+
+### Group et Peer avec Aria
+
+Parent avec aria, enfant style :
+
+```html
+<div class="group" aria-expanded="true">
+  <span class="group-aria-expanded:block hidden">...</span>
+</div>
+```
+
+Sibling avec aria :
+
+```html
+<button class="peer" aria-pressed="true">...</button>
+<div class="peer-aria-pressed:bg-blue-100">...</div>
+```
+
+### Exemples d'Usage Aria
+
+| Composant | Implementation |
+|-----------|----------------|
+| Menu dropdown | `group-aria-expanded:rotate-180 transition` sur l'icone |
+| Checkbox custom | `aria-checked:bg-blue-600 aria-checked:border-blue-600` |
+| Tab panel | `aria-selected:bg-white aria-selected:border-b-white` |
+| Accordion | `aria-expanded:rotate-90 transition` sur l'icone |
+
+---
+
+## Contraste Couleurs
+
+### Ratios WCAG
+
+| Niveau | Texte Normal | Texte Large | UI Components |
+|--------|--------------|-------------|---------------|
+| AA | 4.5:1 | 3:1 | 3:1 |
+| AAA | 7:1 | 4.5:1 | N/A |
+
+Texte large : >= 18pt (24px) ou >= 14pt (18.67px) bold
+
+### Combinaisons Tailwind Conformes
+
+| Combinaison | Ratio | Statut |
+|-------------|-------|--------|
+| `text-gray-900` sur `bg-white` | 21:1 | AA Conforme |
+| `text-gray-800` sur `bg-white` | 12.6:1 | AA Conforme |
+| `text-gray-700` sur `bg-white` | 8.6:1 | AA Conforme |
+| `text-white` sur `bg-gray-800` | 12.6:1 | AA Conforme |
+| `text-white` sur `bg-blue-700` | ~8:1 | AA Conforme |
+| `text-gray-400` sur `bg-white` | ~3:1 | Echec AA |
+| `text-gray-500` sur `bg-white` | ~4.5:1 | Limite AA |
+
+Pour le texte secondaire : `text-gray-600` sur `bg-white` (~5.7:1, passe AA)
+
+### Outils de Verification
+
+| Type | Outils |
+|------|--------|
+| En ligne | WebAIM Contrast Checker, Coolors Contrast Checker |
+| Pour palettes Tailwind | InclusiveColors (inclusivecolors.com) |
+| DevTools | Chrome accessibility tab, Firefox accessibility inspector |
+
+### Couleurs de Focus
+
+| Contexte | Couleurs recommandees |
+|----------|----------------------|
+| Fond clair | `blue-600`, `black` |
+| Fond sombre | `blue-400`, `white` avec offset |
+
+Eviter : couleurs trop claires (blue-300, gray-300), meme couleur que le fond
+
+---
+
+## Touch Targets
+
+### Exigences WCAG 2.2
+
+| Critere | Exigence |
+|---------|----------|
+| SC 2.5.8 Target Size (Minimum) - AA | 24x24 CSS pixels minimum |
+| SC 2.5.5 Target Size (Enhanced) - AAA | 44x44 CSS pixels minimum |
+
+Exceptions : inline links dans du texte, user agent controls, essentiels
+
+### Classes Tailwind pour Touch
+
+| Niveau | Classes |
+|--------|---------|
+| Minimum AA (24px) | `min-w-6 min-h-6` ou `w-6 h-6` |
+| Recommande (44px) | `min-w-11 min-h-11` ou `w-11 h-11` |
+| Padding pour agrandir | `p-2` (8px), `p-3` (12px) |
+| Espacement entre cibles | `gap-2` minimum, `gap-4` recommande |
+
+### Patterns Touch Accessibles
+
+| Element | Classes |
+|---------|---------|
+| Bouton icone | `w-11 h-11 p-2` |
+| Bouton texte minimum | `py-2 px-4 min-h-[44px]` |
+| Liste de navigation | `py-3` par item |
+| Checkbox/Radio wrapper | `w-6 h-6` minimum, idealement `w-8 h-8` |
+| Close button modal | `w-8 h-8 p-1` ou plus grand |
+
+---
+
+## Preferences Utilisateur
+
+### Motion Preferences
+
+| Classe | Usage |
+|--------|-------|
+| `motion-reduce:transition-none` | Desactive les transitions |
+| `motion-reduce:animate-none` | Desactive les animations |
+| `motion-reduce:transform-none` | Desactive les transforms |
+| `motion-safe:animate-spin` | Animation uniquement si pas de preference reduce |
+
+Usage :
+
+```html
+<div class="transition motion-reduce:transition-none">...</div>
+<div class="hover:scale-105 motion-reduce:hover:scale-100">...</div>
+```
+
+### Forced Colors Mode
+
+Windows High Contrast Mode et preferences similaires.
+
+| Classe | Usage |
+|--------|-------|
+| `forced-color-adjust-auto` | Defaut, laisse l'OS ajuster |
+| `forced-color-adjust-none` | Preserve les couleurs originales |
+
+Recommandation : laisser `forced-color-adjust-auto` dans la plupart des cas.
+
+### Print Styles
+
+| Classe | Usage |
+|--------|-------|
+| `print:hidden` | Cacher a l'impression |
+| `print:block` | Montrer a l'impression |
+| `print:text-black` | Forcer noir |
+| `print:bg-white` | Forcer fond blanc |
+
+---
+
+## Navigation Clavier
+
+### Focus Management
+
+| Valeur tabindex | Comportement |
+|-----------------|--------------|
+| `tabindex="0"` | Ajoute a l'ordre de focus |
+| `tabindex="-1"` | Focusable programmatiquement, pas par Tab |
+| `tabindex > 0` | A eviter (casse l'ordre naturel) |
+
+Focus trap (modals) : necessite JavaScript (focus-trap, Headless UI, Radix)
+
+### Skip Links
+
+Pattern :
+
+```html
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-4 focus:bg-white focus:text-black focus:ring-2">
+  Aller au contenu
+</a>
+
+<main id="main" tabindex="-1">...</main>
+```
+
+Le `tabindex="-1"` sur main permet le focus programmatique.
+
+### Keyboard Patterns
+
+| Composant | Touches |
+|-----------|---------|
+| Boutons et liens | Enter active, Space active (natif) |
+| Menu dropdown | Enter/Space ouvre, Escape ferme, Arrows naviguent |
+| Tabs | Tab navigue au panel, Arrows changent de tab |
+| Modal | Escape ferme, Tab reste dans la modal |
+
+---
+
+## ARIA Roles et States
+
+### Quand Utiliser ARIA
+
+Premiere regle ARIA : ne pas utiliser ARIA si HTML natif suffit.
+
+| Preferer | Plutot que |
+|----------|------------|
+| `<button>` | `<div role="button">` |
+| `<a href>` | `<span role="link">` |
+| `<input type="checkbox">` | `<div role="checkbox">` |
+
+Utiliser ARIA pour : widgets complexes, changements dynamiques, labels supplementaires
+
+### Attributs ARIA Courants
+
+| Categorie | Attributs |
+|-----------|-----------|
+| Labels | `aria-label`, `aria-labelledby`, `aria-describedby` |
+| Etats | `aria-expanded`, `aria-selected`, `aria-checked`, `aria-pressed`, `aria-disabled`, `aria-hidden` |
+| Live regions | `aria-live="polite/assertive"`, `aria-atomic`, `aria-relevant` |
+
+### ARIA et Tailwind
+
+Tailwind style selon les attributs ARIA, ne les definit pas :
+
+```html
+<button aria-expanded="false" class="aria-expanded:rotate-180">...</button>
+```
+
+Le JavaScript doit changer l'attribut `aria-expanded`. Tailwind stylise automatiquement selon la valeur.
+
+---
+
+## Composants Accessibles
+
+### Pattern Modal
+
+Structure :
+
+- Dialog avec `role="dialog" aria-modal="true" aria-labelledby`
+- Titre avec `id` reference par `aria-labelledby`
+- Focus trap avec JS
+- Close button accessible
+
+Tailwind :
+
+- Overlay : `fixed inset-0 bg-black/50`
+- Dialog : `focus-within:ring-2`
+- Close : `focus-visible:ring-2`
+
+### Pattern Menu
+
+Structure :
+
+- Button avec `aria-haspopup="true" aria-expanded`
+- Menu avec `role="menu"`
+- Items avec `role="menuitem"`
+
+Tailwind aria styling :
+
+- Chevron : `aria-expanded:rotate-180 transition`
+- Menu : `hidden group-aria-expanded:block`
+
+### Pattern Tabs
+
+Structure :
+
+- Tablist avec `role="tablist"`
+- Tabs avec `role="tab" aria-selected`
+- Panels avec `role="tabpanel" aria-labelledby`
+
+Tailwind :
+
+- Tab : `aria-selected:bg-white aria-selected:border-b-0`
+- Panel : `hidden aria-selected:block`

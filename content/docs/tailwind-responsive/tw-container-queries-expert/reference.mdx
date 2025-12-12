@@ -1,0 +1,395 @@
+---
+title: Reference Technique
+description: Documentation technique approfondie pour les container queries avec Tailwind CSS v4
+---
+
+# Reference Technique - Container Queries
+
+Documentation technique approfondie pour les container queries avec Tailwind CSS v4.
+
+---
+
+## Fondamentaux Container Queries
+
+### Concept Cle
+
+Les container queries permettent de styler un element base sur la taille de son conteneur parent, pas sur la taille du viewport.
+
+- **Media queries** : "Si l'ecran fait 768px+"
+- **Container queries** : "Si ce conteneur fait 448px+"
+
+Cela permet de creer des composants vraiment modulaires et reutilisables.
+
+### CSS Sous-jacent
+
+| Classe Tailwind | CSS genere |
+|-----------------|-----------|
+| `@container` | `container-type: inline-size` |
+| `@sm:flex` | `@container (min-width: 24rem) { display: flex }` |
+
+Le container etablit un contexte de query pour ses descendants.
+
+### Container-Type
+
+| Type | Comportement |
+|------|--------------|
+| `inline-size` | Queries basees sur la largeur (defaut Tailwind) |
+| `size` | Queries basees sur largeur ET hauteur |
+| `normal` | Pas de containment de taille |
+
+Tailwind utilise `inline-size` par defaut car plus performant et suffisant pour 99% des cas.
+
+---
+
+## Classe @container
+
+### Utilisation de Base
+
+```html
+<div class="@container">
+  <!-- Enfants peuvent utiliser @sm:, @md:, etc. -->
+</div>
+```
+
+CSS genere : `container-type: inline-size`
+
+### Named Containers
+
+| Syntaxe | CSS genere |
+|---------|-----------|
+| `@container/sidebar` | `container-type: inline-size; container-name: sidebar` |
+| `@container/card` | `container-type: inline-size; container-name: card` |
+
+Permet de cibler un container specifique quand plusieurs sont imbriques.
+
+### Quand Utiliser Named Containers
+
+Cas d'usage :
+
+- Containers imbriques (sidebar > card)
+- Besoin de cibler un ancetre specifique
+- Composants complexes avec plusieurs zones
+
+Exemple structure :
+
+```html
+<div class="@container/outer">
+  <div class="@container/inner">
+    <span class="@lg/outer:text-2xl">Cible outer</span>
+    <span class="@lg/inner:font-bold">Cible inner</span>
+    <span class="@lg:text-xl">Cible le plus proche (inner)</span>
+  </div>
+</div>
+```
+
+---
+
+## Variants Container
+
+### Breakpoints Minimum (min-width)
+
+| Variant | Largeur | Pixels |
+|---------|---------|--------|
+| `@xs:` | 20rem | 320px |
+| `@sm:` | 24rem | 384px |
+| `@md:` | 28rem | 448px |
+| `@lg:` | 32rem | 512px |
+| `@xl:` | 36rem | 576px |
+| `@2xl:` | 42rem | 672px |
+| `@3xl:` | 48rem | 768px |
+| `@4xl:` | 56rem | 896px |
+| `@5xl:` | 64rem | 1024px |
+| `@6xl:` | 72rem | 1152px |
+| `@7xl:` | 80rem | 1280px |
+
+Usage : `@sm:flex-row` -> s'applique si container >= 24rem
+
+### Breakpoints Maximum (max-width)
+
+| Variant | Largeur max |
+|---------|-------------|
+| `@max-xs:` | < 20rem |
+| `@max-sm:` | < 24rem |
+| `@max-md:` | < 28rem |
+| `@max-lg:` | < 32rem |
+| `@max-xl:` | < 36rem |
+
+Usage : `@max-sm:hidden` -> cache si container < 24rem
+
+### Variants Named
+
+Syntaxe : `@breakpoint/name:utility`
+
+| Exemple | Comportement |
+|---------|--------------|
+| `@sm/sidebar:block` | S'applique si sidebar >= 24rem |
+| `@lg/card:flex-row` | S'applique si card >= 32rem |
+| `@md/main:grid-cols-3` | S'applique si main >= 28rem |
+
+### Valeurs Arbitraires
+
+| Syntaxe | Usage |
+|---------|-------|
+| `@[400px]:flex` | Si container >= 400px |
+| `@min-[500px]:block` | Si container >= 500px |
+| `@max-[600px]:hidden` | Si container < 600px |
+
+Ces valeurs ne necessitent pas de configuration prealable.
+
+---
+
+## Configuration Avancee
+
+### Custom Breakpoints avec @theme
+
+```css
+@theme {
+  --container-3xs: 16rem;
+  --container-2xs: 18rem;
+  --container-xs: 20rem;
+  --container-sm: 24rem;
+  --container-md: 28rem;
+  --container-lg: 32rem;
+  --container-xl: 36rem;
+  --container-2xl: 42rem;
+  --container-prose: 65ch;
+}
+```
+
+Utilisation : `@3xs:hidden`, `@prose:max-w-none`
+
+### Supprimer des Breakpoints
+
+```css
+@theme {
+  --container-4xl: initial;
+  --container-5xl: initial;
+  --container-6xl: initial;
+  --container-7xl: initial;
+}
+```
+
+### Breakpoints Personnalises Semantiques
+
+```css
+@theme {
+  --container-card-compact: 16rem;
+  --container-card-normal: 24rem;
+  --container-card-wide: 36rem;
+}
+```
+
+Utilisation : `@card-compact:text-sm`, `@card-normal:flex-row`, `@card-wide:gap-8`
+
+---
+
+## Differences Container vs Media Queries
+
+### Comparaison Syntaxique
+
+| Type | Syntaxe | Signification |
+|------|---------|---------------|
+| Media queries (viewport) | `sm:flex-row` | Si viewport >= 640px |
+| Container queries | `@sm:flex-row` | Si container >= 24rem |
+
+La difference visuelle : `@` devant le breakpoint.
+
+### Comparaison des Breakpoints
+
+| Contexte | Breakpoint | Largeur |
+|----------|------------|---------|
+| Viewport | `sm:` | 640px |
+| Viewport | `md:` | 768px |
+| Viewport | `lg:` | 1024px |
+| Container | `@sm:` | 384px |
+| Container | `@md:` | 448px |
+| Container | `@lg:` | 512px |
+
+Les container breakpoints sont plus petits car les composants sont generalement plus petits que le viewport.
+
+### Quand Utiliser Quoi
+
+| Container queries (@) pour | Media queries (sans @) pour |
+|---------------------------|----------------------------|
+| Cards reutilisables | Navigation principale |
+| Widgets sidebar | Layout de page |
+| Composants de dashboard | Header/Footer |
+| Micro-layouts | Macro-layouts |
+
+**Combinaison** : Un composant peut utiliser les deux. Container queries pour son layout interne, media queries pour son placement dans la page.
+
+---
+
+## Patterns Avances
+
+### Card Adaptive
+
+```html
+<article class="@container">
+  <div class="flex flex-col @sm:flex-row @md:gap-4">
+    <div>Image</div>
+    <div>Content</div>
+  </div>
+</article>
+```
+
+Comportements :
+- Container < 24rem : layout vertical
+- Container >= 24rem : layout horizontal
+- Container >= 28rem : gap augmente
+
+### Dashboard Widget
+
+```html
+<div class="@container/widget">
+  <header>Toujours visible</header>
+  <main class="hidden @sm/widget:block">Details</main>
+  <footer class="hidden @md/widget:flex">Actions</footer>
+</div>
+```
+
+### Sidebar Responsive
+
+```html
+<aside class="@container/sidebar w-64 lg:w-80">
+  <nav>
+    <ul>
+      <li class="@md/sidebar:flex @md/sidebar:gap-2">
+        <icon />
+        <span class="hidden @sm/sidebar:inline">Label</span>
+      </li>
+    </ul>
+  </nav>
+</aside>
+```
+
+### Grid Contextuel
+
+```html
+<section class="@container">
+  <div class="grid @sm:grid-cols-2 @lg:grid-cols-3 @xl:grid-cols-4">
+    <!-- Items -->
+  </div>
+</section>
+```
+
+Le nombre de colonnes depend de la largeur de la section, pas de l'ecran.
+
+---
+
+## Container Queries Imbriques
+
+### Comportement par Defaut
+
+Sans named containers, les variants ciblent le container le plus proche.
+
+```html
+<div class="@container"> <!-- parent -->
+  <div class="@container"> <!-- child -->
+    <p class="@lg:text-xl">Cible child, pas parent</p>
+  </div>
+</div>
+```
+
+### Ciblage Explicite
+
+Avec named containers :
+
+```html
+<div class="@container/outer">
+  <div class="@container/inner">
+    <p class="@lg/outer:text-2xl @lg/inner:font-bold">
+      Ciblage precis
+    </p>
+  </div>
+</div>
+```
+
+### Bonnes Pratiques Nesting
+
+**Eviter** :
+- Plus de 2-3 niveaux de containers
+- Named containers sans necessite
+- Ciblage d'ancetres distants
+
+**Preferer** :
+- Structures plates quand possible
+- Named containers seulement si imbrication necessaire
+- Noms descriptifs (sidebar, card, pas container1)
+
+---
+
+## Performance
+
+### Impact du Container Query
+
+Container queries ont un cout CSS minimal :
+- Le navigateur calcule deja les tailles des elements
+- Pas de JavaScript requis
+- Recalcul uniquement si la taille change
+
+Plus performant que :
+- ResizeObserver JavaScript
+- Recalcul via CSS variables
+- Libraries JavaScript de responsive
+
+### Optimisations
+
+1. Limiter le nombre de containers imbriques
+2. Eviter `container-type: size` sauf si necessaire
+3. Ne pas utiliser container queries pour des elements fixes
+4. Preferer `container-type: inline-size` (defaut)
+
+---
+
+## Support Navigateur
+
+### Compatibilite
+
+| Navigateur | Version | Support |
+|------------|---------|---------|
+| Chrome | 105+ | Complet |
+| Firefox | 110+ | Complet |
+| Safari | 16+ | Complet |
+| Edge | 105+ | Complet |
+| Opera | 91+ | Complet |
+
+Support global : ~91% (2025)
+
+### Fallback Strategy
+
+**Approche 1 - Mobile-first fallback** :
+Base styles pour mobile (sans container query), container queries comme enhancement.
+
+**Approche 2 - @supports** :
+
+```css
+@supports (container-type: inline-size) {
+  /* styles avec container queries */
+}
+```
+
+**Approche 3 - Media queries comme baseline** :
+`sm:flex-row` (viewport fallback) + `@sm:flex-row` (container enhancement)
+
+En 2025, le fallback est rarement necessaire.
+
+---
+
+## Erreurs Courantes
+
+### Confusion de Syntaxe
+
+| Erreur | Correct |
+|--------|---------|
+| `lg:flex-row` pour cibler un container | `@lg:flex-row` |
+| @container absent du parent | Toujours mettre `@container` sur l'element de reference |
+| `@lg:flex` sur le container lui-meme | `@lg:flex` sur les enfants du container |
+
+### Problemes de Taille
+
+| Probleme | Solution |
+|----------|----------|
+| Container n'a pas de largeur definie | Ajouter `w-full` ou `w-[size]` |
+| Container collapse | Le contenu ou une taille explicite doit donner une dimension |
+| Container queries ne repondent pas | Verifier que `@container` est sur le bon element parent |

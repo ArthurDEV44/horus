@@ -1,0 +1,10 @@
+{
+  "title": "React Expert",
+  "description": "Expert React 19+ - Server Components, Hooks, Patterns, Performance, Accessibilite",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Clerk Expert",
+  "description": "Expert Clerk Authentification - Sessions, Organizations, RBAC, Webhooks",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

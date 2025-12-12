@@ -1,0 +1,286 @@
+---
+title: Reference
+description: Glossaire technique des strategies de rendu, metriques Core Web Vitals detaillees, comportement des crawlers et ressources de reference.
+---
+
+# SEO Rendering Expert - Reference Technique
+
+## Glossaire des Strategies de Rendu
+
+### SSR (Server-Side Rendering)
+Rendu cote serveur a chaque requete. Le HTML complet est genere sur le serveur avant d'etre envoye au client. Ideal pour le contenu dynamique necessitant une fraicheur maximale.
+
+**Avantages SEO** : HTML complet des la premiere requete, pas de dependance JavaScript pour le crawl.
+
+**Inconvenients** : Charge serveur plus elevee, TTFB potentiellement plus long.
+
+### SSG (Static Site Generation)
+Generation statique au moment du build. Les pages HTML sont pre-generees et servies depuis un CDN.
+
+**Avantages SEO** : Performances optimales (LCP), contenu toujours disponible, cout serveur minimal.
+
+**Inconvenients** : Contenu fige jusqu'au prochain build, temps de build croissant avec le nombre de pages.
+
+### ISR (Incremental Static Regeneration)
+Combinaison de SSG et SSR. Pages statiques regenerees en arriere-plan selon une strategie de revalidation.
+
+**Avantages SEO** : Performances du statique avec fraicheur du contenu configurable.
+
+**Inconvenients** : Complexite de configuration, cache stale potentiel.
+
+### CSR (Client-Side Rendering)
+Rendu cote client uniquement. Le serveur envoie un HTML minimal, JavaScript construit le DOM.
+
+**Avantages SEO** : Aucun - a eviter pour les pages necessitant indexation.
+
+**Usage acceptable** : Dashboards, pages authentifiees, contenus non-SEO.
+
+### Streaming SSR
+Rendu serveur progressif. Le HTML est envoye par morceaux au fur et a mesure du rendu.
+
+**Avantages SEO** : TTFB reduit, contenu above-the-fold visible plus rapidement.
+
+**Consideration** : Le contenu streame est bien indexe par Googlebot.
+
+### React Server Components (RSC)
+Composants rendus uniquement cote serveur, sans JavaScript cote client.
+
+**Avantages SEO** : Bundle JS reduit, HTML complet sans hydration pour ces composants.
+
+**Usage** : Composants statiques, affichage de donnees.
+
+## Core Web Vitals - Metriques Detaillees
+
+### LCP (Largest Contentful Paint)
+
+**Definition** : Temps de rendu du plus grand element visible dans le viewport (image, video, bloc de texte).
+
+**Seuils** :
+- Bon : ≤ 2.5s
+- A ameliorer : 2.5s - 4s
+- Mauvais : > 4s
+
+**Facteurs d'impact** :
+- Temps de reponse serveur (TTFB)
+- Render-blocking resources (CSS, JS)
+- Temps de chargement des ressources (images, fonts)
+- Client-side rendering
+
+**Optimisations prioritaires** :
+1. Reduire le TTFB (cache, CDN, edge computing)
+2. Eliminer les ressources bloquantes
+3. Precharger l'element LCP (`<link rel="preload">`)
+4. Optimiser les images (format moderne, dimensionnement)
+
+### INP (Interaction to Next Paint)
+
+**Definition** : Latence des interactions utilisateur (clics, taps, entrees clavier) sur toute la duree de la visite. Remplace FID depuis mars 2024.
+
+**Seuils** :
+- Bon : ≤ 200ms
+- A ameliorer : 200ms - 500ms
+- Mauvais : > 500ms
+
+**Difference avec FID** : FID mesurait uniquement la premiere interaction. INP mesure toutes les interactions et rapporte la pire (au 75e percentile).
+
+**Facteurs d'impact** :
+- JavaScript lourd bloquant le main thread
+- Long tasks (> 50ms)
+- Hydration massive
+- Event handlers inefficaces
+
+**Optimisations prioritaires** :
+1. Code splitting et lazy loading
+2. Hydration selective (React 18+)
+3. Deferer le JavaScript non-critique
+4. Optimiser les event listeners
+
+### CLS (Cumulative Layout Shift)
+
+**Definition** : Somme des decalages de layout inattendus pendant toute la duree de vie de la page.
+
+**Seuils** :
+- Bon : ≤ 0.1
+- A ameliorer : 0.1 - 0.25
+- Mauvais : > 0.25
+
+**Facteurs d'impact** :
+- Images sans dimensions explicites
+- Publicites et embeds dynamiques
+- Fonts web causant du FOIT/FOUT
+- Contenu injecte dynamiquement au-dessus du viewport
+
+**Optimisations prioritaires** :
+1. Definir width/height sur toutes les images et videos
+2. Reserver l'espace pour les publicites
+3. Utiliser `font-display: swap` avec prechargement
+4. Eviter d'inserer du contenu au-dessus du contenu existant
+
+## Comportement des Crawlers
+
+### Googlebot
+
+**Moteur de rendu** : Chromium (evergreen, mis a jour regulierement)
+
+**Processus** :
+1. Crawl initial : recupere le HTML brut
+2. File d'attente de rendu : pages JavaScript en attente
+3. Rendu : execution JavaScript avec Chromium headless
+4. Indexation : basee sur le DOM rendu final
+
+**Delai de rendu** : Peut varier de quelques secondes a plusieurs jours selon la priorite de la page.
+
+**Limites connues** :
+- Timeout de rendu (environ 5 secondes pour le JavaScript)
+- Certaines APIs non supportees (check Google documentation)
+- Lazy loading doit utiliser l'Intersection Observer (pas scroll events)
+
+### Crawlers IA
+
+**GPTBot** (OpenAI), **ClaudeBot** (Anthropic), **PerplexityBot** :
+
+- N'executent PAS JavaScript
+- Voient uniquement le HTML brut initial
+- Ignorent les contenus charges dynamiquement
+
+**Implication** : Le contenu doit etre present dans le HTML source pour etre visible par les IA generative.
+
+### Bing, Yandex, autres
+
+**Capacites variables** : Certains rendent JavaScript, d'autres non. Par securite, considerer le HTML initial comme source de verite.
+
+## Structured Data et Rendu
+
+### Formats Supportes
+
+1. **JSON-LD** (recommande par Google)
+   - Encapsule dans `<script type="application/ld+json">`
+   - Separe du HTML, facile a maintenir
+   - Peut etre genere cote serveur ou client
+
+2. **Microdata**
+   - Attributs HTML inline (itemscope, itemprop)
+   - Plus verbeux, melange au markup
+
+3. **RDFa**
+   - Attributs HTML (vocab, typeof, property)
+   - Moins courant aujourd'hui
+
+### Bonnes Pratiques de Rendu
+
+- Generer le JSON-LD cote serveur (SSR/SSG)
+- Inclure dans le `<head>` ou debut du `<body>`
+- Eviter la generation JavaScript cote client si possible
+- Si dynamique, s'assurer que le script est present avant l'evenement load
+
+### Types Schema.org Prioritaires
+
+- **Organization** : Identite de l'entreprise
+- **WebSite** : Site et moteur de recherche interne
+- **BreadcrumbList** : Fil d'Ariane
+- **Article/BlogPosting** : Contenus editoriaux
+- **Product** : E-commerce
+- **FAQPage** : Questions frequentes
+- **LocalBusiness** : Entreprises locales
+- **HowTo** : Tutoriels etape par etape
+
+## Outils de Diagnostic
+
+### Google Search Console
+
+**URL Inspection** :
+- "View Crawled Page" : ce que Googlebot a vu
+- "Live Test" : rendu en temps reel
+- Comparer les deux pour detecter les differences
+
+**Core Web Vitals Report** :
+- Donnees terrain (CrUX) au 75e percentile
+- Groupement par type de page
+- Historique des performances
+
+**Coverage Report** :
+- Pages indexees vs exclues
+- Raisons d'exclusion (redirect, noindex, erreur de crawl)
+
+### Google PageSpeed Insights
+
+**Donnees Lab** (Lighthouse) :
+- Simulation sur appareil standardise
+- Reproductible mais pas representatif du terrain
+
+**Donnees Field** (CrUX) :
+- Metriques reelles des utilisateurs Chrome
+- Necessite suffisamment de trafic
+
+### Rich Results Test
+
+- Valide le structured data
+- Montre le HTML rendu par Googlebot
+- Previsualise les rich snippets potentiels
+
+### Chrome DevTools
+
+**Performance Tab** :
+- Timeline de rendu
+- Long tasks identifiees
+- Layout shifts visualises
+
+**Network Tab** :
+- Desactiver JavaScript pour simuler un crawler basique
+- Throttling pour simuler connexions lentes
+
+**Lighthouse** :
+- Audit SEO integre
+- Suggestions d'amelioration
+
+## Ressources Externes
+
+### Documentation Officielle
+
+- [Google Search Central - JavaScript SEO](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)
+- [web.dev - Core Web Vitals](https://web.dev/vitals/)
+- [Schema.org](https://schema.org/)
+- [Next.js SEO Documentation](https://nextjs.org/learn/seo)
+
+### Outils en Ligne
+
+- [Rich Results Test](https://search.google.com/test/rich-results)
+- [PageSpeed Insights](https://pagespeed.web.dev/)
+- [Schema Markup Validator](https://validator.schema.org/)
+- [Mobile-Friendly Test](https://search.google.com/test/mobile-friendly)
+
+### Blogs Techniques de Reference
+
+- Google Search Central Blog
+- web.dev Blog
+- Vercel Blog (Next.js)
+- Smashing Magazine (Web Performance)
+
+## FAQ Technique
+
+### Q: Le dynamic rendering est-il encore recommande ?
+
+Non. Google a officiellement deprecie le dynamic rendering en 2024. Les solutions recommandees sont SSR, SSG ou ISR. Le dynamic rendering reste acceptable comme solution transitoire uniquement.
+
+### Q: Combien de temps Googlebot met-il a rendre JavaScript ?
+
+Variable. Les pages peuvent rester dans la file d'attente de rendu de quelques secondes a plusieurs jours. Pour le contenu time-sensitive (actualites, promotions), SSR ou SSG est imperatif.
+
+### Q: Les Single Page Applications (SPA) sont-elles mauvaises pour le SEO ?
+
+Les SPA pures (CSR uniquement) presentent des risques SEO importants. Les solutions hybrides (Next.js, Nuxt, SvelteKit) avec SSR/SSG eliminent ces risques tout en conservant l'experience SPA.
+
+### Q: L'hydration impacte-t-elle le SEO ?
+
+Indirectement. L'hydration affecte INP et TTI. Les mismatches d'hydration peuvent causer des erreurs et du contenu qui change apres le rendu initial, potentiellement problematique pour l'indexation.
+
+### Q: Faut-il mettre les meta tags dans le head cote serveur ?
+
+Oui, imperativement. Les balises title, description, canonical, et Open Graph doivent etre presentes dans le HTML initial. Ne jamais les injecter via JavaScript cote client.
+
+### Q: Comment savoir si mon contenu est indexe correctement ?
+
+1. Utiliser `site:monsite.com` dans Google
+2. Verifier l'URL Inspection dans Search Console
+3. Comparer "View Crawled Page" avec le contenu attendu
+4. Tester avec Rich Results Test pour le rendu JavaScript

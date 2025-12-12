@@ -1,0 +1,10 @@
+{
+  "title": "Typography Expert",
+  "description": "Expert typographie Tailwind CSS - tailles responsives, line-height, prose plugin, fluid typography clamp()",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

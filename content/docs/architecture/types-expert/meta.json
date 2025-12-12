@@ -1,0 +1,6 @@
+{
+  "title": "Types Expert",
+  "description": "Typage TypeScript avancé (interfaces, génériques, inférence, any/unknown). Use when designing types, fixing type errors, or improving type safety.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

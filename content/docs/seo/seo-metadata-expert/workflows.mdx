@@ -1,0 +1,412 @@
+---
+title: Workflows
+description: Processus pas-a-pas SEO Metadata - Audit, implementation, structured data, diagnostic, migration
+---
+
+# SEO Metadata Expert - Workflows
+
+## Workflow 1 : Audit SEO Complet
+
+### Objectif
+Analyser l'etat des metadonnees SEO d'un projet Next.js et produire un rapport actionnable.
+
+### Etapes
+
+#### 1.1 Reconnaissance du Projet
+
+<Actions>
+- Identifier la version de Next.js (package.json)
+- Confirmer l'utilisation de l'App Router (presence de app/ directory)
+- Lister les layouts (app/**/layout.tsx)
+- Lister les pages (app/**/page.tsx)
+- Identifier les routes dynamiques ([slug], [id])
+</Actions>
+
+<Output>
+Inventaire structure des fichiers a auditer avec leur type (statique/dynamique).
+</Output>
+
+#### 1.2 Analyse des Metadata Existants
+
+<Actions>
+- Rechercher les exports `metadata` dans chaque layout/page
+- Rechercher les fonctions `generateMetadata`
+- Verifier les file conventions (opengraph-image, twitter-image, favicon)
+- Identifier les patterns de title template
+</Actions>
+
+<Output>
+Mapping des metadata par route avec status (present/absent/incomplet).
+</Output>
+
+#### 1.3 Verification des Standards
+
+Pour chaque page auditee, verifier :
+
+| Element | Verification |
+|---------|--------------|
+| Title | Present, unique, ≤60 caracteres |
+| Description | Presente, 150-160 caracteres |
+| Canonical | Present, URL absolue |
+| Open Graph | og:title, og:description, og:image, og:url, og:type |
+| Twitter Cards | twitter:card minimum |
+| JSON-LD | Present et valide si applicable |
+
+<Output>
+Tableau de conformite par page avec score et problemes identifies.
+</Output>
+
+#### 1.4 Generation du Rapport
+
+Structure du rapport :
+
+1. **Resume executif** : Score global, problemes critiques
+2. **Detail par page** : Issues et recommandations
+3. **Quick wins** : Corrections rapides a fort impact
+4. **Plan d'action** : Priorisation des corrections
+
+---
+
+## Workflow 2 : Implementation Metadata de Base
+
+### Objectif
+Configurer les metadonnees fondamentales pour un nouveau projet ou projet sans SEO.
+
+### Etapes
+
+#### 2.1 Configuration du Layout Racine
+
+<Actions>
+- Definir le metadata de base dans app/layout.tsx
+- Configurer metadataBase pour les URLs absolues
+- Etablir le title template
+- Definir les Open Graph par defaut
+- Ajouter les Twitter Cards par defaut
+</Actions>
+
+<expected-structure>
+Layout racine avec :
+- title.default et title.template
+- description par defaut
+- metadataBase avec URL du site
+- openGraph avec image par defaut
+- twitter avec card type
+</expected-structure>
+
+#### 2.2 Images OG par Defaut
+
+<decision-point>
+Choix entre :
+- Image statique dans public/og-default.jpg
+- Image generee dynamiquement via opengraph-image.tsx
+</decision-point>
+
+<Actions>
+- Creer ou identifier l'image par defaut (1200x630)
+- Configurer le chemin dans openGraph.images
+- Tester l'accessibilite de l'image
+</Actions>
+
+#### 2.3 Favicon et Icons
+
+<Actions>
+- Verifier la presence de app/favicon.ico ou app/icon.tsx
+- Ajouter apple-touch-icon si absent
+- Configurer manifest.json si PWA
+</Actions>
+
+#### 2.4 Validation
+
+<Actions>
+- Lancer le build Next.js
+- Inspecter le HTML source de la page d'accueil
+- Verifier les meta tags dans le head
+- Tester avec un outil de previsualisation OG
+</Actions>
+
+---
+
+## Workflow 3 : Pages Dynamiques (Blog/Produits)
+
+### Objectif
+Implementer generateMetadata pour des pages avec contenu variable.
+
+### Etapes
+
+#### 3.1 Analyse des Donnees Disponibles
+
+<Actions>
+- Identifier les parametres de route disponibles (slug, id)
+- Localiser la source de donnees (Sanity, API, base de donnees)
+- Lister les champs disponibles pour les metadata (title, excerpt, image)
+</Actions>
+
+#### 3.2 Implementation de generateMetadata
+
+<Pattern>
+La fonction generateMetadata doit :
+1. Extraire les parametres de route
+2. Fetcher les donnees necessaires (memoized automatiquement)
+3. Construire l'objet Metadata complet
+4. Gerer le cas ou la ressource n'existe pas
+</Pattern>
+
+<Considerations>
+- Utiliser les memes appels fetch que le composant page (memoization)
+- Retourner des valeurs par defaut si donnees manquantes
+- Gerer les cas d'erreur gracieusement
+</Considerations>
+
+#### 3.3 Open Graph Dynamique
+
+<decision-point>
+Choix pour l'image OG :
+- Utiliser l'image existante du contenu
+- Generer une image dynamique avec le titre via opengraph-image.tsx
+</decision-point>
+
+Si generation dynamique :
+- Creer app/blog/[slug]/opengraph-image.tsx
+- Utiliser ImageResponse de next/og
+- Inclure le titre et branding
+
+#### 3.4 JSON-LD Contextuel
+
+Pour les articles de blog :
+- Ajouter le schema Article avec author, datePublished, dateModified
+- Inclure l'image principale dans le schema
+- Ajouter BreadcrumbList si fil d'Ariane present
+
+Pour les produits :
+- Ajouter le schema Product avec offers
+- Inclure aggregateRating si avis disponibles
+- Ajouter les proprietes de disponibilite
+
+---
+
+## Workflow 4 : Structured Data JSON-LD
+
+### Objectif
+Implementer les donnees structurees pour ameliorer les rich snippets.
+
+### Etapes
+
+#### 4.1 Identification des Types Applicables
+
+<decision-tree>
+Page d'accueil → Organization + WebSite
+Page A propos → Organization ou Person
+Articles de blog → Article + BreadcrumbList
+Page de service → Service ou Product
+Page de contact → LocalBusiness + ContactPoint
+Page FAQ → FAQPage
+Page avec avis → Review ou AggregateRating
+</decision-tree>
+
+#### 4.2 Creation du Composant JSON-LD
+
+<Pattern>
+Creer un composant reutilisable qui :
+1. Accepte les donnees en props
+2. Construit l'objet JSON-LD
+3. Rend un script type="application/ld+json"
+4. Stringifie proprement le JSON
+</Pattern>
+
+#### 4.3 Implementation par Type de Page
+
+Pour chaque type identifie :
+- Definir les proprietes requises selon schema.org
+- Mapper les donnees existantes vers les proprietes
+- Gerer les proprietes optionnelles enrichissantes
+
+#### 4.4 Validation
+
+<Actions>
+- Tester chaque page avec Rich Results Test
+- Verifier l'eligibilite aux rich snippets
+- Corriger les erreurs bloquantes
+- Evaluer les warnings (non bloquants)
+</Actions>
+
+---
+
+## Workflow 5 : Diagnostic et Resolution de Problemes
+
+### Scenario A : Les apercus sociaux ne s'affichent pas
+
+<Diagnostic>
+1. Verifier que og:image utilise une URL absolue
+2. Tester l'accessibilite de l'image (HTTP 200)
+3. Verifier que l'image n'est pas bloquee par robots.txt
+4. Confirmer les dimensions (min 200x200 pour Facebook)
+5. Vider le cache via le debugger de la plateforme
+</Diagnostic>
+
+<Resolution>
+- Corriger le chemin de l'image vers URL absolue
+- Utiliser metadataBase pour generer les URLs
+- Verifier les headers CORS si image sur CDN externe
+- Forcer le refresh via les outils de debug
+</Resolution>
+
+### Scenario B : Google n'affiche pas le bon titre
+
+<Diagnostic>
+1. Verifier le title tag dans le HTML source
+2. Confirmer que le titre est ≤60 caracteres
+3. Verifier l'absence de duplicate titles
+4. Analyser si le titre correspond au contenu
+</Diagnostic>
+
+<Resolution>
+- Google reecrit les titres non pertinents
+- Aligner le titre avec le H1 de la page
+- Inclure des termes correspondant aux requetes cibles
+- Attendre 2-4 semaines apres correction pour reevaluation
+</Resolution>
+
+### Scenario C : JSON-LD non reconnu
+
+<Diagnostic>
+1. Valider la syntaxe JSON (pas de virgule trailing)
+2. Verifier le @context (https://schema.org)
+3. Controler les proprietes requises pour le type
+4. S'assurer que les donnees correspondent au contenu visible
+</Diagnostic>
+
+<Resolution>
+- Corriger les erreurs de syntaxe
+- Ajouter les proprietes manquantes
+- Aligner les valeurs avec le contenu affiche
+- Retester apres correction avec Rich Results Test
+</Resolution>
+
+---
+
+## Workflow 6 : Migration vers Metadata API
+
+### Objectif
+Migrer un projet utilisant next-seo ou meta tags manuels vers Metadata API native.
+
+### Etapes
+
+#### 6.1 Inventaire de l'Existant
+
+<Actions>
+- Rechercher les imports de next-seo
+- Lister les composants NextSeo, DefaultSeo
+- Identifier les meta tags dans Head
+- Documenter la configuration actuelle
+</Actions>
+
+#### 6.2 Mapping vers Metadata API
+
+| next-seo | Metadata API |
+|----------|--------------|
+| DefaultSeo | metadata export dans layout |
+| NextSeo | metadata export ou generateMetadata dans page |
+| title | metadata.title |
+| description | metadata.description |
+| canonical | metadata.alternates.canonical |
+| openGraph | metadata.openGraph |
+| twitter | metadata.twitter |
+| additionalMetaTags | metadata.other |
+
+#### 6.3 Migration Progressive
+
+<Order>
+1. Configurer le layout racine avec metadata de base
+2. Migrer page par page en commencant par les plus importantes
+3. Supprimer les imports next-seo au fur et a mesure
+4. Retirer la dependance next-seo une fois complete
+</Order>
+
+#### 6.4 Validation Post-Migration
+
+<Actions>
+- Comparer le HTML source avant/apres
+- Verifier qu'aucun meta tag n'a disparu
+- Tester les apercus sociaux
+- Lancer Lighthouse SEO
+</Actions>
+
+---
+
+## Arbres de Decision
+
+### Choix du Type de Metadata
+
+```
+La page a-t-elle des parametres dynamiques ?
+├── Non → Utiliser static metadata export
+└── Oui → La donnee est-elle disponible au build ?
+    ├── Oui → Utiliser generateStaticParams + static metadata
+    └── Non → Utiliser generateMetadata
+```
+
+### Choix du Schema JSON-LD
+
+```
+Quel est le type de contenu principal ?
+├── Article/Blog → Article
+├── Produit → Product
+├── Service → Service
+├── Organisation → Organization
+├── Personne → Person
+├── FAQ → FAQPage
+├── Evenement → Event
+├── Recette → Recipe
+└── Autre → WebPage generique
+```
+
+### Image OG : Statique ou Dynamique ?
+
+```
+L'image doit-elle inclure du texte dynamique (titre) ?
+├── Non → Image statique dans public/ ou depuis CMS
+└── Oui → Le design est-il simple ?
+    ├── Oui → opengraph-image.tsx avec ImageResponse
+    └── Non → Service externe (Cloudinary, imgix) ou generation custom
+```
+
+---
+
+## Checklist de Validation Finale
+
+### Meta Tags Essentiels
+
+- [ ] Title present et ≤60 caracteres
+- [ ] Description presente et 150-160 caracteres
+- [ ] Canonical URL absolue et correcte
+- [ ] Viewport configure pour mobile
+- [ ] Language/locale defini
+
+### Open Graph
+
+- [ ] og:title present
+- [ ] og:description presente
+- [ ] og:image URL absolue et accessible
+- [ ] og:image dimensions ≥1200x630
+- [ ] og:url correspond au canonical
+- [ ] og:type approprie au contenu
+
+### Twitter Cards
+
+- [ ] twitter:card defini (summary ou summary_large_image)
+- [ ] twitter:image accessible (ou fallback OG)
+
+### JSON-LD
+
+- [ ] Syntaxe JSON valide
+- [ ] @context et @type presents
+- [ ] Proprietes requises completes
+- [ ] Donnees alignees avec contenu visible
+- [ ] Rich Results Test sans erreurs
+
+### Technique
+
+- [ ] Build Next.js reussit sans erreurs metadata
+- [ ] HTML source contient les meta tags (SSR)
+- [ ] Lighthouse SEO ≥95
+- [ ] Pas de meta tags en double

@@ -1,0 +1,173 @@
+---
+title: Reference
+description: Documentation technique TechWatch - Sources officielles, APIs, Outils de monitoring, Criteres d'evaluation
+---
+
+# TechWatch Expert - Reference
+
+Documentation des sources fiables et APIs pour la veille technologique.
+
+---
+
+## Sources Officielles par Technologie
+
+### Next.js
+
+| Ressource | URL | Usage |
+|-----------|-----|-------|
+| Blog officiel | nextjs.org/blog | Annonces majeures, releases |
+| GitHub Releases | github.com/vercel/next.js/releases | Changelogs detailles |
+| Changelog filtre | next-changelog.vercel.app | Versions stables uniquement |
+| Documentation | nextjs.org/docs | Guides de migration |
+| endoflife.date | endoflife.date/nextjs | Cycles de support |
+
+### React
+
+| Ressource | URL | Usage |
+|-----------|-----|-------|
+| Blog React | react.dev/blog | Releases, breaking changes |
+| GitHub Releases | github.com/facebook/react/releases | Changelogs |
+| React Compiler | react.dev/learn/react-compiler | Documentation compiler |
+| Working Group | github.com/reactwg | Discussions avancees |
+
+### Tailwind CSS
+
+| Ressource | URL | Usage |
+|-----------|-----|-------|
+| Blog | tailwindcss.com/blog | Annonces v4+ |
+| GitHub | github.com/tailwindlabs/tailwindcss | Issues, releases |
+| Changelog | github.com/tailwindlabs/tailwindcss/blob/master/CHANGELOG.md | Details versions |
+
+### Radix UI / Base UI
+
+| Ressource | URL | Usage |
+|-----------|-----|-------|
+| Radix Changelog | radix-ui.com/primitives/docs/overview/releases | Releases primitives |
+| Base UI Docs | base-ui.com/react/overview | Documentation Base UI |
+| GitHub Issues | github.com/radix-ui/primitives | Bugs, migrations |
+
+### Biome
+
+| Ressource | URL | Usage |
+|-----------|-----|-------|
+| Blog | biomejs.dev/blog | Annonces majeures |
+| Changelog | biomejs.dev/changelog | Details versions |
+| Migration | biomejs.dev/guides/migrate-eslint-prettier | Guide depuis ESLint |
+
+### Sentry
+
+| Ressource | URL | Usage |
+|-----------|-----|-------|
+| Changelog | docs.sentry.io/platforms/javascript/guides/nextjs/migration | Migrations Next.js |
+| GitHub | github.com/getsentry/sentry-javascript | Releases SDK |
+| Blog | blog.sentry.io | Nouvelles features |
+
+---
+
+## APIs de Donnees
+
+### npm Registry API
+
+```
+Endpoint: https://registry.npmjs.org/{package}
+Usage: Versions, dates de publication, metadata
+```
+
+Informations disponibles :
+- `dist-tags.latest` : Derniere version stable
+- `time` : Dates de publication par version
+- `versions` : Liste complete des versions
+
+### GitHub API
+
+```
+Endpoint: https://api.github.com/repos/{owner}/{repo}/releases
+Usage: Changelogs, assets, dates
+```
+
+Endpoints utiles :
+- `/releases/latest` : Derniere release
+- `/releases/tags/{tag}` : Release specifique
+- `/compare/{base}...{head}` : Diff entre versions
+
+### endoflife.date API
+
+```
+Endpoint: https://endoflife.date/api/{product}.json
+Usage: Cycles de support, EOL dates
+```
+
+Produits disponibles : nodejs, nextjs, react, typescript
+
+---
+
+## Newsletters et Agregateurs
+
+### Newsletters Recommandees
+
+| Newsletter | Frequence | Focus |
+|------------|-----------|-------|
+| JavaScript Weekly | Hebdo | Ecosysteme JS general |
+| React Status | Hebdo | React et ecosysteme |
+| Node Weekly | Hebdo | Node.js et backend |
+| Frontend Focus | Hebdo | Frontend general |
+| Bytes | 2x/semaine | Tendances dev |
+
+### Agregateurs
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| JSFeeds | jsfeeds.com | Agregateur blogs JS |
+| Echo JS | echojs.com | News communautaires |
+| Best of JS | bestofjs.org | Tendances packages |
+| npm trends | npmtrends.com | Comparaison popularite |
+
+---
+
+## Outils de Monitoring
+
+### Dependances
+
+| Outil | Usage | Configuration |
+|-------|-------|---------------|
+| Renovate | Mises a jour automatiques | renovate.json |
+| Dependabot | Alertes GitHub | .github/dependabot.yml |
+| Snyk | Vulnerabilites avancees | .snyk |
+| npm-check-updates | Mise a jour interactive | CLI |
+
+### Securite
+
+| Outil | Commande | Usage |
+|-------|----------|-------|
+| npm audit | `npm audit --json` | Vulnerabilites npm |
+| Snyk CLI | `snyk test` | Analyse approfondie |
+| Socket.dev | Extension | Supply chain |
+
+---
+
+## Criteres d'Evaluation des Sources
+
+### Fiabilite (par ordre de priorite)
+
+1. **Documentation officielle** - Source primaire, toujours a jour
+2. **GitHub Releases** - Changelogs exhaustifs
+3. **Blogs mainteneurs** - Context et intentions
+4. **Stack Overflow** - Solutions communautaires (verifier dates)
+5. **Articles Medium/Dev.to** - Opinions et tutoriels (prudence)
+
+### Fraicheur Requise
+
+| Type d'information | Age maximum acceptable |
+|--------------------|------------------------|
+| Version actuelle | Temps reel (API) |
+| Breaking changes | 6 mois |
+| Best practices | 12 mois |
+| Patterns architecturaux | 18 mois |
+
+### Signaux d'Alerte
+
+Considerer une source obsolete si :
+- Article/reponse date de plus de 18 mois
+- Mentionne des versions majeures obsoletes (React 17, Next 13)
+- Propose des solutions contredites par la doc officielle
+- Aucune mise a jour depuis la derniere version majeure du sujet

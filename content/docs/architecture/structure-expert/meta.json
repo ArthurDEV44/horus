@@ -1,0 +1,6 @@
+{
+  "title": "Structure Expert",
+  "description": "Organise projet folders, src/ separation, clean architecture. Use when creating new projects or restructuring existing codebases.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

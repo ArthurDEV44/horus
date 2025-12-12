@@ -1,0 +1,763 @@
+---
+title: Workflows
+description: Processus detailles pour l'audit et l'optimisation des images, migration vers formats modernes, correction CLS, implementation responsive images, alt text SEO et Schema.org ImageObject.
+---
+
+# SEO Image Expert - Workflows Detailles
+
+## Workflow 1 : Audit Complet d'Optimisation Images
+
+### Contexte
+
+Evaluation complete des images d'un site pour identifier les opportunites d'optimisation performance et SEO.
+
+### Etapes
+
+#### 1.1 Collecte d'Informations Preliminaires
+
+Identifier :
+- Pages cles a auditer (homepage, pages produits, articles principaux)
+- Stack technique (Next.js, CMS, CDN utilise)
+- Volume d'images approximatif
+- Problemes signales par l'utilisateur
+
+#### 1.2 Analyse PageSpeed Insights
+
+Pour chaque page cle :
+
+1. Executer PageSpeed Insights en mode mobile
+2. Relever les audits lies aux images :
+   - "Properly size images"
+   - "Serve images in next-gen formats"
+   - "Efficiently encode images"
+   - "Defer offscreen images"
+   - "Image elements do not have explicit width and height"
+3. Identifier l'element LCP (souvent une image hero)
+4. Noter le score LCP actuel
+
+#### 1.3 Inventaire des Formats
+
+1. Lister les formats d'images utilises (JPEG, PNG, GIF, WebP, AVIF)
+2. Calculer la repartition par format
+3. Identifier les images candidates a la conversion moderne
+4. Estimer le gain potentiel (50% pour AVIF, 25% pour WebP)
+
+#### 1.4 Audit Responsive
+
+1. Verifier la presence de srcset sur les images principales
+2. Analyser les tailles servies vs tailles affichees
+3. Tester sur differents viewports (mobile 375px, tablette 768px, desktop 1440px)
+4. Identifier les images oversized
+
+#### 1.5 Audit Alt Text
+
+1. Lister toutes les images de contenu
+2. Verifier la presence d'attributs alt
+3. Evaluer la qualite des alt text existants
+4. Identifier les images decoratives incorrectement marquees
+
+#### 1.6 Audit Chargement
+
+1. Verifier l'utilisation de lazy loading
+2. Identifier si l'image LCP est incorrectement lazy-loaded
+3. Verifier la presence de fetchpriority sur image hero
+4. Analyser le waterfall de chargement
+
+#### 1.7 Rapport et Priorisation
+
+Produire un rapport incluant :
+
+| Categorie | Problemes Trouves | Priorite | Impact Estime |
+|-----------|-------------------|----------|---------------|
+| Formats | X images en JPEG uniquement | Haute | -30% poids |
+| LCP | Image hero sans fetchpriority | Haute | -0.5s LCP |
+| CLS | X images sans dimensions | Haute | Reduction CLS |
+| Responsive | Pas de srcset | Moyenne | Perf mobile |
+| Alt text | X images sans alt | Moyenne | SEO + A11y |
+
+---
+
+## Workflow 2 : Optimisation Image LCP
+
+### Contexte
+
+L'image hero ou principale impacte negativement le LCP (> 2.5 secondes).
+
+### Arbre de Decision
+
+```
+LCP > 2.5s avec image hero ?
+├── L'image est-elle l'element LCP ?
+│   └── Verifier avec PageSpeed Insights "Largest Contentful Paint element"
+│
+├── Probleme de decouverte ?
+│   ├── Image dans CSS background → Migrer vers <img> ou preload
+│   ├── Image chargee par JS → Server-side render
+│   └── Image lazy-loaded → Retirer loading="lazy"
+│
+├── Probleme de priorite ?
+│   └── Ajouter fetchpriority="high"
+│
+├── Probleme de taille ?
+│   ├── Image trop lourde → Compression + format moderne
+│   ├── Image oversized → srcset ou resize
+│   └── Mauvais format → Convertir en AVIF/WebP
+│
+└── Probleme serveur ?
+    ├── TTFB lent → Optimisation backend
+    └── Pas de CDN → Implementer CDN images
+```
+
+### Actions par Cause
+
+#### Decouverte Tardive
+
+1. Verifier comment l'image est referencee dans le HTML
+2. Si en CSS background-image, preferer un `<link rel="preload">` :
+   ```html
+   <link rel="preload" as="image" href="hero.jpg" fetchpriority="high">
+   ```
+3. Si chargee par JavaScript, migrer vers rendu serveur
+
+#### Priorite Reseau
+
+1. Ajouter fetchpriority="high" sur l'element img :
+   ```html
+   <img src="hero.jpg" fetchpriority="high" alt="...">
+   ```
+2. Retirer loading="lazy" si present
+3. Verifier qu'une seule image a fetchpriority="high"
+
+#### Taille et Format
+
+1. Mesurer la taille actuelle de l'image
+2. Determiner les dimensions d'affichage reelles
+3. Redimensionner a la taille necessaire (2x pour retina max)
+4. Convertir en AVIF avec fallback WebP :
+   ```html
+   <picture>
+     <source srcset="hero.avif" type="image/avif">
+     <source srcset="hero.webp" type="image/webp">
+     <img src="hero.jpg" fetchpriority="high" alt="...">
+   </picture>
+   ```
+5. Compresser a 75-85% qualite
+
+#### Validation
+
+1. Re-tester avec PageSpeed Insights
+2. Verifier que LCP < 2.5s
+3. Confirmer que l'image s'affiche correctement
+4. Tester le fallback sur navigateurs anciens
+
+---
+
+## Workflow 3 : Migration vers Formats Modernes
+
+### Contexte
+
+Conversion des images JPEG/PNG vers AVIF et WebP pour reduire le poids.
+
+### Phases
+
+#### 3.1 Inventaire et Priorisation
+
+1. Lister toutes les images du site
+2. Classer par poids (top 20 = priorite)
+3. Identifier les images above-the-fold
+4. Exclure les images deja optimisees
+
+#### 3.2 Strategie de Conversion
+
+```
+Type d'image → Format cible
+
+Photographies → AVIF (qualite 50-70)
+                └── Fallback WebP (qualite 75-85)
+                    └── Fallback JPEG original
+
+Graphiques avec texte → WebP lossless
+                        └── Fallback PNG original
+
+Logos/Icones simples → SVG si possible
+                       └── Sinon WebP lossless
+
+Animations → WebP anime ou AVIF anime
+             └── Fallback GIF
+```
+
+#### 3.3 Implementation Next.js
+
+Configuration next.config.js :
+```javascript
+images: {
+  formats: ['image/avif', 'image/webp'],
+}
+```
+
+Le composant Image gere automatiquement les formats.
+
+#### 3.4 Implementation HTML Standard
+
+```html
+<picture>
+  <source srcset="image.avif" type="image/avif">
+  <source srcset="image.webp" type="image/webp">
+  <img src="image.jpg" alt="Description" width="800" height="600">
+</picture>
+```
+
+#### 3.5 Validation
+
+1. Tester sur Chrome (AVIF), Firefox (AVIF), Safari (WebP)
+2. Verifier que le fallback fonctionne
+3. Comparer la qualite visuelle
+4. Mesurer la reduction de poids
+
+---
+
+## Workflow 4 : Correction CLS Images
+
+### Contexte
+
+Les images causent du Cumulative Layout Shift (CLS > 0.1).
+
+### Diagnostic
+
+#### 4.1 Identification des Coupables
+
+1. Ouvrir Chrome DevTools > Performance
+2. Enregistrer le chargement de la page
+3. Rechercher les "Layout Shift" dans la timeline
+4. Identifier les elements causant les shifts
+
+Alternativement, utiliser PageSpeed Insights qui liste les elements CLS.
+
+#### 4.2 Causes Courantes
+
+| Cause | Symptome | Solution |
+|-------|----------|----------|
+| Dimensions manquantes | Image sans width/height | Ajouter attributs |
+| CSS override dimensions | Dimensions ignorees | Verifier styles |
+| Lazy loading aggressif | Image placeholder puis contenu | Reserver espace |
+| Aspect ratio incorrect | Image deformee puis corrigee | aspect-ratio CSS |
+| Injection dynamique | Image ajoutee apres render | Prevoir espace |
+
+### Solutions
+
+#### Dimensions HTML
+
+```html
+<!-- Avant -->
+<img src="photo.jpg" alt="...">
+
+<!-- Apres -->
+<img src="photo.jpg" alt="..." width="800" height="600">
+```
+
+#### Aspect Ratio CSS
+
+```css
+.image-container {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+}
+
+.image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+```
+
+#### Placeholder Skeleton
+
+```html
+<div class="image-wrapper" style="aspect-ratio: 4/3; background: #e0e0e0;">
+  <img src="photo.jpg" alt="..." loading="lazy">
+</div>
+```
+
+#### Next.js avec Placeholder
+
+```jsx
+<Image
+  src="/photo.jpg"
+  alt="..."
+  width={800}
+  height={600}
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,..."
+/>
+```
+
+### Validation
+
+1. Re-enregistrer la performance dans DevTools
+2. Verifier l'absence de Layout Shifts lies aux images
+3. Confirmer CLS < 0.1 dans PageSpeed Insights
+
+---
+
+## Workflow 5 : Implementation Responsive Images
+
+### Contexte
+
+Implementer des images adaptatives pour servir la taille appropriee selon l'appareil.
+
+### Etapes
+
+#### 5.1 Analyse des Besoins
+
+1. Identifier les breakpoints du design
+2. Mesurer la taille d'affichage des images a chaque breakpoint
+3. Calculer les tailles source necessaires (considerer 2x retina)
+
+Exemple :
+| Viewport | Taille Affichee | Source 1x | Source 2x |
+|----------|-----------------|-----------|-----------|
+| Mobile (375px) | 375px | 400w | 800w |
+| Tablette (768px) | 384px | 400w | 800w |
+| Desktop (1440px) | 600px | 640w | 1280w |
+
+#### 5.2 Generation des Variantes
+
+Creer les versions necessaires :
+- image-400w.jpg
+- image-640w.jpg
+- image-800w.jpg
+- image-1280w.jpg
+
+#### 5.3 Implementation srcset
+
+```html
+<img
+  src="image-800w.jpg"
+  srcset="image-400w.jpg 400w,
+          image-640w.jpg 640w,
+          image-800w.jpg 800w,
+          image-1280w.jpg 1280w"
+  sizes="(max-width: 767px) 100vw,
+         (max-width: 1199px) 50vw,
+         600px"
+  alt="Description"
+  loading="lazy"
+>
+```
+
+#### 5.4 Next.js Automatique
+
+Le composant Image gere srcset automatiquement :
+
+```jsx
+<Image
+  src="/image.jpg"
+  alt="Description"
+  width={800}
+  height={600}
+  sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 600px"
+/>
+```
+
+Configuration deviceSizes dans next.config.js si necessaire.
+
+#### 5.5 Validation
+
+1. Tester sur differents viewports dans DevTools
+2. Verifier quelle source est chargee (Network panel)
+3. Confirmer que les images ne sont pas oversized
+
+---
+
+## Workflow 6 : Optimisation Alt Text SEO
+
+### Contexte
+
+Ameliorer les attributs alt pour le SEO et l'accessibilite.
+
+### Phases
+
+#### 6.1 Audit Existant
+
+1. Extraire tous les attributs alt du site
+2. Classer en categories :
+   - Manquants
+   - Vides (intentionnels vs erreurs)
+   - Generiques ("image", "photo")
+   - Keyword stuffing
+   - Corrects
+
+#### 6.2 Classification des Images
+
+| Type | Traitement Alt |
+|------|----------------|
+| Hero/Banner | Descriptif + contexte page |
+| Produit | Nom + caracteristique principale |
+| Portrait | Nom personne + role |
+| Graphique | Resume donnees cles |
+| Decoration | alt="" (vide intentionnel) |
+| Icone | Fonction ou alt="" si redondant |
+
+#### 6.3 Redaction des Alt
+
+Template par type :
+
+**Produit** :
+`[Nom produit] - [Couleur/Taille/Variante] [Caracteristique distinctive]`
+Exemple : `Sneakers Nike Air Max 90 blanches, semelle visible`
+
+**Lieu** :
+`[Type de lieu] a [Localisation], [Caracteristique principale]`
+Exemple : `Villa de luxe avec piscine a debordement, vue sur la baie de Cannes`
+
+**Portrait** :
+`[Nom de la personne], [Role ou contexte]`
+Exemple : `Marie Dupont, fondatrice de l'entreprise`
+
+**Graphique** :
+`[Type de graphique] montrant [donnee principale] : [chiffre cle]`
+Exemple : `Graphique en barres montrant la croissance : +45% en 2024`
+
+#### 6.4 Verification Qualite
+
+Checklist par alt :
+- [ ] Moins de 125 caracteres
+- [ ] Ne commence pas par "Image de..."
+- [ ] Contient un mot-cle naturellement (si pertinent)
+- [ ] Decrit le contenu visible
+- [ ] Apporte du contexte SEO
+
+#### 6.5 Implementation
+
+1. Mettre a jour les attributs alt dans le code/CMS
+2. Former l'equipe editoriale sur les bonnes pratiques
+3. Configurer des regles de linting si possible
+
+---
+
+## Workflow 7 : Implementation Schema.org ImageObject
+
+### Contexte
+
+Ajouter des donnees structurees ImageObject pour ameliorer la visibilite dans Google Images.
+
+### Cas d'Usage
+
+#### 7.1 Images de Contenu Editorial
+
+Integrer ImageObject dans le schema Article :
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Titre de l'article",
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://example.com/image.jpg",
+    "width": 1200,
+    "height": 630,
+    "caption": "Legende de l'image",
+    "creditText": "Photo par Photographe"
+  },
+  "author": {...},
+  "publisher": {...}
+}
+```
+
+#### 7.2 Images Produit E-commerce
+
+Integrer dans le schema Product :
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Nom du produit",
+  "image": [
+    {
+      "@type": "ImageObject",
+      "url": "https://example.com/product-1.jpg",
+      "width": 1200,
+      "height": 1200
+    },
+    {
+      "@type": "ImageObject",
+      "url": "https://example.com/product-2.jpg",
+      "width": 1200,
+      "height": 1200
+    }
+  ],
+  "offers": {...}
+}
+```
+
+#### 7.3 Images avec Licence
+
+Pour le badge "Licensable" dans Google Images :
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "ImageObject",
+  "contentUrl": "https://example.com/photo.jpg",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "acquireLicensePage": "https://example.com/license-info",
+  "creditText": "Photo par Jean Dupont",
+  "creator": {
+    "@type": "Person",
+    "name": "Jean Dupont"
+  },
+  "copyrightNotice": "© 2025 Example Company"
+}
+```
+
+### Validation
+
+1. Tester avec Rich Results Test
+2. Verifier l'absence d'erreurs
+3. Confirmer l'eligibilite aux rich results
+4. Monitorer Google Search Console > Enhancements
+
+---
+
+## Workflow 8 : Configuration Next.js Image
+
+### Contexte
+
+Configurer optimalement le composant Image de Next.js.
+
+### Configuration next.config.js
+
+```javascript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    // Priorite des formats
+    formats: ['image/avif', 'image/webp'],
+
+    // Breakpoints pour images pleine largeur
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+
+    // Tailles pour images avec sizes prop
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+
+    // Sources distantes autorisees (Sanity, Cloudinary, etc.)
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.sanity.io',
+        pathname: '/images/**',
+      },
+      // Ajouter autres sources...
+    ],
+
+    // Cache minimum (secondes)
+    minimumCacheTTL: 60 * 60 * 24, // 24h
+  },
+}
+
+module.exports = nextConfig
+```
+
+### Usage Composant
+
+#### Image Standard
+
+```jsx
+import Image from 'next/image'
+
+<Image
+  src="/photo.jpg"
+  alt="Description pertinente"
+  width={800}
+  height={600}
+  className="rounded-lg"
+/>
+```
+
+#### Image LCP (Hero)
+
+```jsx
+<Image
+  src="/hero.jpg"
+  alt="Hero description"
+  width={1920}
+  height={1080}
+  priority // ou preload en v16
+  sizes="100vw"
+/>
+```
+
+#### Image avec Placeholder Blur
+
+```jsx
+import heroImage from '@/public/hero.jpg'
+
+<Image
+  src={heroImage}
+  alt="Hero"
+  placeholder="blur"
+/>
+
+// Pour remote images
+<Image
+  src="https://cdn.example.com/image.jpg"
+  alt="Remote"
+  width={800}
+  height={600}
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,/9j/4AAQ..."
+/>
+```
+
+#### Image Fill (Conteneur Parent)
+
+```jsx
+<div className="relative h-64 w-full">
+  <Image
+    src="/photo.jpg"
+    alt="Description"
+    fill
+    className="object-cover"
+    sizes="(max-width: 768px) 100vw, 50vw"
+  />
+</div>
+```
+
+### Generation blurDataURL
+
+Creer un utilitaire :
+
+```javascript
+// lib/blur-data-url.ts
+import { getPlaiceholder } from 'plaiceholder'
+
+export async function getBlurDataURL(src: string) {
+  const { base64 } = await getPlaiceholder(src)
+  return base64
+}
+```
+
+Utilisation au build time pour les images statiques.
+
+---
+
+## Workflow 9 : Integration CDN Images
+
+### Contexte
+
+Configurer un CDN pour optimisation automatique des images.
+
+### Cloudflare Images
+
+#### Configuration Transformation URL
+
+```
+https://example.com/cdn-cgi/image/f=auto,quality=85,width=800/original.jpg
+```
+
+Parametres principaux :
+- `f=auto` : AVIF > WebP > original
+- `quality=1-100` : Qualite compression
+- `width` / `height` : Redimensionnement
+- `fit=scale-down|contain|cover|crop|pad`
+
+#### Integration Next.js
+
+Loader personnalise :
+
+```javascript
+// lib/cloudflare-loader.js
+export default function cloudflareLoader({ src, width, quality }) {
+  const params = [`width=${width}`, `quality=${quality || 75}`, 'f=auto']
+  return `https://example.com/cdn-cgi/image/${params.join(',')}${src}`
+}
+```
+
+Configuration :
+
+```javascript
+// next.config.js
+module.exports = {
+  images: {
+    loader: 'custom',
+    loaderFile: './lib/cloudflare-loader.js',
+  },
+}
+```
+
+### Cache Headers
+
+Configuration recommandee pour images statiques :
+
+```
+Cache-Control: public, max-age=31536000, immutable
+```
+
+Pour images pouvant changer :
+
+```
+Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+```
+
+---
+
+## Checklist Pre-Deploiement Images
+
+### Performance
+
+- [ ] Image LCP a fetchpriority="high" (ou priority Next.js)
+- [ ] Image LCP n'est PAS lazy-loaded
+- [ ] Images below-the-fold ont loading="lazy"
+- [ ] Formats modernes actives (AVIF, WebP)
+- [ ] Compression appliquee (75-85% qualite)
+- [ ] Tailles appropriees (pas d'oversizing)
+- [ ] srcset implemente pour images responsives
+
+### CLS
+
+- [ ] Toutes images ont width et height
+- [ ] Ou aspect-ratio CSS defini
+- [ ] Placeholder blur pour images importantes
+- [ ] Espace reserve pour images chargees dynamiquement
+
+### SEO / Accessibilite
+
+- [ ] Alt text present sur toutes images de contenu
+- [ ] Alt text descriptif et concis (< 125 chars)
+- [ ] Images decoratives ont alt=""
+- [ ] Schema ImageObject si applicable
+- [ ] Noms de fichiers descriptifs
+
+### Validation
+
+- [ ] PageSpeed Insights ≥ 90
+- [ ] LCP < 2.5s
+- [ ] CLS < 0.1
+- [ ] Pas d'audits "Properly size images"
+- [ ] Pas d'audits "Serve next-gen formats"
+- [ ] Rich Results Test valide (si schema)
+- [ ] Test navigateurs (fallback AVIF)
+
+---
+
+## Metriques de Succes
+
+### KPIs Primaires
+
+| Metrique | Objectif | Mesure |
+|----------|----------|--------|
+| LCP | < 2.5s | PageSpeed Insights |
+| CLS | < 0.1 | PageSpeed Insights |
+| Poids images | -30 a -50% | DevTools Network |
+| Score Lighthouse | ≥ 90 | Lighthouse |
+
+### KPIs Secondaires
+
+| Metrique | Objectif | Mesure |
+|----------|----------|--------|
+| Couverture alt | 100% | Audit manuel |
+| Format moderne | > 80% | Inventaire |
+| Images responsives | > 90% | Audit code |
+| Schema valide | 100% | Rich Results Test |

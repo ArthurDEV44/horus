@@ -1,0 +1,563 @@
+---
+title: Structure Expert - Reference
+description: Documentation complète des patterns, conventions et standards de structure de projets.
+---
+
+# Structure Expert - Documentation de Référence
+
+Documentation complète des patterns, conventions et standards de structure de projets.
+
+---
+
+## Table des Matières
+
+1. [Principes Fondamentaux](#principes-fondamentaux)
+2. [Structures par Écosystème](#structures-par-écosystème)
+3. [Patterns Architecturaux](#patterns-architecturaux)
+4. [Conventions de Nommage](#conventions-de-nommage)
+5. [Gestion des Monorepos](#gestion-des-monorepos)
+6. [Anti-patterns](#anti-patterns)
+
+---
+
+## Principes Fondamentaux
+
+### Séparation des Préoccupations
+
+Chaque dossier répond à une question unique :
+- **Quoi ?** → `src/` (code source)
+- **Comment tester ?** → `tests/`
+- **Comment builder ?** → `scripts/`, fichiers config racine
+- **Comment utiliser ?** → `docs/`
+- **Quoi déployer ?** → `dist/`, `build/`
+
+### Règle des 7±2
+
+Un dossier contient idéalement entre 5 et 9 éléments. Au-delà, envisage une sous-organisation.
+
+### Principe de Localité
+
+Les fichiers fréquemment modifiés ensemble doivent être proches. Un composant React inclut son style, ses tests et ses types dans le même dossier ou à proximité immédiate.
+
+### Convention over Configuration
+
+Adopte les conventions par défaut des outils. Ne personnalise que si nécessaire. Les conventions standard :
+- `src/` pour le code source
+- `dist/` ou `build/` pour les outputs
+- `tests/` ou `__tests__/` pour les tests
+- `docs/` pour la documentation
+
+---
+
+## Structures par Écosystème
+
+### Node.js / TypeScript
+
+#### Application API
+
+```
+my-api/
+├── src/
+│   ├── modules/              # Modules métier
+│   │   ├── users/
+│   │   │   ├── users.controller.ts
+│   │   │   ├── users.service.ts
+│   │   │   ├── users.repository.ts
+│   │   │   ├── users.types.ts
+│   │   │   └── index.ts
+│   │   └── orders/
+│   ├── shared/               # Code partagé
+│   │   ├── middlewares/
+│   │   ├── guards/
+│   │   ├── decorators/
+│   │   └── utils/
+│   ├── infrastructure/       # Connexions externes
+│   │   ├── database/
+│   │   ├── cache/
+│   │   └── messaging/
+│   ├── config/               # Configuration applicative
+│   │   ├── database.config.ts
+│   │   └── app.config.ts
+│   ├── app.ts
+│   └── main.ts
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+├── scripts/
+├── dist/                     # Gitignored
+├── package.json
+├── tsconfig.json
+├── .env.example
+└── README.md
+```
+
+#### Librairie NPM
+
+```
+my-library/
+├── src/
+│   ├── index.ts              # Point d'entrée public
+│   ├── core/
+│   └── utils/
+├── tests/
+├── dist/                     # Gitignored
+├── package.json              # main, types, exports
+├── tsconfig.json
+├── tsconfig.build.json
+└── README.md
+```
+
+Configuration `package.json` pour librairie :
+
+```json
+{
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
+```
+
+### Python
+
+#### Package avec src Layout
+
+```
+my-package/
+├── src/
+│   └── my_package/
+│       ├── __init__.py
+│       ├── core/
+│       │   ├── __init__.py
+│       │   └── engine.py
+│       ├── utils/
+│       │   ├── __init__.py
+│       │   └── helpers.py
+│       └── cli.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_core/
+│   └── test_utils/
+├── docs/
+├── pyproject.toml
+├── README.md
+└── .python-version
+```
+
+Configuration `pyproject.toml` minimale :
+
+```toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "my-package"
+version = "1.0.0"
+requires-python = ">=3.11"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/my_package"]
+```
+
+#### Application FastAPI
+
+```
+my-api/
+├── src/
+│   └── app/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── api/
+│       │   ├── __init__.py
+│       │   ├── routes/
+│       │   └── deps.py
+│       ├── core/
+│       │   ├── config.py
+│       │   └── security.py
+│       ├── models/
+│       ├── schemas/
+│       ├── services/
+│       └── repositories/
+├── tests/
+├── alembic/                  # Migrations DB
+├── pyproject.toml
+└── README.md
+```
+
+### Go
+
+```
+my-service/
+├── cmd/
+│   └── server/
+│       └── main.go
+├── internal/                 # Code privé au module
+│   ├── handlers/
+│   ├── services/
+│   ├── repositories/
+│   └── models/
+├── pkg/                      # Code exportable
+│   └── utils/
+├── api/                      # Définitions OpenAPI, proto
+├── configs/
+├── scripts/
+├── go.mod
+├── go.sum
+└── README.md
+```
+
+### Rust
+
+```
+my-crate/
+├── src/
+│   ├── lib.rs               # Si librairie
+│   ├── main.rs              # Si binaire
+│   ├── modules/
+│   └── utils/
+├── tests/                   # Tests d'intégration
+├── benches/                 # Benchmarks
+├── examples/
+├── Cargo.toml
+└── README.md
+```
+
+### .NET / C#
+
+```
+MySolution/
+├── src/
+│   ├── MyApp.Domain/        # Entités, interfaces
+│   ├── MyApp.Application/   # Use cases, services
+│   ├── MyApp.Infrastructure/# EF Core, external services
+│   └── MyApp.Api/           # Controllers, config
+├── tests/
+│   ├── MyApp.UnitTests/
+│   └── MyApp.IntegrationTests/
+├── docs/
+├── MySolution.sln
+└── README.md
+```
+
+---
+
+## Patterns Architecturaux
+
+### Feature-Based (Vertical Slices)
+
+Organisation par fonctionnalité métier. Idéal pour les équipes produit.
+
+```
+src/
+├── features/
+│   ├── authentication/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   ├── types.ts
+│   │   └── index.ts
+│   ├── dashboard/
+│   └── settings/
+└── shared/
+```
+
+**Avantages** :
+- Haute cohésion au sein d'une feature
+- Facilite le travail en équipe parallèle
+- Suppression de feature = suppression d'un dossier
+
+**Inconvénients** :
+- Duplication potentielle entre features
+- Nécessite discipline pour le dossier shared/
+
+### Layer-Based (Horizontal)
+
+Organisation par couche technique. Adapté aux petits projets ou équipes techniques.
+
+```
+src/
+├── controllers/
+├── services/
+├── repositories/
+├── models/
+├── middlewares/
+└── utils/
+```
+
+**Avantages** :
+- Simple à comprendre
+- Conventions claires
+- Adapté aux débutants
+
+**Inconvénients** :
+- Faible cohésion métier
+- Modifications éparpillées
+
+### Clean Architecture
+
+```
+src/
+├── domain/
+│   ├── entities/
+│   ├── value-objects/
+│   ├── events/
+│   └── repositories/       # Interfaces uniquement
+├── application/
+│   ├── use-cases/
+│   ├── services/
+│   ├── ports/              # Interfaces I/O
+│   └── dtos/
+├── infrastructure/
+│   ├── persistence/
+│   │   ├── repositories/   # Implémentations
+│   │   └── mappers/
+│   ├── external-services/
+│   └── messaging/
+└── presentation/
+    ├── http/
+    │   ├── controllers/
+    │   └── middlewares/
+    └── graphql/
+```
+
+**Règle de dépendance** : Les couches internes ne dépendent jamais des couches externes. Domain est au centre, autonome.
+
+### Hexagonal Architecture
+
+```
+src/
+├── core/                    # Hexagone
+│   ├── domain/
+│   └── application/
+│       ├── ports/
+│       │   ├── in/          # Use cases interfaces
+│       │   └── out/         # Repository interfaces
+│       └── services/
+└── adapters/
+    ├── in/                  # Driving adapters
+    │   ├── web/
+    │   └── cli/
+    └── out/                 # Driven adapters
+        ├── persistence/
+        └── messaging/
+```
+
+---
+
+## Conventions de Nommage
+
+### Fichiers et Dossiers
+
+| Écosystème | Dossiers | Fichiers | Exemple |
+|------------|----------|----------|---------|
+| JavaScript/TypeScript | kebab-case | kebab-case ou camelCase | `user-service/user.service.ts` |
+| Python | snake_case | snake_case | `user_service/user_service.py` |
+| Go | lowercase | lowercase | `userservice/service.go` |
+| Rust | snake_case | snake_case | `user_service/mod.rs` |
+| C# | PascalCase | PascalCase | `UserService/UserService.cs` |
+
+### Suffixes Communs
+
+| Suffixe | Usage | Exemple |
+|---------|-------|---------|
+| `.service` | Logique métier | `user.service.ts` |
+| `.controller` | Gestion HTTP | `user.controller.ts` |
+| `.repository` | Accès données | `user.repository.ts` |
+| `.types` / `.d` | Définitions de types | `user.types.ts` |
+| `.spec` / `.test` | Tests unitaires | `user.service.spec.ts` |
+| `.e2e-spec` | Tests end-to-end | `user.e2e-spec.ts` |
+| `.config` | Configuration | `database.config.ts` |
+| `.constants` | Constantes | `api.constants.ts` |
+| `.utils` | Utilitaires | `string.utils.ts` |
+
+### Index Files (Barrel Exports)
+
+Chaque module expose un `index.ts` qui exporte l'API publique :
+
+```typescript
+// src/modules/users/index.ts
+export { UsersService } from './users.service';
+export { UsersController } from './users.controller';
+export type { User, CreateUserDto } from './users.types';
+```
+
+---
+
+## Gestion des Monorepos
+
+### Structure Recommandée
+
+```
+monorepo/
+├── apps/                    # Applications déployables
+│   ├── web/                 # Frontend React/Vue/etc
+│   ├── api/                 # Backend API
+│   ├── admin/               # Admin dashboard
+│   └── mobile/              # React Native / Flutter
+├── packages/                # Librairies internes
+│   ├── ui/                  # Design system
+│   ├── config/              # Configs partagées (ESLint, TS)
+│   ├── utils/               # Utilitaires communs
+│   └── types/               # Types partagés
+├── tools/                   # Scripts et outils internes
+├── docs/                    # Documentation globale
+├── package.json             # Workspace root
+├── pnpm-workspace.yaml      # ou turbo.json, nx.json
+├── tsconfig.base.json       # Config TS partagée
+└── README.md
+```
+
+### Configuration pnpm Workspaces
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'tools/*'
+```
+
+### Configuration Turborepo
+
+```json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "test": {}
+  }
+}
+```
+
+### Conventions de Nommage Monorepo
+
+- Préfixe packages internes : `@org/package-name`
+- Apps sans préfixe ou avec préfixe différent
+- Versions synchronisées ou indépendantes selon la stratégie
+
+---
+
+## Anti-patterns
+
+### Le Fourre-tout `utils/`
+
+**Problème** : Un dossier `utils/` qui grossit indéfiniment avec des fonctions sans rapport.
+
+**Solution** : Créer des sous-dossiers thématiques ou intégrer les utils dans les features concernées.
+
+```
+# Mauvais
+utils/
+├── formatDate.ts
+├── validateEmail.ts
+├── calculateTax.ts
+├── parseConfig.ts
+└── ... 50 autres fichiers
+
+# Bon
+shared/
+├── date/
+│   └── formatters.ts
+├── validation/
+│   └── email.ts
+└── config/
+    └── parser.ts
+```
+
+### L'Imbrication Excessive
+
+**Problème** : Plus de 4 niveaux de profondeur rend la navigation difficile.
+
+**Règle** : Maximum 4 niveaux depuis src/ pour atteindre un fichier de code.
+
+```
+# Mauvais
+src/modules/users/features/profile/components/forms/inputs/TextInput.tsx
+
+# Bon
+src/features/users/components/ProfileForm.tsx
+```
+
+### Le Mélange de Conventions
+
+**Problème** : Incohérence dans le nommage (camelCase, snake_case, kebab-case mélangés).
+
+**Solution** : Définir une convention par type et s'y tenir. Documenter dans CONTRIBUTING.md.
+
+### Les Imports Circulaires
+
+**Problème** : Module A importe B qui importe A.
+
+**Solution** :
+- Extraire le code partagé dans un module tiers
+- Utiliser l'injection de dépendances
+- Restructurer pour respecter le sens des dépendances
+
+### Configuration Éparpillée
+
+**Problème** : Fichiers de config dispersés dans l'arborescence.
+
+**Solution** : Tous les fichiers de configuration à la racine ou dans un dossier `config/` dédié.
+
+```
+# Bon
+project/
+├── .eslintrc.js
+├── .prettierrc
+├── tsconfig.json
+├── vitest.config.ts
+├── src/
+└── ...
+```
+
+---
+
+## Fichiers Racine Standards
+
+| Fichier | Usage |
+|---------|-------|
+| `README.md` | Documentation d'entrée |
+| `LICENSE` | Licence du projet |
+| `CHANGELOG.md` | Historique des versions |
+| `CONTRIBUTING.md` | Guide de contribution |
+| `.gitignore` | Fichiers ignorés par Git |
+| `.editorconfig` | Config éditeur cross-IDE |
+| `.env.example` | Template variables d'environnement |
+| `package.json` / `pyproject.toml` / `Cargo.toml` | Manifest projet |
+| `tsconfig.json` / équivalent | Config compilateur |
+| `Dockerfile` | Build image Docker |
+| `docker-compose.yml` | Orchestration locale |
+
+---
+
+## Ressources
+
+### Documentation Officielle
+- [Next.js Project Structure](https://nextjs.org/docs/app/getting-started/project-structure)
+- [Python Packaging Guide - src layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/)
+- [Turborepo Documentation](https://turbo.build/repo/docs)
+- [Nx Documentation](https://nx.dev/docs)
+
+### Articles de Référence
+- [Clean Architecture Folder Structure](https://www.milanjovanovic.tech/blog/clean-architecture-folder-structure)
+- [React Folder Structure in 5 Steps](https://www.robinwieruch.de/react-folder-structure/)
+- [Modern Node.js + TypeScript Setup 2025](https://dev.to/woovi/a-modern-nodejs-typescript-setup-for-2025-nlk)
+
+### Conventions
+- [Folder Structure Conventions (GitHub)](https://github.com/kriasoft/Folder-Structure-Conventions)
+- [pyOpenSci Python Package Guide](https://www.pyopensci.org/python-package-guide/package-structure-code/python-package-structure.html)

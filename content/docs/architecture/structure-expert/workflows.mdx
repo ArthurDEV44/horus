@@ -1,0 +1,556 @@
+---
+title: Structure Expert - Workflows
+description: Processus détaillés pour chaque scénario de structuration de projet.
+---
+
+# Structure Expert - Workflows
+
+Processus détaillés pour chaque scénario de structuration de projet.
+
+---
+
+## Table des Matières
+
+1. [Création d'un Nouveau Projet](#workflow-1--création-dun-nouveau-projet)
+2. [Restructuration d'un Projet Existant](#workflow-2--restructuration-dun-projet-existant)
+3. [Migration vers Monorepo](#workflow-3--migration-vers-monorepo)
+4. [Adoption du src Layout](#workflow-4--adoption-du-src-layout)
+5. [Passage au Feature-Based](#workflow-5--passage-au-feature-based)
+6. [Séparation Frontend/Backend](#workflow-6--séparation-frontendbackend)
+
+---
+
+## Workflow 1 : Création d'un Nouveau Projet
+
+### Phase 1 : Collecte d'Informations
+
+Pose les questions suivantes :
+
+1. **Type de projet**
+   - Application web (SPA, SSR, statique)
+   - API backend (REST, GraphQL, gRPC)
+   - CLI
+   - Librairie/package
+   - Fullstack
+   - Mobile
+
+2. **Stack technique**
+   - Langage principal
+   - Framework(s)
+   - Base de données
+   - Services externes
+
+3. **Contexte équipe**
+   - Taille de l'équipe
+   - Niveau d'expérience
+   - Méthodologie (agile, etc.)
+
+4. **Contraintes**
+   - Monorepo ou repo unique
+   - CI/CD existant
+   - Standards entreprise
+
+### Phase 2 : Recherche
+
+Effectue une recherche web pour :
+
+- Conventions actuelles du framework choisi
+- Dernières versions des outils de build
+- Meilleures pratiques de la communauté
+- Exemples de projets open source similaires
+
+### Phase 3 : Génération de Structure
+
+Génère l'arborescence adaptée avec :
+
+```
+<ProposedStructure>
+project-name/
+├── src/
+│   └── [structure adaptée au type]
+├── tests/
+├── docs/
+├── scripts/
+├── [fichiers config racine]
+└── README.md
+</ProposedStructure>
+```
+
+### Phase 4 : Validation Utilisateur
+
+Présente la structure avec :
+- Justification de chaque dossier principal
+- Alternatives considérées
+- Points d'attention
+
+### Phase 5 : Implémentation
+
+1. Crée l'arborescence des dossiers
+2. Génère les fichiers de configuration :
+   - Package manifest (package.json, pyproject.toml, etc.)
+   - Config compilateur (tsconfig.json, etc.)
+   - .gitignore adapté
+   - .editorconfig
+3. Ajoute les fichiers .gitkeep dans les dossiers vides
+4. Crée un README.md minimal avec la structure documentée
+
+---
+
+## Workflow 2 : Restructuration d'un Projet Existant
+
+### Phase 1 : Audit de l'Existant
+
+Analyse le projet actuel :
+
+1. **Inventaire des fichiers**
+   - Liste des dossiers de premier niveau
+   - Répartition du code par dossier
+   - Fichiers de configuration présents
+
+2. **Détection des problèmes**
+   - Dossiers fourre-tout (utils/, helpers/, common/)
+   - Imbrication excessive
+   - Incohérences de nommage
+   - Imports circulaires potentiels
+
+3. **Dépendances**
+   - Graph des imports entre modules
+   - Couplage entre composants
+
+### Phase 2 : Proposition de Refactoring
+
+Présente un plan en phases :
+
+<RefactoringPlan>
+Phase 1 - Quick Wins (sans risque)
+- Renommages de dossiers
+- Déplacement de fichiers isolés
+- Ajout de index.ts manquants
+
+Phase 2 - Réorganisation Modules
+- Regroupement par feature
+- Extraction du shared/
+- Nettoyage des utils/
+
+Phase 3 - Architecture (si nécessaire)
+- Séparation des layers
+- Inversion des dépendances
+</RefactoringPlan>
+
+### Phase 3 : Plan de Migration
+
+Pour chaque déplacement :
+
+1. **Avant** : Chemin actuel
+2. **Après** : Nouveau chemin
+3. **Impact** : Fichiers à mettre à jour (imports)
+4. **Risque** : Faible / Moyen / Élevé
+
+### Phase 4 : Exécution Incrémentale
+
+Procède par petits commits :
+
+1. Un commit par déplacement logique
+2. Mise à jour des imports dans le même commit
+3. Vérification des tests après chaque étape
+4. Pas de changement de logique métier
+
+### Phase 5 : Validation Finale
+
+- Exécute tous les tests
+- Vérifie le build
+- Valide les imports (pas de chemins cassés)
+- Met à jour la documentation
+
+---
+
+## Workflow 3 : Migration vers Monorepo
+
+### Phase 1 : Évaluation
+
+Détermine si le monorepo est adapté :
+
+**Indicateurs favorables :**
+- Plusieurs apps partageant du code
+- Équipe travaillant sur plusieurs projets
+- Besoin de cohérence (versions, configs)
+- CI/CD unifiée souhaitée
+
+**Contre-indicateurs :**
+- Projets vraiment indépendants
+- Équipes silotées
+- Cycles de release différents
+
+### Phase 2 : Choix de l'Outil
+
+Compare selon les besoins :
+
+| Critère | Turborepo | Nx | pnpm seul |
+|---------|-----------|-----|-----------|
+| Simplicité | Haute | Moyenne | Haute |
+| Features | Build | Complet | Basique |
+| Courbe d'apprentissage | Faible | Moyenne | Faible |
+| Écosystème | JS/TS | Polyglot | JS/TS |
+
+### Phase 3 : Structure Cible
+
+Définis la structure :
+
+```
+monorepo/
+├── apps/
+│   ├── [app-1]/
+│   └── [app-2]/
+├── packages/
+│   ├── shared/
+│   ├── ui/
+│   └── config/
+├── package.json
+├── pnpm-workspace.yaml
+└── turbo.json (ou nx.json)
+```
+
+### Phase 4 : Migration
+
+Ordre recommandé :
+
+1. **Setup du monorepo vide**
+   - Initialise le workspace
+   - Configure l'outil (Turborepo/Nx)
+   - Setup pnpm workspaces
+
+2. **Migration de la première app**
+   - Déplace dans apps/
+   - Ajuste les paths
+   - Vérifie le build
+
+3. **Extraction des packages partagés**
+   - Identifie le code commun
+   - Crée les packages/
+   - Met à jour les imports
+
+4. **Migration des autres apps**
+   - Une par une
+   - Connecte aux packages
+
+5. **Optimisation**
+   - Configure le caching
+   - Setup les pipelines
+
+### Phase 5 : Documentation
+
+Documente :
+- Comment ajouter une nouvelle app
+- Comment créer un nouveau package
+- Commandes principales
+- Architecture des dépendances
+
+---
+
+## Workflow 4 : Adoption du src Layout
+
+### Contexte
+
+Le src layout place tout le code importable dans un dossier src/, séparant le code source des fichiers de configuration racine.
+
+### Phase 1 : État Actuel (Flat Layout)
+
+```
+# Structure flat typique
+my-package/
+├── my_package/
+│   ├── __init__.py
+│   └── module.py
+├── tests/
+├── setup.py
+└── README.md
+```
+
+### Phase 2 : Structure Cible (src Layout)
+
+```
+my-package/
+├── src/
+│   └── my_package/
+│       ├── __init__.py
+│       └── module.py
+├── tests/
+├── pyproject.toml
+└── README.md
+```
+
+### Phase 3 : Migration
+
+1. **Crée le dossier src/**
+   ```bash
+   mkdir src
+   ```
+
+2. **Déplace le package**
+   ```bash
+   mv my_package src/
+   ```
+
+3. **Met à jour pyproject.toml**
+
+   Pour Hatch :
+   ```toml
+   [tool.hatch.build.targets.wheel]
+   packages = ["src/my_package"]
+   ```
+
+   Pour Setuptools :
+   ```toml
+   [tool.setuptools.packages.find]
+   where = ["src"]
+   ```
+
+4. **Met à jour les imports de tests**
+   - Les tests doivent maintenant importer depuis le package installé
+   - Installe en mode éditable : `pip install -e .`
+
+5. **Vérifie**
+   - Exécute les tests
+   - Vérifie le build du package
+
+### Avantages Obtenus
+
+- Tests s'exécutent contre le package installé
+- Pas de confusion avec le dossier courant
+- Structure plus propre à la racine
+- Meilleure compatibilité avec les outils modernes
+
+---
+
+## Workflow 5 : Passage au Feature-Based
+
+### Phase 1 : Analyse de l'Existant
+
+Structure layer-based typique :
+
+```
+src/
+├── controllers/
+│   ├── userController.ts
+│   └── orderController.ts
+├── services/
+│   ├── userService.ts
+│   └── orderService.ts
+├── models/
+│   ├── User.ts
+│   └── Order.ts
+└── utils/
+```
+
+### Phase 2 : Identification des Features
+
+Liste les domaines métier :
+- Users (authentication, profile, settings)
+- Orders (creation, payment, history)
+- Products (catalog, search, inventory)
+
+### Phase 3 : Structure Cible
+
+```
+src/
+├── features/
+│   ├── users/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── models/
+│   │   ├── types.ts
+│   │   └── index.ts
+│   ├── orders/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── models/
+│   │   └── index.ts
+│   └── products/
+├── shared/
+│   ├── middleware/
+│   ├── utils/
+│   └── types/
+├── infrastructure/
+│   ├── database/
+│   └── cache/
+└── main.ts
+```
+
+### Phase 4 : Migration Progressive
+
+Pour chaque feature :
+
+1. **Crée le dossier feature**
+   ```
+   src/features/users/
+   ```
+
+2. **Déplace les fichiers liés**
+   - controllers/userController.ts → features/users/controllers/
+   - services/userService.ts → features/users/services/
+   - models/User.ts → features/users/models/
+
+3. **Crée l'index d'export**
+   ```typescript
+   // features/users/index.ts
+   export * from './controllers';
+   export * from './services';
+   export * from './models';
+   ```
+
+4. **Met à jour les imports**
+   ```typescript
+   // Avant
+   import { UserService } from '../services/userService';
+
+   // Après
+   import { UserService } from '@/features/users';
+   ```
+
+5. **Vérifie et teste**
+
+### Phase 5 : Gestion du Shared
+
+Identifie ce qui reste vraiment partagé :
+- Middleware HTTP → shared/middleware/
+- Types génériques → shared/types/
+- Utils purs → shared/utils/
+
+Règle : Si un fichier n'est utilisé que par une feature, il va dans cette feature.
+
+---
+
+## Workflow 6 : Séparation Frontend/Backend
+
+### Phase 1 : État Initial
+
+Projet fullstack mélangé :
+
+```
+my-app/
+├── src/
+│   ├── components/     # Frontend
+│   ├── pages/          # Frontend
+│   ├── api/            # Backend
+│   ├── services/       # Mixte
+│   └── utils/          # Mixte
+└── package.json
+```
+
+### Phase 2 : Choix d'Architecture
+
+**Option A : Dossiers Séparés (même repo)**
+```
+my-app/
+├── frontend/
+├── backend/
+└── shared/
+```
+
+**Option B : Monorepo avec Workspaces**
+```
+my-app/
+├── apps/
+│   ├── web/
+│   └── api/
+├── packages/
+│   └── shared/
+└── package.json
+```
+
+**Option C : Repos Séparés**
+- Repo frontend
+- Repo backend
+- Repo shared (package npm privé)
+
+### Phase 3 : Extraction du Shared
+
+Identifie le code partagé :
+
+1. **Types/Interfaces**
+   - DTOs de l'API
+   - Types de domaine
+   - Enums partagés
+
+2. **Validation**
+   - Schémas Zod/Yup
+   - Règles métier
+
+3. **Constantes**
+   - Routes API
+   - Messages d'erreur
+   - Configuration
+
+### Phase 4 : Migration (Option B recommandée)
+
+1. **Initialise le monorepo**
+   ```bash
+   pnpm init
+   # Configure pnpm-workspace.yaml
+   ```
+
+2. **Crée la structure**
+   ```
+   apps/web/       # Frontend
+   apps/api/       # Backend
+   packages/shared/
+   ```
+
+3. **Migre le frontend**
+   - Déplace les fichiers React/Vue/etc.
+   - Configure les paths
+   - Vérifie le build
+
+4. **Migre le backend**
+   - Déplace les fichiers API
+   - Configure les paths
+   - Vérifie le build
+
+5. **Extrait le shared**
+   - Crée le package
+   - Déplace les types communs
+   - Met à jour les imports
+
+6. **Configure les dépendances**
+   ```json
+   // apps/web/package.json
+   {
+     "dependencies": {
+       "@myapp/shared": "workspace:*"
+     }
+   }
+   ```
+
+### Phase 5 : Configuration Finale
+
+- Setup Turborepo/Nx pour le build
+- Configure les scripts de dev
+- Setup Docker Compose si nécessaire
+- Documente les commandes
+
+---
+
+## Checklist Générale
+
+### Avant Tout Changement
+
+- [ ] Commit du code actuel (état propre)
+- [ ] Tests passent
+- [ ] Backup si nécessaire
+- [ ] Documentation de l'état actuel
+
+### Pendant la Migration
+
+- [ ] Un changement logique par commit
+- [ ] Tests après chaque étape
+- [ ] Pas de modification de logique métier
+- [ ] Mise à jour des imports immédiates
+
+### Après la Migration
+
+- [ ] Tous les tests passent
+- [ ] Build fonctionne
+- [ ] Pas de fichiers orphelins
+- [ ] Documentation mise à jour
+- [ ] README reflète la nouvelle structure
+- [ ] Scripts npm/pnpm mis à jour

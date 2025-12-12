@@ -1,0 +1,10 @@
+{
+  "title": "TechWatch Expert",
+  "description": "Expert Veille Technologique - Versions, Releases, Breaking Changes, Securite",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

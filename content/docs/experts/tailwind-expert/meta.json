@@ -1,0 +1,10 @@
+{
+  "title": "TailwindCSS Expert",
+  "description": "Expert TailwindCSS v4+ - CSS-First, @theme, Dark Mode, Animations",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

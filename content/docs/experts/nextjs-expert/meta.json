@@ -1,0 +1,10 @@
+{
+  "title": "Next.js Expert",
+  "description": "Expert Next.js 16+ - App Router, Server Components, Caching, Performance",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

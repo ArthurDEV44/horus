@@ -1,0 +1,498 @@
+---
+title: SOLID Expert - Reference
+description: Documentation détaillée des cinq principes SOLID avec exemples, violations courantes et solutions.
+---
+
+# SOLID Expert - Documentation de Référence
+
+Documentation détaillée des cinq principes SOLID avec exemples, violations courantes et solutions.
+
+---
+
+## Table des Matières
+
+1. [Single Responsibility Principle (SRP)](#1-single-responsibility-principle-srp)
+2. [Open/Closed Principle (OCP)](#2-openclosed-principle-ocp)
+3. [Liskov Substitution Principle (LSP)](#3-liskov-substitution-principle-lsp)
+4. [Interface Segregation Principle (ISP)](#4-interface-segregation-principle-isp)
+5. [Dependency Inversion Principle (DIP)](#5-dependency-inversion-principle-dip)
+6. [Relations Entre Principes](#6-relations-entre-principes)
+7. [Application Pragmatique](#7-application-pragmatique)
+
+---
+
+## 1. Single Responsibility Principle (SRP)
+
+### Définition
+
+> "Une classe ne devrait avoir qu'une seule raison de changer."
+> — Robert C. Martin
+
+La "raison de changer" correspond à un acteur ou stakeholder spécifique. Si plusieurs acteurs peuvent demander des modifications à une classe, elle viole probablement SRP.
+
+### Comprendre "Responsabilité"
+
+Une responsabilité n'est pas une action isolée mais un **domaine de préoccupation** :
+
+| Mauvaise interprétation | Bonne interprétation |
+|------------------------|---------------------|
+| "Cette méthode fait une chose" | "Cette classe sert un seul acteur" |
+| "Une méthode par classe" | "Un domaine métier par classe" |
+| "Découper au maximum" | "Découper selon les raisons de changer" |
+
+### Violations Courantes
+
+#### 1. Classe Employee multifonction
+Une classe Employee qui :
+- Calcule le salaire (comptabilité)
+- Sauvegarde en base (IT/DBA)
+- Génère des rapports (RH)
+
+Trois acteurs = trois raisons de changer = violation SRP.
+
+#### 2. Active Record Pattern
+Une entité qui gère à la fois ses données ET sa persistance :
+- Logique métier
+- Requêtes SQL
+- Mapping ORM
+
+#### 3. God Class / Manager Class
+Classes nommées `UserManager`, `DataHandler`, `ServiceHelper` qui accumulent des responsabilités au fil du temps.
+
+### Solutions
+
+#### Extraction par Acteur
+
+Transformer une classe multifonction en plusieurs classes cohérentes :
+
+- `Employee` → données et comportement métier pur
+- `SalaryCalculator` → calculs de rémunération
+- `EmployeeRepository` → persistance
+- `EmployeeReportGenerator` → génération de rapports
+
+#### Pattern Façade
+
+Si une coordination est nécessaire, créer une façade qui orchestre sans implémenter :
+
+La façade `EmployeeService` délègue aux classes spécialisées sans contenir de logique propre.
+
+### Signes d'Alerte
+
+- Classe > 200-300 lignes
+- Difficile de nommer la classe sans "Manager", "Handler", "Processor"
+- Imports provenant de domaines variés (UI, DB, HTTP, Business)
+- Tests unitaires nécessitant beaucoup de mocks
+
+---
+
+## 2. Open/Closed Principle (OCP)
+
+### Définition
+
+> "Les entités logicielles doivent être ouvertes à l'extension mais fermées à la modification."
+> — Bertrand Meyer (1988)
+
+Ajouter une fonctionnalité = ajouter du code, pas modifier l'existant.
+
+### Mécanismes d'Extension
+
+#### 1. Polymorphisme / Héritage
+Étendre le comportement via des sous-classes ou implémentations d'interface.
+
+#### 2. Composition
+Injecter des comportements via des collaborateurs.
+
+#### 3. Configuration
+Paramétrer le comportement sans modifier le code.
+
+### Violations Courantes
+
+#### 1. Switch sur Type
+Un bloc switch/case qui grandit à chaque nouveau type ajouté :
+
+Chaque nouvelle forme nécessite de modifier la méthode `calculateArea`.
+
+#### 2. Conditions if/else Croissantes
+Des conditions qui s'accumulent pour gérer des cas spécifiques :
+
+Chaque nouveau moyen de paiement nécessite un nouveau `else if`.
+
+#### 3. Flag Arguments
+Des booléens ou enums qui changent le comportement :
+
+L'ajout d'un nouveau format nécessite de modifier la méthode.
+
+### Solutions
+
+#### Strategy Pattern
+
+Encapsuler les algorithmes dans des classes distinctes :
+
+- Interface `PaymentProcessor` avec méthode `process(amount)`
+- Implémentations : `CreditCardProcessor`, `PayPalProcessor`, `CryptoProcessor`
+- Service qui reçoit le processor par injection
+
+Ajouter un nouveau moyen de paiement = créer une nouvelle classe.
+
+#### Decorator Pattern
+
+Ajouter des comportements sans modifier la classe de base :
+
+- Interface `Notifier`
+- Classe de base `EmailNotifier`
+- Decorators : `SlackNotifierDecorator`, `SMSNotifierDecorator`
+
+Chaque decorator wrappe un notifier et ajoute son comportement.
+
+#### Template Method
+
+Définir le squelette dans la classe parente, laisser les détails aux sous-classes :
+
+- Classe abstraite `DataProcessor` avec méthode template `process()`
+- Méthodes abstraites : `validate()`, `transform()`, `save()`
+- Sous-classes concrètes implémentent les détails
+
+### Quand NE PAS Appliquer OCP
+
+- Code stable qui ne change jamais
+- Prototype ou MVP
+- Quand l'abstraction coûte plus que le bénéfice
+- Cas avec 2-3 variations maximum et stables
+
+---
+
+## 3. Liskov Substitution Principle (LSP)
+
+### Définition
+
+> "Les objets d'une superclasse doivent pouvoir être remplacés par des objets de ses sous-classes sans altérer la correction du programme."
+> — Barbara Liskov (1987)
+
+Si S est un sous-type de T, alors les objets de type T peuvent être remplacés par des objets de type S sans modifier les propriétés désirables du programme.
+
+### Règles Comportementales
+
+Pour respecter LSP, une sous-classe doit :
+
+| Règle | Description |
+|-------|-------------|
+| **Préconditions** | Ne pas renforcer (accepter au moins autant que le parent) |
+| **Postconditions** | Ne pas affaiblir (garantir au moins autant que le parent) |
+| **Invariants** | Préserver ceux du parent |
+| **Historique** | Ne pas modifier l'état de manière interdite par le parent |
+
+### Violations Classiques
+
+#### 1. Rectangle / Square
+
+Le problème mathématique vs programmatique :
+
+- `Rectangle` avec `setWidth()` et `setHeight()` indépendants
+- `Square` hérite de `Rectangle` mais synchronise width/height
+
+Un client qui fait `rect.setWidth(5); rect.setHeight(10); assert area == 50` échoue avec un `Square`.
+
+#### 2. Bird / Penguin
+
+- `Bird` avec méthode `fly()`
+- `Penguin` hérite de `Bird` mais ne peut pas voler
+
+Que faire dans `fly()` ? Lancer une exception ? Ne rien faire ? Les deux violent LSP.
+
+#### 3. Méthodes NotImplemented
+
+Une implémentation qui lance `NotImplementedError` ou retourne `null` là où le parent retourne une valeur.
+
+#### 4. Renforcement de Précondition
+
+Une sous-classe qui accepte moins de valeurs que le parent :
+
+- Parent : `save(file)` accepte tout chemin
+- Enfant : `save(file)` n'accepte que les chemins locaux
+
+### Solutions
+
+#### Composition over Inheritance
+
+Remplacer l'héritage par la composition :
+
+Au lieu de `Square extends Rectangle` :
+- Créer une interface `Shape` avec `getArea()`
+- `Rectangle` et `Square` implémentent `Shape` indépendamment
+
+#### Extraction d'Interface
+
+Pour Bird/Penguin :
+- Interface `Bird` (caractéristiques communes)
+- Interface `FlyingBird extends Bird` avec `fly()`
+- `Sparrow implements FlyingBird`
+- `Penguin implements Bird` (sans FlyingBird)
+
+#### Null Object Pattern
+
+Au lieu de lancer une exception :
+- Créer un `NullFlight` qui ne fait rien mais reste cohérent
+- Le comportement est prévisible sans vérification `instanceof`
+
+### Détection des Violations
+
+Signes d'alerte dans le code :
+- `instanceof` ou type checks dans le code client
+- `try/catch` autour d'appels polymorphiques
+- Méthodes vides ou throwing dans les sous-classes
+- Documentation "ne pas appeler cette méthode sur..."
+
+---
+
+## 4. Interface Segregation Principle (ISP)
+
+### Définition
+
+> "Aucun client ne devrait être forcé de dépendre de méthodes qu'il n'utilise pas."
+> — Robert C. Martin
+
+Préférer plusieurs interfaces spécifiques à une interface générale.
+
+### Fat Interface vs Role Interface
+
+| Fat Interface | Role Interfaces |
+|--------------|-----------------|
+| `IRepository` avec 20 méthodes | `IReader`, `IWriter`, `IDeleter` |
+| Tout le monde implémente tout | Chaque client n'implémente que ce qu'il utilise |
+| Une modification impacte tous | Une modification impacte seulement les concernés |
+
+### Violations Courantes
+
+#### 1. Interface Tout-en-un
+
+Interface `IWorker` avec :
+- `work()`
+- `eat()`
+- `sleep()`
+- `attendMeeting()`
+- `writeReport()`
+
+Un `Robot` qui implémente `IWorker` doit implémenter `eat()` et `sleep()` — absurde.
+
+#### 2. Interface Repository Générique
+
+Interface `IRepository<T>` avec :
+- `getAll()`, `getById()`, `create()`, `update()`, `delete()`
+- `getByName()`, `getByDate()`, `search()`, `paginate()`
+- `bulkInsert()`, `bulkDelete()`, `archive()`
+
+Certaines entités n'ont besoin que de lecture, d'autres pas de suppression.
+
+#### 3. Printer Multifonction
+
+Interface `IPrinter` avec :
+- `print()`, `scan()`, `fax()`, `copy()`, `staple()`
+
+Une imprimante simple ne peut pas faxer ni agrafer.
+
+### Solutions
+
+#### Découpage par Rôle
+
+Transformer la fat interface en role interfaces :
+
+Pour le worker :
+- `IWorkable` : `work()`
+- `IFeedable` : `eat()`, `sleep()`
+- `IMeetingAttendee` : `attendMeeting()`
+
+Un `Human` implémente toutes, un `Robot` seulement `IWorkable`.
+
+Pour le repository :
+- `IReadRepository<T>` : `getById()`, `getAll()`
+- `IWriteRepository<T>` : `create()`, `update()`
+- `IDeleteRepository<T>` : `delete()`
+- `ISearchableRepository<T>` : `search()`, `paginate()`
+
+Composer selon les besoins : `interface IUserRepository extends IReadRepository<User>, IWriteRepository<User>`
+
+#### Adapter Pattern
+
+Pour migrer une fat interface existante :
+
+Créer des adapters qui exposent seulement le sous-ensemble nécessaire :
+- `ReadOnlyRepositoryAdapter` implémente `IReadRepository`
+- Délègue au `FullRepository` interne
+- N'expose que les méthodes de lecture
+
+### Granularité Appropriée
+
+Éviter l'excès inverse (trop d'interfaces) :
+
+| Trop peu | Juste bien | Trop |
+|----------|------------|------|
+| 1 interface 20 méthodes | 4-5 interfaces cohérentes | 20 interfaces 1 méthode |
+
+Critère : une interface = un rôle cohérent, pas une méthode isolée.
+
+---
+
+## 5. Dependency Inversion Principle (DIP)
+
+### Définition
+
+> "Les modules de haut niveau ne doivent pas dépendre des modules de bas niveau. Les deux doivent dépendre d'abstractions."
+>
+> "Les abstractions ne doivent pas dépendre des détails. Les détails doivent dépendre des abstractions."
+> — Robert C. Martin
+
+### Comprendre High-Level vs Low-Level
+
+| High-Level | Low-Level |
+|------------|-----------|
+| Logique métier | Implémentation technique |
+| Orchestration | Détails |
+| Politique | Mécanisme |
+| `OrderService` | `MySQLOrderRepository` |
+| `NotificationManager` | `SendGridEmailClient` |
+
+### Violation Typique
+
+Le module high-level crée directement ses dépendances :
+
+`OrderService` qui instancie `new MySQLOrderRepository()` et `new SendGridEmailSender()` dans son constructeur.
+
+Problèmes :
+- Impossible de tester sans vraie DB
+- Changement de provider = modification du service
+- Couplage fort aux implémentations
+
+### Solution : Inversion via Abstraction
+
+1. Créer des interfaces au niveau high-level :
+   - `IOrderRepository` (défini par `OrderService`)
+   - `IEmailSender` (défini par `OrderService`)
+
+2. Les modules low-level implémentent ces interfaces :
+   - `MySQLOrderRepository implements IOrderRepository`
+   - `SendGridEmailSender implements IEmailSender`
+
+3. Injection des dépendances :
+   - `OrderService` reçoit `IOrderRepository` et `IEmailSender` en paramètre
+   - Ne connaît pas les implémentations concrètes
+
+### DIP vs DI vs IoC
+
+| Concept | Définition |
+|---------|------------|
+| **DIP** | Principe de design (dépendre des abstractions) |
+| **DI** | Pattern d'implémentation (injection des dépendances) |
+| **IoC** | Inversion du flux de contrôle (le framework appelle ton code) |
+
+DIP est le "quoi", DI et IoC sont le "comment".
+
+### Types d'Injection
+
+#### Constructor Injection (Recommandé)
+Les dépendances sont fournies au constructeur, rendant les dépendances explicites et l'objet immutable.
+
+#### Setter Injection
+Les dépendances sont fournies via des setters. Utile pour les dépendances optionnelles mais rend l'objet mutable.
+
+#### Interface Injection
+L'objet implémente une interface `Injectable` qui reçoit les dépendances. Rarement utilisé.
+
+### Containers d'Injection
+
+Les frameworks modernes gèrent l'injection automatiquement :
+
+- **TypeScript** : InversifyJS, TSyringe, NestJS
+- **Java** : Spring, Guice, Dagger
+- **C#** : ASP.NET Core DI, Autofac, Ninject
+- **Python** : dependency-injector, punq
+
+### Quand NE PAS Appliquer DIP
+
+- Classes utilitaires sans comportement substituable
+- Value objects et DTOs
+- Dépendances stables (ex: classes standard du langage)
+- Quand une seule implémentation existera toujours
+
+---
+
+## 6. Relations Entre Principes
+
+### Synergie SRP + ISP
+
+SRP au niveau classe = ISP au niveau interface.
+Une interface avec une seule responsabilité est naturellement fine.
+
+### OCP Activé par DIP
+
+DIP permet OCP : en dépendant d'abstractions, on peut substituer des implémentations sans modifier le code client.
+
+### LSP Prérequis pour OCP
+
+Si LSP est violé, l'extension via polymorphisme (OCP) ne fonctionne pas — le code client doit vérifier les types.
+
+### ISP Facilite DIP
+
+Des interfaces fines permettent des dépendances minimales et ciblées.
+
+### Ordre d'Application Recommandé
+
+1. **SRP** d'abord : classes cohérentes
+2. **ISP** : interfaces fines
+3. **DIP** : dépendances abstraites
+4. **LSP** : hiérarchies correctes
+5. **OCP** : extensibilité
+
+---
+
+## 7. Application Pragmatique
+
+### Quand Appliquer SOLID
+
+✅ Appliquer si :
+- Code appelé à évoluer
+- Plusieurs développeurs travaillent dessus
+- Tests unitaires nécessaires
+- Domaine métier complexe
+
+❌ Ne pas appliquer si :
+- Prototype jetable
+- Script ponctuel
+- Code trivial et stable
+- L'abstraction coûte plus qu'elle ne rapporte
+
+### Équilibre Complexité vs Bénéfice
+
+| Situation | Recommandation |
+|-----------|----------------|
+| 2 cas possibles, stables | if/else suffit |
+| 3+ cas, évolutifs | Pattern Strategy |
+| 1 seule implémentation | Pas d'interface |
+| Implémentation substituable | Interface + DI |
+
+### Refactoring Progressif
+
+Ne pas tout refactorer d'un coup :
+
+1. Identifier les hot spots (code qui change souvent)
+2. Appliquer SOLID sur ces zones
+3. Laisser le code stable tranquille
+4. Itérer selon les besoins
+
+---
+
+## Ressources
+
+### Documentation Officielle
+- [Martin Fowler - DIP in the Wild](https://martinfowler.com/articles/dipInTheWild.html)
+- [Baeldung - SOLID Principles](https://www.baeldung.com/solid-principles)
+- [DevIQ - SOLID Principles](https://deviq.com/principles/)
+
+### Articles 2025
+- [SOLID Principles in 2025 - Box Piper](https://www.boxpiper.com/posts/solid-software-design-principles/)
+- [ByteByteGo - Mastering Design Principles](https://blog.bytebytego.com/p/mastering-design-principles-solid)
+- [Stack Overflow - Why SOLID Still Matters](https://stackoverflow.blog/2021/11/01/why-solid-principles-are-still-the-foundation-for-modern-software-architecture/)
+
+### Livres de Référence
+- "Clean Architecture" — Robert C. Martin
+- "Agile Software Development, Principles, Patterns, and Practices" — Robert C. Martin
+- "Head First Design Patterns" — Freeman & Robson

@@ -1,0 +1,284 @@
+---
+title: Workflows
+description: Processus detailles pour TechWatch - Audit complet, Verification rapide, Preparation mise a jour, Reponse vulnerabilite, Veille proactive
+---
+
+# TechWatch Expert - Workflows
+
+Workflows complets pour les differents scenarios de veille technologique.
+
+---
+
+## Workflow 1 : Audit Complet de Stack
+
+Processus pour un audit exhaustif de toutes les dependances.
+
+### Etape 1 : Etat des Lieux
+
+Execute ces commandes pour collecter les donnees :
+
+```bash
+# Packages obsoletes
+pnpm outdated
+
+# Vulnerabilites
+npm audit --json
+
+# Arbre de dependances
+pnpm list --depth=2
+```
+
+### Etape 2 : Classification des Dependances
+
+Organise les dependances par categorie :
+
+| Categorie | Packages | Criticite |
+|-----------|----------|-----------|
+| Framework | next, react, react-dom | Haute |
+| UI | radix-ui, base-ui, tailwindcss, motion | Moyenne |
+| Forms | react-hook-form, zod | Moyenne |
+| Email | react-email, resend | Basse |
+| Monitoring | @sentry/nextjs | Haute |
+| Backend | @upstash/redis, @upstash/ratelimit | Moyenne |
+| Tooling | biome, typescript, vitest | Basse |
+
+### Etape 3 : Recherche par Priorite
+
+Pour chaque package obsolete, recherche web dans cet ordre :
+
+1. **Critique** - Vulnerabilites actives (CVE recents)
+2. **Framework** - Next.js, React (impact global)
+3. **Monitoring** - Sentry (stabilite production)
+4. **UI** - Composants visibles (compatibilite)
+5. **Tooling** - DX seulement (risque faible)
+
+### Etape 4 : Rapport Final
+
+Structure du rapport :
+
+```markdown
+## Resume
+- X vulnerabilites (Y critiques, Z hautes)
+- X packages obsoletes
+- Prochaine EOL : [package] le [date]
+
+## Actions Immediates
+1. [Package] : [raison] → [version cible]
+2. ...
+
+## Mises a jour Recommandees
+| Package | Actuel | Cible | Raison | Effort |
+|---------|--------|-------|--------|--------|
+
+## Breaking Changes a Anticiper
+- [Package X.Y] : [changement] → [solution]
+
+## Opportunites
+- [Nouvelle feature] disponible dans [package@version]
+```
+
+---
+
+## Workflow 2 : Verification Rapide
+
+Pour une verification quotidienne legere.
+
+### Commandes Rapides
+
+```bash
+# Check rapide vulnerabilites critiques
+npm audit --audit-level=high
+
+# Packages majeurs obsoletes uniquement
+pnpm outdated | grep -E "(next|react|typescript)"
+```
+
+### Points de Controle
+
+1. Vulnerabilites critiques/hautes ?
+2. Next.js ou React obsoletes de plus d'une version mineure ?
+3. TypeScript plus de 2 versions mineures en retard ?
+
+### Output Attendu
+
+```
+Etat : [OK | ATTENTION | ACTION REQUISE]
+- Vulnerabilites : X (dont Y critiques)
+- Retard majeur : [packages concernes]
+```
+
+---
+
+## Workflow 3 : Preparation de Mise a Jour
+
+Avant d'effectuer une mise a jour majeure.
+
+### Phase Preparatoire
+
+1. **Identifier la cible** - Package et version visee
+2. **Lire le changelog complet** entre version actuelle et cible
+3. **Rechercher les issues** de migration sur GitHub
+4. **Verifier compatibilite** avec les autres dependances
+
+### Recherches Web Requises
+
+Pour chaque mise a jour majeure :
+
+```
+Recherche 1 : "[package] [version] migration guide"
+Recherche 2 : "[package] [version] breaking changes"
+Recherche 3 : "[package] [version] issues github"
+Recherche 4 : "[package] [version] [autre-dep] compatibility"
+```
+
+### Checklist Pre-Migration
+
+- [ ] Changelog lu et compris
+- [ ] Breaking changes documentes
+- [ ] Impact sur autres packages evalue
+- [ ] Tests de regression identifies
+- [ ] Rollback strategy definie
+
+### Matrice de Compatibilite
+
+Verifier les compatibilites croisees :
+
+| Package | Compatible React 19 | Compatible Next 16 | Compatible TS 5.9 |
+|---------|---------------------|--------------------|--------------------|
+| radix-ui | ✓ | ✓ | ✓ |
+| base-ui | ✓ | ✓ | ✓ |
+| motion | ✓ | ✓ | ✓ |
+| sentry | Verifier | ✓ | ✓ |
+
+---
+
+## Workflow 4 : Reponse a Vulnerabilite
+
+Quand une CVE est annoncee.
+
+### Evaluation Immediate
+
+1. **Severite** - CVSS score et exploitabilite
+2. **Exposition** - Le code vulnerable est-il utilise ?
+3. **Patch disponible** - Version corrective existe ?
+4. **Workaround** - Solution temporaire possible ?
+
+### Arbre de Decision
+
+```
+CVE annoncee
+    ├── Critique/Haute + Exploitable ?
+    │   ├── Oui → Mise a jour immediate ou workaround
+    │   └── Non → Planifier dans sprint courant
+    └── Moyenne/Basse ?
+        ├── Patch facile → Inclure prochain batch
+        └── Migration complexe → Backlog priorise
+```
+
+### Recherches Requises
+
+```
+Recherche 1 : "CVE-XXXX-XXXXX [package]"
+Recherche 2 : "[package] security advisory [date]"
+Recherche 3 : "[package] [version] patch CVE"
+```
+
+### Documentation
+
+Produire un rapport incluant :
+
+- CVE ID et score CVSS
+- Packages affectes (directs et transitifs)
+- Version corrective
+- Action prise et date
+- Tests de validation
+
+---
+
+## Workflow 5 : Veille Proactive
+
+Pour anticiper les evolutions a venir.
+
+### Surveillance Continue
+
+Surveiller pour chaque technologie critique :
+
+| Technologie | Surveiller | Frequence |
+|-------------|------------|-----------|
+| Next.js | Blog, GitHub discussions, canary releases | Hebdo |
+| React | Blog, RFC, Working Group | Hebdo |
+| TypeScript | Roadmap, beta releases | Mensuel |
+| Tailwind | Blog, GitHub | Mensuel |
+
+### Sources a Consulter
+
+1. **Blogs officiels** - Annonces majeures
+2. **GitHub Milestones** - Roadmaps
+3. **Twitter/X maintainers** - Previews informels
+4. **Newsletters** - Syntheses hebdo
+
+### Signaux d'Alerte
+
+Declencher une investigation si :
+
+- Annonce de deprecation d'API utilisee
+- Nouvelle version majeure en beta
+- CVE sur technologie adjacente
+- Changement de mainteneur/ownership
+
+### Rapport de Veille
+
+Format mensuel :
+
+```markdown
+## Veille [Mois Annee]
+
+### A Venir
+- [Tech] v[X] prevue [date] : [impact attendu]
+
+### En Cours
+- [Tech] beta [X] : [features interessantes]
+
+### Deprecations
+- [API/Feature] deprecated, removal prevu [version]
+
+### Recommandations
+- Anticiper migration [X] avant [date]
+- Evaluer adoption [feature] pour [use case]
+```
+
+---
+
+## Scripts Utilitaires
+
+### Script : Rapport Complet
+
+```bash
+#!/bin/bash
+echo "=== AUDIT DEPENDANCES ==="
+echo ""
+echo "--- Packages Obsoletes ---"
+pnpm outdated
+echo ""
+echo "--- Vulnerabilites ---"
+npm audit
+echo ""
+echo "--- Versions Actuelles (principales) ---"
+pnpm list next react typescript tailwindcss --depth=0
+```
+
+### Script : Check Rapide CI
+
+```bash
+#!/bin/bash
+# Exit 1 si vulnerabilites critiques
+npm audit --audit-level=critical
+```
+
+### Alias Recommandes
+
+```bash
+alias deps-check="pnpm outdated && npm audit"
+alias deps-update="pnpm update --interactive"
+alias deps-major="npx npm-check-updates -u"
+```

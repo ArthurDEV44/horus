@@ -1,0 +1,487 @@
+---
+title: Reference
+description: Documentation technique React - Glossaire, APIs React 19, Hooks, Server Components, Patterns, Testing, Accessibilite
+---
+
+# React Expert - Documentation Technique
+
+## Glossaire
+
+| Terme | Definition |
+|-------|------------|
+| **Actions** | Fonctions async dans transitions, gestion automatique pending/error |
+| **Client Component** | Composant avec "use client", execute cote client, acces aux hooks interactifs |
+| **Compound Components** | Pattern ou composants parents/enfants partagent un etat implicite |
+| **Concurrent Rendering** | Rendu interruptible permettant des UI reactives |
+| **Custom Hook** | Fonction use* encapsulant logique stateful reutilisable |
+| **Error Boundary** | Composant attrapant les erreurs de ses enfants |
+| **Hydration** | Processus d'attachement de React au HTML server-rendered |
+| **Memoization** | Cache des resultats de calculs/renders pour eviter recalculs |
+| **React Compiler** | Outil de build optimisant automatiquement les re-renders |
+| **RSC** | React Server Components, composants executes uniquement serveur |
+| **Server Action** | Fonction async "use server" pour mutations serveur |
+| **Suspense** | Boundary pour afficher un fallback pendant chargement async |
+| **Transition** | Update non-urgente pouvant etre interrompue |
+
+---
+
+## React 19 APIs
+
+### use() Hook
+
+Le hook `use()` permet de lire des promesses et du context en render.
+
+| Caracteristique | Detail |
+|----------------|--------|
+| **Promesses** | Suspend le composant jusqu'a resolution |
+| **Context** | Peut etre appele conditionnellement (contrairement a useContext) |
+| **Suspense** | Necessite un Suspense boundary pour les promesses |
+| **Erreurs** | Propagees a l'Error Boundary le plus proche |
+
+**Usage** :
+- Lire des donnees async dans un Client Component
+- Acceder au context conditionnellement
+- Simplifier le pattern "lift async to parent"
+
+### useActionState
+
+Remplace useFormState. Gere l'etat des actions async.
+
+| Parametre | Description |
+|-----------|-------------|
+| `action` | Fonction async a executer |
+| `initialState` | Etat initial |
+| `permalink` | URL pour progressive enhancement (optionnel) |
+
+| Retour | Description |
+|--------|-------------|
+| `state` | Etat actuel (resultat de l'action) |
+| `formAction` | Action a passer au form |
+| `isPending` | Boolean indiquant si action en cours |
+
+### useFormStatus
+
+Donne le statut du formulaire parent.
+
+| Propriete | Type | Description |
+|-----------|------|-------------|
+| `pending` | boolean | Formulaire en cours de soumission |
+| `data` | FormData | Donnees du formulaire |
+| `method` | string | Methode HTTP |
+| `action` | string | URL d'action |
+
+**Contrainte** : Doit etre utilise dans un composant enfant du form, pas dans le meme composant que le form.
+
+### useOptimistic
+
+Permet des updates UI optimistes avec rollback automatique.
+
+| Parametre | Description |
+|-----------|-------------|
+| `state` | Etat actuel |
+| `updateFn` | Fonction de transformation optimiste |
+
+| Retour | Description |
+|--------|-------------|
+| `optimisticState` | Etat optimiste a afficher |
+| `addOptimistic` | Fonction pour declencher l'update optimiste |
+
+**Pattern** :
+1. Appeler addOptimistic avec la valeur attendue
+2. UI se met a jour immediatement
+3. L'action async s'execute
+4. Si echec, React rollback automatiquement
+
+---
+
+## Hooks de Performance
+
+### useTransition
+
+Marque des updates comme non-urgentes.
+
+| Retour | Description |
+|--------|-------------|
+| `isPending` | Boolean pendant la transition |
+| `startTransition` | Fonction pour wrapper les updates |
+
+**Usage** :
+- Filtrage de longues listes pendant que l'utilisateur tape
+- Navigation entre onglets avec contenu lourd
+- Updates de state non-critiques pour l'UX immediate
+
+### useDeferredValue
+
+Differe une valeur pendant les updates urgentes.
+
+| Parametre | Description |
+|-----------|-------------|
+| `value` | Valeur a differer |
+
+| Retour | Description |
+|--------|-------------|
+| `deferredValue` | Version differee, peut etre stale pendant updates |
+
+**Usage** :
+- Input de recherche avec resultats couteux a render
+- Charts/graphiques mis a jour pendant scroll
+- Toute valeur derivee d'un state qui trigger des renders lourds
+
+---
+
+## Server Components
+
+### Modele Mental
+
+| Aspect | Server Component | Client Component |
+|--------|-----------------|------------------|
+| Execution | Serveur uniquement | Client (+ hydration) |
+| Directive | Aucune (defaut) | "use client" |
+| Hooks interactifs | Non | Oui |
+| Event handlers | Non | Oui |
+| Browser APIs | Non | Oui |
+| Fetch direct DB | Oui | Non |
+| Secrets | Oui | Non |
+| Bundle size | Zero | Inclus |
+
+### Regles de Composition
+
+| Pattern | Valide | Raison |
+|---------|--------|--------|
+| Server → Server | Oui | Meme environnement |
+| Server → Client | Oui | Serialisation des props |
+| Client → Server | Non | Client ne peut pas render serveur |
+| Client children Server | Oui | Passe en props/children |
+
+### Serialisation des Props
+
+Les props passees de Server a Client doivent etre serialisables :
+
+| Serialisable | Non Serialisable |
+|--------------|------------------|
+| Primitives (string, number, boolean) | Fonctions (sauf Server Actions) |
+| Arrays | Classes |
+| Plain objects | Symbols |
+| Dates | DOM nodes |
+| null, undefined | Promises (sauf avec use()) |
+
+---
+
+## React Compiler
+
+### Fonctionnement
+
+Le React Compiler analyse le code et ajoute automatiquement la memoization :
+
+| Phase | Description |
+|-------|-------------|
+| **HIR** | Conversion en High-level Intermediate Representation |
+| **Type Inference** | Analyse des types et mutations |
+| **Effect Analysis** | Detection des effets de bord |
+| **Reactive Analysis** | Identification des dependances reactives |
+| **Code Generation** | Generation du code optimise |
+
+### Ce qu'il optimise
+
+| Element | Avant | Apres Compiler |
+|---------|-------|----------------|
+| Composants | Re-render a chaque update parent | Memo automatique |
+| Valeurs calculees | Recalcul a chaque render | Cache automatique |
+| Callbacks | Nouvelle reference a chaque render | Reference stable |
+| JSX | Recreation a chaque render | Memo si props inchangees |
+
+### Regles du Compiler
+
+Pour que le compiler optimise correctement :
+
+| Regle | Raison |
+|-------|--------|
+| Pas de mutation | Le compiler assume l'immutabilite |
+| Hooks en top-level | Flow d'analyse predictible |
+| Composants purs | Side effects detectables |
+| Props serialisables | Comparaison possible |
+
+### Quand useMemo/useCallback reste utile
+
+| Scenario | Raison |
+|----------|--------|
+| Escape hatch explicite | Forcer la memoization specifique |
+| Code legacy non-compile | Compatibilite |
+| Ref stability pour libs tierces | APIs qui comptent sur la reference |
+
+---
+
+## Patterns de Composition
+
+### Compound Components
+
+Permet une API declarative pour composants complexes.
+
+**Structure** :
+- Parent gere l'etat partage
+- Enfants accedent via Context
+- API declarative et flexible
+
+**Benefits** :
+- Inversion of control
+- Flexibilite d'arrangement
+- Separation des responsabilites
+
+### Render Props
+
+Passe une fonction qui retourne du JSX.
+
+**Use-cases** :
+- Partage de logique avec controle du rendu
+- Hooks impossible (class components legacy)
+- Maximum de flexibilite pour le consommateur
+
+### Custom Hooks
+
+Extraction de logique stateful reutilisable.
+
+**Conventions** :
+- Nom commence par "use"
+- Peut appeler d'autres hooks
+- Retourne ce dont le composant a besoin
+- Un hook = une responsabilite
+
+**Good practices** :
+- useToggle pour boolean state
+- useDebounce pour valeurs debounced
+- usePrevious pour valeur precedente
+- useLocalStorage pour persistence
+
+### Higher-Order Components (HOC)
+
+Fonction qui prend un composant et retourne un composant enrichi.
+
+**Modern usage** :
+- Rare en React moderne, preferer les hooks
+- Utile pour cross-cutting concerns (analytics, logging)
+- Eviter pour la logique metier
+
+---
+
+## State Management
+
+### Choix du State
+
+| Type de State | Solution Recommandee |
+|---------------|---------------------|
+| Local UI | useState |
+| Logique complexe | useReducer |
+| Partage bas-frequence | Context |
+| Partage haute-frequence | Zustand/Jotai |
+| Server state | TanStack Query |
+| Forms | React Hook Form |
+
+### Context API - Best Practices
+
+| Pratique | Raison |
+|----------|--------|
+| Scope minimal | Eviter re-renders inutiles |
+| Separer state et dispatch | Consumers peuvent choisir |
+| memo les providers | Si value change souvent |
+| Eviter objets inline | Nouvelle reference a chaque render |
+
+### Zustand vs Jotai vs Redux
+
+| Critere | Zustand | Jotai | Redux Toolkit |
+|---------|---------|-------|---------------|
+| Complexite | Faible | Faible | Moyenne |
+| Boilerplate | Minimal | Minimal | Modere |
+| DevTools | Oui | Oui | Excellent |
+| Middleware | Simple | Via atoms | Mature |
+| Server State | Non natif | Non natif | Via RTK Query |
+| Use case | Global state simple | Atomic state | Enterprise |
+
+---
+
+## Testing Patterns
+
+### Principes React Testing Library
+
+| Principe | Application |
+|----------|-------------|
+| Test behavior, not implementation | Tester ce que l'utilisateur voit/fait |
+| Accessible queries | Preferer getByRole, getByLabelText |
+| Avoid test IDs | Dernier recours si pas d'alternative |
+| userEvent over fireEvent | Simulation plus realiste |
+
+### Priorite des Queries
+
+1. **Accessible** : getByRole, getByLabelText, getByPlaceholderText, getByText, getByDisplayValue
+2. **Semantic** : getByAltText, getByTitle
+3. **Test IDs** : getByTestId (dernier recours)
+
+### Patterns Async
+
+| Scenario | Solution |
+|----------|----------|
+| Attendre apparition | findBy* (auto-wait) |
+| Attendre disparition | waitForElementToBeRemoved |
+| Multiple conditions | waitFor |
+| Side effects | act() (souvent auto) |
+
+### Mock Patterns
+
+| Element | Approche |
+|---------|----------|
+| Hooks custom | Mock le module ou inject via props |
+| Context | Wrapper avec Provider mocke |
+| Router | MemoryRouter de react-router |
+| Fetch | msw (Mock Service Worker) |
+| Time | vi.useFakeTimers() |
+
+---
+
+## Accessibilite
+
+### WCAG 2.2 Criteres Cles
+
+| Critere | Niveau | Description |
+|---------|--------|-------------|
+| 1.1.1 | A | Text alternatives pour images |
+| 1.3.1 | A | Info et relations (structure) |
+| 2.1.1 | A | Keyboard accessible |
+| 2.4.7 | AA | Focus visible |
+| 4.1.2 | A | Name, Role, Value |
+
+### ARIA dans React
+
+| Pattern | Usage |
+|---------|-------|
+| `aria-label` | Label non-visible |
+| `aria-labelledby` | Reference a un element visible |
+| `aria-describedby` | Description supplementaire |
+| `aria-expanded` | Etat d'expansion (accordions, dropdowns) |
+| `aria-selected` | Etat de selection (tabs, listbox) |
+| `aria-live` | Annonces dynamiques |
+
+### React Aria / ARIAKit
+
+| Avantage | Description |
+|----------|-------------|
+| Comportement correct | Gestion clavier/focus automatique |
+| ARIA complet | Tous les attributs necessaires |
+| Unstyled | Liberte de design total |
+| Tested | Validation cross-browser/AT |
+
+---
+
+## Anti-Patterns a Eviter
+
+### State Anti-Patterns
+
+| Anti-Pattern | Probleme | Solution |
+|--------------|----------|----------|
+| State as variable | Reset a chaque render | useState |
+| Direct mutation | Pas de re-render | Nouveau reference |
+| Derived state in state | Desynchronisation | Calculer en render |
+| Excessive state | Re-renders inutiles | Colocation |
+
+### Effect Anti-Patterns
+
+| Anti-Pattern | Probleme | Solution |
+|--------------|----------|----------|
+| Fetch in useEffect | Race conditions, waterfall | RSC ou TanStack Query |
+| State update chain | Renders multiples | Single state update |
+| Missing dependencies | Stale closures | Inclure toutes les deps |
+| Object/array in deps | Re-run infini | useMemo ou ref |
+
+### Hook Anti-Patterns
+
+| Anti-Pattern | Probleme | Solution |
+|--------------|----------|----------|
+| Conditional hooks | Violation rules of hooks | Toujours meme ordre |
+| Hook in non-hook | Ne fonctionne pas | Extraire en composant ou hook |
+| use* sans hooks | Convention violee | Renommer sans use prefix |
+
+### Component Anti-Patterns
+
+| Anti-Pattern | Probleme | Solution |
+|--------------|----------|----------|
+| Inline component def | Remount a chaque render | Extraire hors du render |
+| Props drilling profond | Code difficile | Context ou state manager |
+| God component | Maintenance difficile | Decomposer |
+| Premature optimization | Complexite inutile | Profiler d'abord |
+
+---
+
+## Performance Debugging
+
+### React DevTools Profiler
+
+| Metrique | Description |
+|----------|-------------|
+| Render duration | Temps de render du composant |
+| Commit info | Pourquoi le composant a render |
+| Ranked chart | Composants par temps de render |
+| Flamegraph | Hierarchie des renders |
+
+### Causes de Re-renders
+
+| Cause | Detection | Solution |
+|-------|-----------|----------|
+| Props change | why-did-you-render | Memoize ou restructurer |
+| State change | DevTools | Verifier si necessaire |
+| Context change | DevTools | Splitter le context |
+| Parent re-render | Flamegraph | React.memo si justifie |
+
+### Memory Leaks
+
+| Cause | Symptome | Solution |
+|-------|----------|----------|
+| Subscription non-cleanup | Memory grows | Return cleanup dans useEffect |
+| Timer non-clear | Callbacks apres unmount | clearTimeout/clearInterval |
+| Event listener orphelin | Memory grows | removeEventListener |
+| Ref a element unmounted | Stale ref | Verifier existence |
+
+---
+
+## FAQ
+
+### Quand utiliser Server vs Client Component ?
+
+**Server Component** (defaut) :
+- Fetch de donnees
+- Acces backend/DB
+- Secrets et tokens
+- Dependances lourdes
+
+**Client Component** :
+- Interactivite (onClick, onChange)
+- Hooks (useState, useEffect)
+- Browser APIs
+- Real-time updates
+
+### useEffect pour fetch, c'est mal ?
+
+En 2025, oui generalement. Preferer :
+- React Server Components pour SSR
+- TanStack Query pour client-side
+- Server Actions pour mutations
+
+useEffect fetch pose : race conditions, pas de cache, waterfalls, gestion loading/error manuelle.
+
+### React.memo est-il encore utile avec le Compiler ?
+
+Rarement. Le React Compiler v1.0 gere la memoization automatiquement. Garder memo pour :
+- Code non compile (libs tierces)
+- Escape hatch explicite
+- Composants avec des requirements tres specifiques
+
+### Comment structurer un gros composant ?
+
+1. Extraire les custom hooks pour la logique
+2. Extraire les sous-composants (meme fichier ok si petit)
+3. Colocaliser le state au plus proche
+4. Separer concerns : data, presentation, interaction
+
+### Context re-renders tous mes composants, que faire ?
+
+1. Splitter le context (state vs dispatch)
+2. Memo les consumers
+3. Passer uniquement ce qui est necessaire
+4. Considerer Zustand/Jotai pour state haute-frequence

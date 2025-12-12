@@ -1,0 +1,522 @@
+---
+title: Reference
+description: Documentation technique Securite - OWASP Top 10 2025, CVE, CSP, Validation, Rate Limiting, Glossaire
+---
+
+# Security Expert - Reference
+
+Documentation technique approfondie pour l'agent security-expert.
+
+---
+
+## OWASP Top 10 2025 - Reference Complete
+
+### A01:2025 - Broken Access Control
+
+**Description** : Echecs des controles d'acces permettant aux utilisateurs d'agir hors de leurs permissions.
+
+**CWEs associes** : 40 CWEs, affecte 3.73% des applications testees
+
+**Vecteurs d'attaque** :
+- Modification de l'URL, etat interne, page HTML
+- Modification des requetes API
+- Elevation de privileges (utilisateur vers admin)
+- Manipulation de tokens JWT
+- CORS mal configure permettant l'acces non autorise
+
+**Exemples de vulnerabilites** :
+- Acces aux donnees d'autres utilisateurs via modification de parametres
+- Routes API sans verification d'autorisation
+- Force browsing vers des pages admin
+- IDOR (Insecure Direct Object References)
+
+**Detection** :
+- Verifier les controles d'acces sur chaque endpoint
+- Tester l'acces horizontal (autres utilisateurs) et vertical (roles superieurs)
+- Analyser les middleware d'authentification
+
+**Remediation** :
+- Implementer le principe du moindre privilege
+- Valider les permissions cote serveur systematiquement
+- Utiliser un Data Access Layer centralise
+- Logger et alerter sur les tentatives d'acces non autorises
+
+---
+
+### A02:2025 - Security Misconfiguration
+
+**Description** : Configurations par defaut non securisees, configurations incompletes ou mal configurees.
+
+**Monte de #5 a #2** en 2025, affecte 3.00% des applications
+
+**Vecteurs d'attaque** :
+- Features non necessaires activees (ports, services, pages, comptes)
+- Comptes par defaut inchanges
+- Messages d'erreur revelant trop d'informations
+- Headers de securite manquants ou mal configures
+- Logiciels non a jour avec vulnerabilites connues
+
+**Headers de Securite Requis** :
+
+| Header | Valeur Recommandee |
+|--------|-------------------|
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
+| `X-Frame-Options` | `DENY` ou `SAMEORIGIN` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+| `Content-Security-Policy` | Voir section CSP detaillee |
+
+**Detection** :
+- Scanner avec securityheaders.com
+- Verifier next.config.ts pour les headers
+- Auditer les configurations de deploiement
+
+---
+
+### A03:2025 - Software Supply Chain Failures (NOUVEAU)
+
+**Description** : Vulnerabilites introduites via les dependances, build systems, ou l'infrastructure de distribution.
+
+**Nouvelle categorie 2025** - Expansion de "Vulnerable and Outdated Components"
+
+**Vecteurs d'attaque** :
+- Packages npm compromis (phishing, takeover)
+- Typosquatting de noms de packages
+- Dependency confusion attacks
+- Malicious postinstall scripts
+- Compromission de build pipelines
+
+**Attaques Majeures 2025** :
+
+| Attaque | Date | Impact |
+|---------|------|--------|
+| npm Supply Chain Attack | Sept 2025 | 18 packages, 2.6 milliards downloads/semaine |
+| Shai-Hulud Worm | Nov 2025 | 796 packages, 132M monthly downloads |
+| Shai-Hulud 2.0 | Nov 2025 | 25,000+ repositories GitHub |
+
+**Packages Compromis Connus (Sept 2025)** :
+- chalk, debug, ansi-styles, strip-ansi
+- Et 14 autres packages populaires
+
+**Detection** :
+- `npm audit` / `pnpm audit` regulier
+- Verifier les lock files pour modifications non attendues
+- Surveiller les dependabot/renovate alerts
+- Utiliser `minimumReleaseAge` dans pnpm
+
+**Remediation** :
+- Activer 2FA sur tous les comptes npm
+- Utiliser lock files et les versionner
+- Configurer `minimumReleaseAge` pour retarder les installations
+- Auditer les postinstall scripts
+
+---
+
+### A04:2025 - Cryptographic Failures
+
+**Description** : Echecs lies a la cryptographie exposant des donnees sensibles.
+
+**Descend de #2 a #4** en 2025
+
+**Vecteurs d'attaque** :
+- Transmission de donnees en clair (HTTP au lieu de HTTPS)
+- Utilisation d'algorithmes faibles (MD5, SHA1, DES)
+- Cles de chiffrement faibles ou previsibles
+- Stockage de mots de passe en clair ou avec hash faible
+- Mauvaise gestion des cles (expiration, rotation)
+
+**Algorithmes Deprecies** :
+- MD5, SHA1 pour hashage
+- DES, 3DES pour chiffrement
+- RSA < 2048 bits
+- Modes ECB pour chiffrement par bloc
+
+**Algorithmes Recommandes 2025** :
+- Argon2id pour hashage de mots de passe
+- AES-256-GCM pour chiffrement symetrique
+- RSA >= 2048 bits ou ECDSA P-256+ pour asymetrique
+- SHA-256 minimum pour hashage general
+
+**Detection** :
+- Verifier HTTPS enforce partout
+- Auditer les implementations crypto
+- Scanner pour algorithmes deprecies
+
+---
+
+### A05:2025 - Injection
+
+**Description** : Donnees non fiables envoyees a un interpreteur comme partie d'une commande ou requete.
+
+**Descend de #3 a #5** en 2025
+
+**Types d'Injection** :
+
+| Type | Vecteur | Impact |
+|------|---------|--------|
+| SQL Injection | Requetes SQL construites avec input user | Data breach, RCE |
+| XSS | HTML/JS injecte dans pages web | Session hijacking, defacement |
+| Command Injection | Commandes OS via input user | RCE complet |
+| NoSQL Injection | Queries MongoDB/etc manipulees | Data breach |
+| LDAP Injection | Requetes LDAP manipulees | Auth bypass |
+
+**Patterns Dangereux a Rechercher** :
+
+```
+// XSS
+dangerouslySetInnerHTML
+innerHTML =
+document.write(
+eval(
+new Function(
+
+// SQL
+$queryRaw
+query(`SELECT ... ${variable}`)
+execute(userInput)
+
+// Command
+exec(userInput)
+spawn(userInput)
+```
+
+**Detection Next.js/React** :
+- Scanner pour `dangerouslySetInnerHTML` sans DOMPurify
+- Verifier les usages de `$queryRaw` Prisma
+- Auditer les endpoints API pour validation input
+
+---
+
+### A06:2025 - Insecure Design
+
+**Description** : Failles de conception (pas d'implementation) representant des risques inherents.
+
+**Position #6** en 2025
+
+**Caracteristiques** :
+- Absence de threat modeling
+- Manque de patterns de securite dans l'architecture
+- Logique metier vulnerables by design
+- Absence de defense en profondeur
+
+**Exemples** :
+- Systeme de recuperation de mot de passe sans rate limiting
+- Absence de CAPTCHA sur des formulaires sensibles
+- Trust excessif des donnees client
+- Absence de separation des privileges
+
+**Approche** :
+- Threat modeling avant implementation
+- Security by design
+- Defense en profondeur
+- Principe du moindre privilege
+
+---
+
+### A07:2025 - Identification and Authentication Failures
+
+**Description** : Failles permettant de compromettre l'identite des utilisateurs.
+
+**Position stable #7** en 2025
+
+**Vecteurs d'attaque** :
+- Credential stuffing (credentials volees d'autres sites)
+- Brute force sur les mots de passe
+- Sessions non invalidees apres logout
+- Tokens de session previsibles
+- MFA absente ou contournable
+
+**JWT Security Issues** :
+
+| Vulnerabilite | Description |
+|---------------|-------------|
+| Algorithm Confusion | Accepter alg=none ou HMAC avec cle publique RSA |
+| Missing Validation | Pas de verification exp, iss, aud |
+| Weak Keys | Secrets previsibles ou courts |
+| Token in URL | JWT expose dans query strings |
+| No Rotation | Tokens longue duree sans refresh |
+
+**CVEs JWT 2025** :
+- CVE-2025-27371 : Confusion audience claim OAuth 2.0
+- CVE-2025-27370 : Confusion audience claim OpenID Connect
+
+**Best Practices** :
+- MFA obligatoire pour comptes sensibles
+- Rate limiting sur authentification
+- Session timeout et invalidation
+- Tokens courte duree avec refresh
+- Validation stricte des claims JWT
+
+---
+
+### A08:2025 - Software and Data Integrity Failures
+
+**Description** : Echecs de verification d'integrite du software et des donnees.
+
+**Position #8** en 2025
+
+**Vecteurs** :
+- CI/CD pipelines non securises
+- Auto-updates sans verification de signature
+- Deserialization non securisee
+- Donnees non signees acceptees
+
+**Detection** :
+- Auditer les pipelines CI/CD
+- Verifier les signatures de packages
+- Scanner pour deserialization non securisee
+
+---
+
+### A09:2025 - Logging and Alerting Failures
+
+**Description** : Logging insuffisant empechant la detection et la reponse aux incidents.
+
+**Renomme** de "Security Logging and Monitoring Failures"
+
+**Exigences** :
+- Logger toutes les tentatives d'authentification
+- Logger les acces aux donnees sensibles
+- Logger les erreurs et exceptions
+- Alertes temps reel sur activites suspectes
+- Retention adequat des logs
+
+**A Ne Pas Logger** :
+- Mots de passe (meme hashes)
+- Tokens de session
+- Donnees personnelles sensibles (PII)
+- Secrets et cles API
+
+---
+
+### A10:2025 - Mishandling of Exceptional Conditions (NOUVEAU)
+
+**Description** : Gestion incorrecte des erreurs et conditions exceptionnelles.
+
+**Nouvelle categorie 2025** - 24 CWEs associes
+
+**Patterns Dangereux** :
+- Fail open au lieu de fail secure
+- Information leakage via messages d'erreur
+- Stack traces exposes en production
+- Exceptions non catchees causant DoS
+- Recovery incorrecte apres erreur
+
+**Best Practices** :
+- Fail secure par defaut
+- Messages d'erreur generiques en production
+- Logging des erreurs sans exposition
+- Recovery gracieuse des etats d'erreur
+
+---
+
+## CVE Critiques 2025
+
+### CVE-2025-55182 - React Server Components RCE
+
+**CVSS** : 10.0 (Maximum)
+**Impact** : Remote Code Execution
+**Affecte** : React Server Components
+
+**Description** : Vulnerabilite dans le protocole RSC permettant a un attaquant non authentifie d'executer du code arbitraire sur le serveur via une requete HTTP malicieuse.
+
+**Versions Affectees** :
+- React avant les versions patchees
+
+**Remediation** :
+- Mettre a jour vers les versions patchees immediatement
+- next@15.0.5+, next@15.1.9+, next@15.2.6+, next@15.3.6+, next@15.4.8+, next@15.5.7+, next@16.0.7+
+
+---
+
+### CVE-2025-66478 - Next.js Server Actions
+
+**Impact** : High
+**Affecte** : Next.js Server Actions
+
+**Description** : Vulnerabilite dans la deserialisation des Server Actions.
+
+**Remediation** :
+- Mettre a jour vers les versions patchees
+- Valider tous les inputs des Server Actions avec Zod/Valibot
+
+---
+
+## Content Security Policy (CSP) - Guide Complet
+
+### Directives Essentielles
+
+| Directive | Description |
+|-----------|-------------|
+| `default-src` | Fallback pour toutes les directives non specifiees |
+| `script-src` | Sources autorisees pour JavaScript |
+| `style-src` | Sources autorisees pour CSS |
+| `img-src` | Sources autorisees pour images |
+| `font-src` | Sources autorisees pour fonts |
+| `connect-src` | Sources pour fetch, XHR, WebSocket |
+| `frame-ancestors` | Qui peut embarquer la page (remplace X-Frame-Options) |
+| `form-action` | Cibles autorisees pour les forms |
+| `base-uri` | Restrictions sur l'element base |
+
+### CSP Strict Recommandee
+
+```
+default-src 'self';
+script-src 'self' 'nonce-{RANDOM}' 'strict-dynamic';
+style-src 'self' 'nonce-{RANDOM}';
+img-src 'self' data: https:;
+font-src 'self';
+connect-src 'self';
+frame-ancestors 'none';
+form-action 'self';
+base-uri 'self';
+object-src 'none';
+report-uri /csp-report;
+report-to csp-endpoint;
+```
+
+### Nonces vs Hashes
+
+**Nonces** : Valeur aleatoire generee a chaque requete
+- Plus flexible pour scripts dynamiques
+- Requiert generation cote serveur
+
+**Hashes** : Hash SHA du contenu du script
+- Pour scripts inline statiques
+- Pas de generation cote serveur necessaire
+
+### strict-dynamic
+
+Permet aux scripts de confiance de charger d'autres scripts sans les lister explicitement dans la CSP.
+
+---
+
+## Validation et Sanitization
+
+### Schemas Zod pour Server Actions
+
+```typescript
+// Schema de validation robuste
+const userInputSchema = z.object({
+  email: z.string()
+    .email()
+    .max(254)
+    .transform(val => val.toLowerCase().trim()),
+
+  name: z.string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-zA-Z\s-]+$/, "Caracteres invalides"),
+
+  message: z.string()
+    .min(10)
+    .max(5000)
+    .transform(val => val.trim()),
+});
+```
+
+### DOMPurify Configuration
+
+```typescript
+import DOMPurify from 'dompurify';
+
+const config = {
+  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
+  ALLOWED_ATTR: ['href', 'target', 'rel'],
+  ALLOW_DATA_ATTR: false,
+  ADD_ATTR: ['target="_blank"', 'rel="noopener noreferrer"'],
+};
+
+const sanitized = DOMPurify.sanitize(userInput, config);
+```
+
+### URL Validation
+
+```typescript
+function isValidUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+// Blocage des protocoles dangereux
+function isSafeUrl(url: string): boolean {
+  const dangerous = ['javascript:', 'data:', 'vbscript:'];
+  return !dangerous.some(proto => url.toLowerCase().startsWith(proto));
+}
+```
+
+---
+
+## Rate Limiting Patterns
+
+### Express/Next.js avec Upstash Redis
+
+```typescript
+// Configuration recommandee
+const rateLimiter = {
+  // Endpoints publics
+  public: { requests: 100, window: '1m' },
+
+  // Authentication
+  login: { requests: 5, window: '15m' },
+  register: { requests: 3, window: '1h' },
+  passwordReset: { requests: 3, window: '1h' },
+
+  // API sensibles
+  sensitive: { requests: 10, window: '1m' },
+
+  // Contact forms
+  contact: { requests: 3, window: '1h' },
+};
+```
+
+---
+
+## Glossaire Securite
+
+| Terme | Definition |
+|-------|------------|
+| **ASVS** | Application Security Verification Standard - Framework OWASP de verification |
+| **CSRF** | Cross-Site Request Forgery - Forcer des actions via requetes cross-site |
+| **CVE** | Common Vulnerabilities and Exposures - Identifiant unique de vulnerabilite |
+| **CVSS** | Common Vulnerability Scoring System - Score de severite (0-10) |
+| **CWE** | Common Weakness Enumeration - Classification des faiblesses |
+| **DAL** | Data Access Layer - Couche centralisant l'acces aux donnees |
+| **HSTS** | HTTP Strict Transport Security - Force HTTPS |
+| **IDOR** | Insecure Direct Object Reference - Acces direct a des objets via ID |
+| **JWT** | JSON Web Token - Token d'authentification standardise |
+| **MFA** | Multi-Factor Authentication - Authentification multi-facteurs |
+| **OWASP** | Open Web Application Security Project |
+| **RCE** | Remote Code Execution - Execution de code a distance |
+| **SSRF** | Server-Side Request Forgery - Requetes forgees cote serveur |
+| **XSS** | Cross-Site Scripting - Injection de scripts malicieux |
+
+---
+
+## Sources et References
+
+### Documentation Officielle
+
+- [OWASP Top 10 2025](https://owasp.org/Top10/2025/)
+- [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)
+- [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/)
+- [Next.js Security Guide](https://nextjs.org/docs/app/guides/data-security)
+- [Node.js Security Releases](https://nodejs.org/en/blog/vulnerability)
+
+### Bases de Vulnerabilites
+
+- [NVD - National Vulnerability Database](https://nvd.nist.gov/)
+- [CVE - MITRE](https://cve.mitre.org/)
+- [GitHub Security Advisories](https://github.com/advisories)
+- [Snyk Vulnerability Database](https://snyk.io/vuln/)
+
+### Outils de Test
+
+- [Security Headers](https://securityheaders.com/)
+- [Mozilla Observatory](https://observatory.mozilla.org/)
+- [CSP Evaluator](https://csp-evaluator.withgoogle.com/)

@@ -1,0 +1,264 @@
+---
+title: Reference
+description: Documentation technique SEO Metadata - Glossaire, meta tags, Open Graph, Twitter Cards, JSON-LD, validation
+---
+
+# SEO Metadata Expert - Documentation Technique
+
+## Glossaire
+
+| Terme | Definition |
+|-------|------------|
+| **Canonical URL** | URL officielle d'une page, evite les problemes de contenu duplique |
+| **Core Web Vitals** | Metriques Google mesurant l'experience utilisateur (LCP, FID/INP, CLS) |
+| **generateMetadata** | Fonction async Next.js pour generer des metadonnees dynamiques |
+| **JSON-LD** | JavaScript Object Notation for Linked Data, format prefere de Google pour structured data |
+| **Metadata API** | API native Next.js App Router pour definir les meta tags |
+| **Open Graph** | Protocole Facebook pour controler l'apparence des liens partages |
+| **Rich Snippets** | Resultats enrichis dans les SERP (etoiles, FAQ, prix, etc.) |
+| **Schema.org** | Vocabulaire standardise pour structured data (800+ types) |
+| **SERP** | Search Engine Results Page - page de resultats de recherche |
+| **Streaming Metadata** | Fonctionnalite Next.js 15 permettant de streamer les meta tags |
+| **Structured Data** | Donnees structurees aidant les moteurs a comprendre le contenu |
+| **Twitter Cards** | Equivalent Twitter/X d'Open Graph pour les apercus de liens |
+
+---
+
+## Meta Tags Essentiels
+
+### Tags Fondamentaux
+
+| Tag | Role | Recommandations |
+|-----|------|-----------------|
+| `<title>` | Titre affiche dans SERP et onglet navigateur | 50-60 caracteres, unique par page |
+| `<meta name="description">` | Description dans SERP | 150-160 caracteres, incite au clic |
+| `<meta name="viewport">` | Configuration responsive | `width=device-width, initial-scale=1` |
+| `<link rel="canonical">` | URL canonique | URL absolue, evite duplications |
+| `<meta name="robots">` | Instructions aux crawlers | `index, follow` par defaut |
+
+### Open Graph (og:)
+
+| Propriete | Obligatoire | Valeur |
+|-----------|-------------|--------|
+| `og:title` | Oui | Titre pour partage social |
+| `og:description` | Oui | Description pour partage social |
+| `og:image` | Oui | URL absolue de l'image (1200x630px) |
+| `og:url` | Oui | URL canonique de la page |
+| `og:type` | Oui | website, article, product, etc. |
+| `og:site_name` | Recommande | Nom du site |
+| `og:locale` | Recommande | Langue (fr_FR, en_US) |
+
+### Twitter Cards (twitter:)
+
+| Propriete | Valeur |
+|-----------|--------|
+| `twitter:card` | summary, summary_large_image, player |
+| `twitter:title` | Fallback sur og:title si absent |
+| `twitter:description` | Fallback sur og:description si absent |
+| `twitter:image` | Fallback sur og:image si absent |
+| `twitter:site` | Handle Twitter du site (@compte) |
+| `twitter:creator` | Handle de l'auteur |
+
+---
+
+## Structured Data JSON-LD
+
+### Types Schema.org Courants
+
+| Type | Usage | Proprietes Cles |
+|------|-------|-----------------|
+| `Organization` | Page d'entreprise | name, url, logo, contactPoint |
+| `WebSite` | Site global | name, url, potentialAction (SearchAction) |
+| `Article` | Articles de blog | headline, author, datePublished, image |
+| `BreadcrumbList` | Fil d'Ariane | itemListElement avec position |
+| `LocalBusiness` | Commerce local | name, address, geo, openingHours |
+| `Product` | Page produit | name, image, offers, aggregateRating |
+| `FAQPage` | Page FAQ | mainEntity avec Question/Answer |
+| `Review` | Avis clients | author, reviewRating, itemReviewed |
+| `Person` | Page personne | name, image, jobTitle, sameAs |
+| `Event` | Evenement | name, startDate, location, offers |
+
+### Proprietes Communes Requises
+
+| Type | Proprietes Obligatoires |
+|------|------------------------|
+| Article | @type, headline, author, datePublished |
+| Product | @type, name, image, offers (avec price, priceCurrency) |
+| LocalBusiness | @type, name, address, telephone |
+| FAQPage | @type, mainEntity (array de Question) |
+
+---
+
+## Next.js Metadata API
+
+### Hierarchie et Heritage
+
+1. Le metadata defini dans un layout parent s'applique a toutes les pages enfants
+2. Le metadata d'une page override celui du layout parent
+3. Les title templates permettent d'ajouter prefixes/suffixes automatiques
+4. Les file conventions (opengraph-image.tsx) ont priorite sur metadata object
+
+### Priorite de Resolution
+
+1. File-based metadata (opengraph-image.tsx, favicon.ico)
+2. generateMetadata function
+3. Static metadata export
+4. Parent layout metadata
+
+### Memoization des Fetch
+
+Les appels fetch() dans generateMetadata sont automatiquement memoizes et partages avec :
+- generateStaticParams
+- Layouts
+- Pages
+- Server Components
+
+Cela evite les requetes dupliquees lors du build.
+
+### Streaming Metadata (Next.js 15)
+
+Pour les pages dynamiques :
+- Le contenu UI est streame immediatement
+- Les meta tags sont injectes dans le body une fois generateMetadata resolu
+- Les bots executant JavaScript (Googlebot) recoivent les metadata correctement
+- Les bots HTML-only (facebookexternalhit) attendent le rendu complet
+
+---
+
+## Dimensions et Formats d'Images
+
+### Open Graph
+
+| Parametre | Valeur Recommandee |
+|-----------|--------------------|
+| Dimensions | 1200 x 630 pixels |
+| Ratio | 1.91:1 |
+| Taille max | 8 MB |
+| Formats | JPG, PNG, GIF |
+
+### Twitter Cards
+
+| Parametre | Valeur Recommandee |
+|-----------|--------------------|
+| Dimensions | 1200 x 675 pixels |
+| Ratio | 16:9 |
+| Taille max | 5 MB |
+| Formats | JPG, PNG, GIF, WEBP |
+
+### Recommandation Commune
+
+Utiliser une image de 1200 x 675 pixels qui fonctionne pour les deux plateformes.
+
+---
+
+## Outils de Validation
+
+### Validation Locale
+
+| Outil | Usage |
+|-------|-------|
+| Chrome DevTools > Lighthouse | Score SEO global, meta tags |
+| View Page Source | Verifier le HTML rendu cote serveur |
+| Next.js Build | Erreurs de metadata detectees au build |
+
+### Validation Externe
+
+| Outil | URL | Test |
+|-------|-----|------|
+| Google Rich Results Test | search.google.com/test/rich-results | JSON-LD valide, eligibilite rich snippets |
+| Schema Markup Validator | validator.schema.org | Syntaxe schema.org |
+| Facebook Sharing Debugger | developers.facebook.com/tools/debug | Apercu Open Graph |
+| Twitter Card Validator | cards-dev.twitter.com/validator | Apercu Twitter Cards |
+| LinkedIn Post Inspector | linkedin.com/post-inspector | Apercu LinkedIn |
+
+### Criteres de Validation
+
+| Critere | Seuil Acceptable |
+|---------|------------------|
+| Lighthouse SEO | ≥ 95/100 |
+| Rich Results Test | Aucune erreur, warnings acceptables |
+| OG Image accessible | HTTP 200, type MIME correct |
+| Title length | ≤ 60 caracteres (pas de troncature) |
+| Description length | 150-160 caracteres |
+
+---
+
+## Erreurs Courantes
+
+### Meta Tags
+
+| Erreur | Impact | Solution |
+|--------|--------|----------|
+| Title duplique | Confusion crawlers | Titre unique par page |
+| Description manquante | Google genere automatiquement | Ajouter description explicite |
+| Canonical incorrect | Problemes d'indexation | URL absolue correcte |
+| Viewport absent | Mobile-first indexing impacte | Ajouter viewport standard |
+
+### Open Graph
+
+| Erreur | Impact | Solution |
+|--------|--------|----------|
+| og:image URL relative | Image non affichee | Utiliser URL absolue |
+| Image trop petite | Apparence degradee | Minimum 1200x630 |
+| og:url different de canonical | Incoherence | Aligner les deux |
+
+### JSON-LD
+
+| Erreur | Impact | Solution |
+|--------|--------|----------|
+| Syntaxe JSON invalide | Ignore par Google | Valider avec outil |
+| Proprietes manquantes | Pas de rich snippet | Ajouter proprietes requises |
+| Donnees non visibles sur page | Violation guidelines | Aligner avec contenu visible |
+| Multiple @context | Confusion | Un seul contexte schema.org |
+
+---
+
+## Ressources Officielles
+
+### Documentation Next.js
+
+- Metadata API : nextjs.org/docs/app/api-reference/functions/generate-metadata
+- JSON-LD Guide : nextjs.org/docs/app/guides/json-ld
+- Metadata Files : nextjs.org/docs/app/api-reference/file-conventions/metadata
+
+### Documentation Google
+
+- Structured Data Intro : developers.google.com/search/docs/appearance/structured-data/intro-structured-data
+- Title Link : developers.google.com/search/docs/appearance/title-link
+- Meta Description : developers.google.com/search/docs/appearance/snippet
+
+### Standards
+
+- Schema.org : schema.org/docs/developers.html
+- Open Graph Protocol : ogp.me
+- Twitter Cards : developer.x.com/en/docs/x-for-websites/cards
+
+---
+
+## FAQ
+
+### Pourquoi Google reecrit-il mon title/description ?
+
+Google reecrit 60-70% des meta descriptions pour mieux correspondre a la requete de l'utilisateur. Pour minimiser les reecritures :
+- Aligner le contenu avec l'intention de recherche
+- Utiliser des termes naturels, pas de keyword stuffing
+- S'assurer que le title reflete exactement le contenu
+
+### generateMetadata ou static metadata ?
+
+- **Static metadata** : contenu fixe, connu au build (page A propos, CGV)
+- **generateMetadata** : contenu dynamique, depend des parametres de route ou donnees externes (blog posts, produits)
+
+### Comment tester les metadata en local ?
+
+1. Lancer `pnpm build` pour verifier les erreurs
+2. Lancer `pnpm dev` et inspecter le HTML source
+3. Utiliser ngrok ou un tunnel pour tester avec les debuggers externes
+
+### Les Twitter Cards utilisent-elles Open Graph ?
+
+Oui, Twitter fait un fallback sur Open Graph si les proprietes twitter: sont absentes. Definir og: est suffisant, mais twitter:card est requis pour specifier le type de carte.
+
+### Faut-il encore utiliser next-seo ?
+
+Non recommande. La Metadata API native de Next.js App Router remplace next-seo. Utiliser next-seo peut creer des conflits. Pour les nouveaux projets, utiliser exclusivement metadata export ou generateMetadata.

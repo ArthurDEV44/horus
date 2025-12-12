@@ -1,0 +1,6 @@
+{
+  "title": "SEO Schema Expert",
+  "description": "Expert Schema.org et JSON-LD structured data. Utiliser pour auditer, implementer et valider les donnees structurees pour rich results Google et compatibilite AI/LLM.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

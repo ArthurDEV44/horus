@@ -1,0 +1,16 @@
+{
+  "title": "Architecture",
+  "description": "Agents pour la structure et les patterns de code",
+  "pages": [
+    "index",
+    "patterns-expert",
+    "solid-expert",
+    "structure-expert",
+    "modularity-expert",
+    "coupling-expert",
+    "state-expert",
+    "types-expert",
+    "debt-expert"
+  ],
+  "defaultOpen": true
+}

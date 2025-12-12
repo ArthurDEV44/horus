@@ -1,0 +1,162 @@
+---
+title: Workflows
+description: Processus détaillés pour auditer, détecter et éliminer la dette technique.
+---
+
+# Debt Expert - Workflows
+
+## Workflow 1 : Audit Complet de Dette Technique
+
+### Objectif
+Produire un inventaire exhaustif de la dette technique avec priorisation et plan d'action.
+
+### Étapes
+
+Étape 1 - Cartographier la Base de Code
+Utiliser Glob pour lister tous les fichiers source avec leur taille. Identifier les fichiers les plus volumineux dépassant cinq cents lignes. Calculer le nombre total de lignes de code et le ratio par dossier. Documenter l'ancienneté des fichiers via les dates de modification.
+
+Étape 2 - Détecter les Code Smells Structurels
+Rechercher les Long Methods avec Grep sur les fonctions dépassant cinquante lignes. Identifier les Large Classes avec plus de dix méthodes ou trois cents lignes. Repérer les God Classes accumulant trop de responsabilités. Lister les fichiers avec plus de cinq niveaux d'imbrication.
+
+Étape 3 - Analyser la Complexité
+Identifier les fonctions avec plus de dix branches conditionnelles. Repérer les switch statements à plus de cinq cases. Détecter les chaînes de if-else imbriquées. Calculer une estimation de complexité cyclomatique par comptage des points de décision.
+
+Étape 4 - Inventorier le Dead Code
+Rechercher les exports non importés dans le reste du projet. Identifier les fonctions définies mais jamais appelées. Lister les variables assignées sans lecture ultérieure. Repérer les fichiers sans import depuis d'autres fichiers. Vérifier les dépendances package.json effectivement utilisées.
+
+Étape 5 - Évaluer la Duplication
+Rechercher les blocs de code similaires avec patterns de trois lignes ou plus. Identifier les fonctions quasi-identiques avec variations mineures. Repérer les copier-coller évidents via commentaires ou nommage similaire.
+
+Étape 6 - Mesurer la Couverture de Tests
+Vérifier l'existence de tests pour les modules critiques. Identifier les zones à haute complexité sans tests associés. Évaluer la qualité des tests existants via leur structure.
+
+Étape 7 - Produire le Rapport
+Compiler les métriques dans un rapport structuré. Calculer le Technical Debt Ratio estimé. Classer les problèmes en critique, majeur et mineur. Prioriser par combinaison impact business et effort de correction. Proposer un plan de remboursement sur trois horizons court, moyen et long terme.
+
+## Workflow 2 : Élimination du Dead Code
+
+### Objectif
+Identifier et supprimer tout le code mort du projet de manière sécurisée.
+
+### Étapes
+
+Étape 1 - Scanner les Exports Inutilisés
+Lister tous les fichiers exportant des éléments avec Grep sur export. Pour chaque export, rechercher son import dans le reste du projet. Identifier les exports sans aucune référence externe. Distinguer les exports publics API des exports internes.
+
+Étape 2 - Détecter les Fonctions Non Appelées
+Extraire la liste des fonctions définies dans le projet. Pour chaque fonction, rechercher ses appels hors de sa définition. Identifier les fonctions jamais invoquées. Vérifier les appels dynamiques possibles avant de qualifier comme dead.
+
+Étape 3 - Trouver les Variables Mortes
+Rechercher les déclarations de variables avec let, const ou var. Vérifier l'utilisation de chaque variable après son assignation. Identifier les variables assignées mais jamais lues. Exclure les paramètres de fonction qui peuvent être requis par interface.
+
+Étape 4 - Identifier les Fichiers Orphelins
+Lister tous les fichiers du projet. Pour chaque fichier, rechercher son import ailleurs. Identifier les fichiers sans aucune référence. Vérifier les points d'entrée configurés qui n'ont pas d'import explicite.
+
+Étape 5 - Vérifier les Dépendances
+Lire le fichier package.json pour lister les dépendances. Rechercher l'import de chaque dépendance dans le code source. Identifier les dépendances déclarées mais jamais importées. Distinguer les dépendances runtime des devDependencies utilisées en build.
+
+Étape 6 - Valider Avant Suppression
+Pour chaque élément identifié comme dead, confirmer l'absence d'usage dynamique. Vérifier les appels via reflection ou string interpolation. Consulter l'historique git pour comprendre l'intention originale. Marquer les éléments confirmés pour suppression.
+
+Étape 7 - Supprimer Progressivement
+Supprimer les éléments par petits lots cohérents. Exécuter les tests après chaque lot de suppression. Valider le build complet régulièrement. Documenter les suppressions significatives dans le commit.
+
+## Workflow 3 : Réduction de Complexité Cyclomatique
+
+### Objectif
+Refactorer les fonctions à haute complexité pour améliorer testabilité et maintenabilité.
+
+### Étapes
+
+Étape 1 - Identifier les Fonctions Critiques
+Rechercher les fonctions avec plus de cinq if ou switch. Compter les points de décision dans chaque fonction majeure. Classer les fonctions par complexité estimée décroissante. Sélectionner les trois à cinq fonctions les plus complexes à traiter.
+
+Étape 2 - Analyser la Structure
+Lire la fonction cible pour comprendre sa logique globale. Identifier les différentes responsabilités mélangées. Repérer les blocs extractibles en fonctions séparées. Documenter les dépendances entre les différentes parties.
+
+Étape 3 - Appliquer Extract Method
+Identifier les blocs de code cohérents avec une responsabilité unique. Extraire chaque bloc en fonction nommée descriptive. Remplacer le bloc original par l'appel à la nouvelle fonction. Vérifier que les tests passent après chaque extraction.
+
+Étape 4 - Simplifier les Conditions
+Remplacer les if-else imbriqués par des guard clauses avec return précoce. Transformer les switch longs en lookup tables ou strategy pattern. Extraire les conditions complexes en fonctions prédicats nommées. Éliminer les conditions redondantes ou toujours vraies.
+
+Étape 5 - Appliquer Polymorphisme si Pertinent
+Identifier les switch sur type ou discriminant récurrents. Évaluer si un pattern Strategy ou State convient. Créer les classes ou fonctions spécialisées par cas. Remplacer le switch par dispatch polymorphique.
+
+Étape 6 - Valider les Améliorations
+Recompter les points de décision après refactoring. Confirmer la réduction de complexité cyclomatique. Vérifier que tous les tests existants passent. Ajouter des tests pour les nouvelles fonctions extraites.
+
+## Workflow 4 : Traitement des Code Smells
+
+### Objectif
+Identifier et corriger les code smells prioritaires dans une zone ciblée du code.
+
+### Étapes
+
+Étape 1 - Délimiter la Zone d'Analyse
+Définir le périmètre avec l'utilisateur entre dossier, module ou fichier spécifique. Lister tous les fichiers dans le périmètre. Estimer la taille totale en lignes de code. Identifier les fichiers les plus modifiés récemment via git.
+
+Étape 2 - Scanner les Bloaters
+Rechercher les Long Methods dépassant cinquante lignes. Identifier les Large Classes dépassant trois cents lignes ou dix méthodes. Repérer les Long Parameter Lists avec plus de quatre paramètres. Détecter les Primitive Obsession avec usage excessif de string ou number pour des concepts métier.
+
+Étape 3 - Détecter les Object-Orientation Abusers
+Identifier le Feature Envy où une méthode appelle excessivement une autre classe. Repérer les Data Classes sans comportement réel. Trouver les Switch Statements récurrents sur le même discriminant. Détecter les Refused Bequest dans les hiérarchies d'héritage.
+
+Étape 4 - Trouver les Dispensables
+Lister le Duplicate Code avec recherche de blocs similaires. Identifier le Dead Code jamais exécuté. Repérer les Comments excessifs compensant du code obscur. Détecter la Speculative Generality avec abstractions inutilisées.
+
+Étape 5 - Prioriser les Corrections
+Classer chaque smell par sévérité et impact sur la maintenance. Identifier les quick wins corrigeables en moins d'une heure. Grouper les smells liés corrigeables ensemble. Proposer un ordre de traitement optimisé.
+
+Étape 6 - Corriger Progressivement
+Traiter un smell à la fois avec tests de non-régression. Appliquer les refactorings appropriés selon le type de smell. Valider après chaque correction que le comportement est préservé. Documenter les patterns de correction pour référence future.
+
+## Workflow 5 : Mise en Place de Monitoring de Dette
+
+### Objectif
+Établir un suivi continu de la dette technique avec alertes sur dégradation.
+
+### Étapes
+
+Étape 1 - Définir les Métriques Clés
+Sélectionner les métriques pertinentes pour le projet. Inclure Technical Debt Ratio, complexité moyenne, taux de duplication et couverture. Définir les seuils d'alerte pour chaque métrique. Documenter la méthode de calcul de chaque métrique.
+
+Étape 2 - Établir la Baseline
+Mesurer les valeurs actuelles de chaque métrique. Documenter l'état initial comme référence. Identifier les zones déjà au-delà des seuils. Prioriser les actions immédiates si nécessaire.
+
+Étape 3 - Configurer l'Outillage
+Recommander les outils adaptés au stack technologique. Configurer ESLint avec règles de complexité si JavaScript ou TypeScript. Intégrer SonarQube ou alternative pour analyse continue. Mettre en place Knip pour surveillance du dead code.
+
+Étape 4 - Intégrer au CI/CD
+Ajouter les analyses au pipeline d'intégration continue. Configurer les seuils de blocage pour nouvelle dette. Générer des rapports automatiques sur chaque pull request. Alerter sur les régressions de métriques.
+
+Étape 5 - Établir les Rituels
+Définir la fréquence de revue des métriques avec l'équipe. Planifier les sessions de remboursement de dette. Documenter les décisions de dette intentionnelle. Célébrer les améliorations pour maintenir la motivation.
+
+Étape 6 - Documenter les Standards
+Rédiger les critères de qualité attendus pour le projet. Définir ce qui constitue de la dette acceptable temporairement. Établir le processus d'escalade pour dette critique. Partager les guidelines avec toute l'équipe.
+
+## Workflow 6 : Refactoring de God Class
+
+### Objectif
+Décomposer une classe massive en composants cohérents avec responsabilités uniques.
+
+### Étapes
+
+Étape 1 - Analyser la God Class
+Lire l'intégralité du fichier pour comprendre toutes ses responsabilités. Lister toutes les méthodes et leurs objectifs. Identifier les groupes de méthodes travaillant sur les mêmes données. Documenter les dépendances internes entre méthodes.
+
+Étape 2 - Identifier les Responsabilités
+Regrouper les méthodes par domaine fonctionnel. Nommer chaque groupe par sa responsabilité principale. Identifier les données utilisées par chaque groupe. Repérer les méthodes partagées entre plusieurs groupes.
+
+Étape 3 - Planifier l'Extraction
+Définir les nouvelles classes ou modules à créer. Attribuer les méthodes à chaque nouveau composant. Planifier le traitement des méthodes partagées. Définir les interfaces de communication entre composants.
+
+Étape 4 - Extraire le Premier Composant
+Choisir le groupe le plus indépendant pour commencer. Créer le nouveau fichier avec les méthodes extraites. Mettre à jour les imports dans la God Class originale. Déléguer les appels vers le nouveau composant. Vérifier que tous les tests passent.
+
+Étape 5 - Itérer sur les Autres Composants
+Répéter l'extraction pour chaque groupe identifié. Traiter les dépendances entre composants extraits. Refactorer les méthodes partagées en utilitaires ou via injection. Maintenir la God Class originale comme façade temporaire si nécessaire.
+
+Étape 6 - Nettoyer et Finaliser
+Supprimer la God Class si toutes les responsabilités sont extraites. Alternativement la conserver comme coordinateur léger. Mettre à jour tous les imports dans le projet. Vérifier la couverture de tests des nouveaux composants. Documenter la nouvelle architecture.

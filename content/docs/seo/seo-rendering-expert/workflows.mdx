@@ -1,0 +1,418 @@
+---
+title: Workflows
+description: Processus detailles par scenario incluant audits complets, choix de strategie, diagnostics d'indexation, optimisation Core Web Vitals et migrations.
+---
+
+# SEO Rendering Expert - Workflows Detailles
+
+## Workflow 1 : Audit Complet de Rendu SEO
+
+### Contexte
+Evaluation complete de la strategie de rendu d'un site et son impact sur l'indexation.
+
+### Etapes
+
+#### 1.1 Collecte d'Informations Preliminaires
+
+Identifier :
+- Framework et version (package.json, documentation)
+- Strategie de rendu declaree (SSR, SSG, ISR, CSR)
+- CDN et hebergement utilises
+- Problemes signales par l'utilisateur
+
+#### 1.2 Analyse du HTML Source
+
+Pour les pages cles (homepage, pages categories, articles) :
+
+1. Recuperer le HTML source brut (view-source: ou curl)
+2. Verifier la presence dans le HTML initial :
+   - Balise `<title>` avec contenu approprie
+   - Meta description
+   - Balise canonical
+   - Open Graph tags
+   - JSON-LD structured data
+   - Contenu textuel principal (H1, paragraphes)
+
+3. Noter tout contenu absent du HTML source
+
+#### 1.3 Analyse du DOM Rendu
+
+1. Ouvrir les memes pages dans Chrome DevTools
+2. Comparer le DOM final avec le HTML source
+3. Identifier les differences :
+   - Contenu ajoute par JavaScript
+   - Meta tags modifiees cote client
+   - Structured data injectees dynamiquement
+
+#### 1.4 Test de Rendu Googlebot
+
+1. Utiliser Google Rich Results Test sur les pages cles
+2. Examiner le "Rendered HTML"
+3. Verifier que le contenu critique est visible
+4. Noter les erreurs de ressources bloquees
+
+#### 1.5 Analyse Search Console
+
+1. URL Inspection sur pages representatives
+2. Comparer "Crawled Page" vs "Live Test"
+3. Verifier le Coverage Report pour les exclusions
+4. Examiner le rapport Core Web Vitals
+
+#### 1.6 Evaluation Core Web Vitals
+
+1. PageSpeed Insights sur pages cles (mobile et desktop)
+2. Collecter metriques Field (si disponibles) et Lab
+3. Identifier les metriques hors seuils
+4. Prioriser par impact SEO (LCP > INP > CLS)
+
+#### 1.7 Synthese et Recommandations
+
+Produire un rapport incluant :
+- Etat actuel du rendu par type de page
+- Problemes identifies avec niveau de criticite
+- Recommandations priorisees
+- Plan d'action suggere
+
+---
+
+## Workflow 2 : Choix de Strategie de Rendu
+
+### Contexte
+Determiner la strategie de rendu optimale pour un nouveau projet ou une migration.
+
+### Arbre de Decision
+
+```
+Le contenu necessite-t-il une indexation SEO ?
+├── NON → CSR acceptable
+│         (dashboards, apps authentifiees)
+│
+└── OUI → Le contenu change-t-il frequemment ?
+          ├── RAREMENT (< 1x/jour)
+          │   └── SSG recommande
+          │       - Build time rendering
+          │       - CDN distribution
+          │       - Performances optimales
+          │
+          ├── REGULIEREMENT (plusieurs fois/jour)
+          │   └── ISR recommande
+          │       - Revalidation configurable
+          │       - Balance fraicheur/performance
+          │       - Stale-while-revalidate
+          │
+          └── TEMPS REEL (a chaque requete)
+              └── Le contenu est-il personnalise ?
+                  ├── NON → SSR avec cache edge
+                  │         - Cache-Control headers
+                  │         - Edge computing si global
+                  │
+                  └── OUI → SSR sans cache
+                            - Contenu dynamique par utilisateur
+                            - Considerer streaming SSR
+```
+
+### Considerations par Type de Page
+
+| Type de Page | Strategie Recommandee | Justification |
+|--------------|----------------------|---------------|
+| Homepage | SSG ou ISR (1h) | Contenu stable, performance critique |
+| Blog/Articles | SSG | Contenu fige apres publication |
+| Pages categories | ISR (15min-1h) | Mise a jour moderee |
+| Fiches produits | ISR (5-15min) | Prix/stock changeants |
+| Resultats recherche | SSR | Dynamique par requete |
+| Dashboard utilisateur | CSR | Pas d'indexation necessaire |
+| Pages legales | SSG | Contenu tres stable |
+
+### Validation du Choix
+
+Avant de finaliser :
+1. Effectuer une recherche web sur les best practices actuelles du framework choisi
+2. Verifier la documentation officielle pour les options de configuration
+3. Considerer le volume de pages (build time pour SSG)
+4. Evaluer l'infrastructure disponible (edge functions, serverless)
+
+---
+
+## Workflow 3 : Diagnostic d'un Probleme d'Indexation
+
+### Contexte
+Une ou plusieurs pages ne sont pas indexees correctement malgre un contenu de qualite.
+
+### Etapes de Diagnostic
+
+#### 3.1 Verification des Blocages Evidents
+
+1. Verifier robots.txt :
+   - La page est-elle bloquee ?
+   - Les ressources JS/CSS sont-elles accessibles ?
+
+2. Verifier les meta robots :
+   - `noindex` present ?
+   - `nofollow` sur les liens internes ?
+
+3. Verifier le canonical :
+   - Pointe-t-il vers une autre page ?
+   - Est-il coherent entre source et rendu ?
+
+#### 3.2 Test de Rendu JavaScript
+
+1. Rich Results Test sur la page problematique
+2. Examiner :
+   - Le contenu est-il visible dans le rendu ?
+   - Y a-t-il des erreurs JavaScript ?
+   - Des ressources sont-elles bloquees ?
+
+3. Comparer avec une page similaire qui s'indexe bien
+
+#### 3.3 Analyse des Delais de Rendu
+
+1. Le contenu depend-il d'appels API ?
+2. Quel est le temps total de rendu JavaScript ?
+3. Y a-t-il des timeouts ou erreurs reseau ?
+
+Si le rendu est lent ou incertain :
+- Considerer la migration vers SSR/SSG/ISR
+- Implementer un fallback HTML
+
+#### 3.4 Verification du Contenu
+
+1. Le contenu est-il suffisamment unique ?
+2. Y a-t-il duplication avec d'autres pages ?
+3. La page a-t-elle assez de contenu textuel ?
+
+#### 3.5 Analyse des Signaux Techniques
+
+1. La page est-elle accessible depuis la navigation interne ?
+2. Existe-t-il des liens internes vers cette page ?
+3. La page est-elle dans le sitemap ?
+4. Y a-t-il des erreurs de crawl dans Search Console ?
+
+#### 3.6 Resolution
+
+Selon le diagnostic, appliquer la solution appropriee :
+
+| Probleme | Solution |
+|----------|----------|
+| Contenu non rendu | Migration SSR/SSG/ISR |
+| Ressources bloquees | Mise a jour robots.txt |
+| Meta noindex | Supprimer ou corriger |
+| Canonical incorrect | Corriger la balise |
+| Timeout JavaScript | Optimiser ou pre-rendre |
+| Contenu duplique | Canonical ou consolidation |
+| Orphan page | Ajouter maillage interne |
+
+---
+
+## Workflow 4 : Optimisation Core Web Vitals
+
+### Contexte
+Les metriques CWV sont en dessous des seuils recommandes.
+
+### Processus par Metrique
+
+#### 4.1 Optimisation LCP
+
+**Diagnostic** :
+1. Identifier l'element LCP (PageSpeed Insights le montre)
+2. Analyser le waterfall de chargement
+3. Identifier les goulots d'etranglement
+
+**Actions par cause** :
+
+| Cause | Actions |
+|-------|---------|
+| TTFB lent | Cache serveur, CDN, edge computing |
+| CSS bloquant | Critical CSS inline, async loading |
+| Image LCP lente | Preload, formats modernes, CDN images |
+| Fonts bloquants | font-display: swap, preload |
+| JavaScript bloquant | Defer, async, code splitting |
+
+**Validation** :
+- Retester avec PageSpeed Insights
+- Attendre donnees CrUX (28 jours)
+
+#### 4.2 Optimisation INP
+
+**Diagnostic** :
+1. Identifier les interactions lentes (DevTools Performance)
+2. Rechercher les long tasks (> 50ms)
+3. Analyser l'hydration (pour frameworks React/Vue)
+
+**Actions par cause** :
+
+| Cause | Actions |
+|-------|---------|
+| Hydration massive | Hydration selective, lazy hydration |
+| Long tasks | Code splitting, web workers |
+| Event handlers lourds | Debounce, throttle, optimisation |
+| Third-party scripts | Defer, facade patterns |
+
+**Validation** :
+- Tester les interactions manuellement
+- Utiliser Web Vitals extension
+- Monitorer dans CrUX
+
+#### 4.3 Optimisation CLS
+
+**Diagnostic** :
+1. Identifier les elements qui causent des shifts (DevTools)
+2. Verifier les images sans dimensions
+3. Rechercher le contenu injecte dynamiquement
+
+**Actions par cause** :
+
+| Cause | Actions |
+|-------|---------|
+| Images sans dimensions | Ajouter width/height ou aspect-ratio |
+| Fonts FOUT | font-display: optional ou preload |
+| Ads dynamiques | Reserver l'espace (placeholder) |
+| Contenu injecte | Reserver l'espace, eviter l'insertion au-dessus |
+| Embeds (videos, maps) | Definir dimensions fixes |
+
+**Validation** :
+- Layout Shift Debugger dans DevTools
+- Lighthouse CLS breakdown
+- CrUX apres deploiement
+
+---
+
+## Workflow 5 : Migration de Strategie de Rendu
+
+### Contexte
+Passage d'une strategie de rendu a une autre (ex: CSR vers SSR).
+
+### Phases de Migration
+
+#### 5.1 Preparation
+
+1. Inventorier toutes les pages et leur strategie actuelle
+2. Definir la strategie cible par type de page
+3. Identifier les dependances cote client a migrer
+4. Planifier les tests de non-regression
+
+#### 5.2 Audit Pre-Migration
+
+1. Capturer l'etat actuel :
+   - Positions dans les SERPs pour pages cles
+   - Core Web Vitals actuels
+   - Pages indexees (Search Console)
+   - Trafic organique par page
+
+2. Documenter les URLs existantes (mapping si changements)
+
+#### 5.3 Implementation Progressive
+
+1. Commencer par les pages les moins critiques
+2. Pour chaque batch :
+   - Implementer la nouvelle strategie
+   - Tester le rendu (Rich Results Test)
+   - Valider les Core Web Vitals
+   - Deployer en production
+   - Monitorer l'indexation
+
+3. Progresser vers les pages critiques
+
+#### 5.4 Validation Post-Migration
+
+1. Verifier l'indexation de toutes les pages migrees
+2. Comparer les Core Web Vitals avant/apres
+3. Monitorer le trafic organique
+4. Verifier les erreurs dans Search Console
+
+#### 5.5 Rollback Plan
+
+En cas de probleme :
+1. Identifier les pages impactees
+2. Revenir a la strategie precedente
+3. Analyser la cause du probleme
+4. Corriger avant nouvelle tentative
+
+---
+
+## Workflow 6 : Optimisation pour Crawlers IA
+
+### Contexte
+S'assurer que le contenu est visible par les crawlers IA qui n'executent pas JavaScript.
+
+### Etapes
+
+#### 6.1 Audit de Visibilite
+
+1. Recuperer le HTML source brut (curl ou view-source)
+2. Verifier la presence du contenu textuel principal
+3. Verifier les structured data dans le source
+4. Tester sans JavaScript dans le navigateur
+
+#### 6.2 Identification des Lacunes
+
+Contenu typiquement absent du HTML initial :
+- Resultats de requetes API
+- Contenu charge au scroll (lazy loading mal implemente)
+- Donnees injectees via JavaScript
+- Composants client-only
+
+#### 6.3 Solutions
+
+| Probleme | Solution |
+|----------|----------|
+| Contenu API-dependent | SSR/SSG avec fetch cote serveur |
+| Lazy loading content | SSR le contenu, lazy load les images |
+| Client components | Utiliser Server Components (RSC) |
+| Dynamic data | ISR avec revalidation appropriee |
+
+#### 6.4 Validation
+
+1. Curl la page et verifier le contenu
+2. Desactiver JavaScript dans Chrome et naviguer
+3. Utiliser un outil de crawl sans JS (Screaming Frog mode HTML)
+
+#### 6.5 Structured Data pour GEO
+
+Pour optimiser la visibilite dans les moteurs generatifs :
+1. Implementer des structured data riches et precis
+2. Utiliser des attributions claires (auteur, date, sources)
+3. Structurer le contenu avec des headings logiques
+4. Inclure des donnees factuelles verifiables
+
+---
+
+## Checklist Pre-Deploiement SEO Rendering
+
+### HTML Source
+
+- [ ] Title tag present et unique
+- [ ] Meta description presente
+- [ ] Canonical tag correct
+- [ ] Open Graph tags complets
+- [ ] Contenu H1 visible
+- [ ] Contenu principal dans le HTML source
+- [ ] JSON-LD structured data present
+
+### Rendu JavaScript
+
+- [ ] Pas de mismatch d'hydration
+- [ ] Contenu identique source vs rendu
+- [ ] Meta tags non modifiees cote client
+- [ ] Pas d'erreurs JavaScript bloquantes
+
+### Core Web Vitals
+
+- [ ] LCP < 2.5s (test mobile)
+- [ ] INP < 200ms (si interactif)
+- [ ] CLS < 0.1
+- [ ] Images avec dimensions definies
+- [ ] Fonts optimisees
+
+### Accessibilite Crawlers
+
+- [ ] robots.txt permet JS/CSS
+- [ ] Pas de noindex non voulu
+- [ ] Sitemap a jour
+- [ ] Liens internes fonctionnels
+
+### Validation Finale
+
+- [ ] Rich Results Test passe
+- [ ] URL Inspection sans erreurs
+- [ ] Structured data valide
+- [ ] Mobile-friendly test passe

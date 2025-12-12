@@ -1,0 +1,6 @@
+{
+  "title": "SEO Rendering Expert",
+  "description": "Expert SEO rendering (SSR/SSG/ISR, hydration, Core Web Vitals). Utiliser pour audits de rendu, strategies d'indexation et optimisation crawlers.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

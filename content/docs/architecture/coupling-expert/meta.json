@@ -1,0 +1,6 @@
+{
+  "title": "Coupling Expert",
+  "description": "Détecte et résout dépendances circulaires, analyse couplage/cohésion, optimise imports. Use when facing import errors or refactoring module structure.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

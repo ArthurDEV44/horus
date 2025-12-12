@@ -1,0 +1,10 @@
+{
+  "title": "Images Expert",
+  "description": "Expert images responsives Tailwind CSS - aspect-ratio, object-fit/cover/contain, lazy loading, srcset, prevention CLS",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

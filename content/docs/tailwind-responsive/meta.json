@@ -1,0 +1,16 @@
+{
+  "title": "Tailwind Responsive",
+  "description": "Agents pour le design responsive avec Tailwind CSS",
+  "pages": [
+    "index",
+    "tw-mobile-first-expert",
+    "tw-breakpoints-expert",
+    "tw-layout-expert",
+    "tw-typography-expert",
+    "tw-spacing-expert",
+    "tw-images-expert",
+    "tw-container-queries-expert",
+    "tw-accessibility-expert"
+  ],
+  "defaultOpen": false
+}

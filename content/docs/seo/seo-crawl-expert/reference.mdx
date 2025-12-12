@@ -1,0 +1,218 @@
+---
+title: Reference
+description: Documentation technique approfondie pour l'agent SEO Crawl Expert - glossaire, outils, codes de statut et ressources.
+---
+
+# REFERENCE.md - SEO Crawl Expert
+
+Documentation technique approfondie pour l'agent seo-crawl-expert.
+
+## Glossaire Technique
+
+### Termes Fondamentaux
+
+| Terme | Definition |
+|-------|------------|
+| **Crawl Budget** | Quantite de ressources et temps que Google alloue au crawl d'un site. Sites inefficaces gaspillent ce budget sur des pages a faible valeur. |
+| **Crawlabilite** | Capacite des moteurs de recherche a acceder et parcourir les pages d'un site web. |
+| **Indexation** | Processus par lequel les moteurs stockent le contenu crawle dans leur base de donnees. Distinct du crawl. |
+| **Link Equity** | Autorite transmise d'une page a une autre via les liens internes. Aussi appele "link juice". |
+| **Page Orpheline** | Page sans aucun lien interne pointant vers elle, invisible pour les crawlers internes. |
+| **Canonical** | Balise indiquant la version preferee d'une page en cas de contenu duplique. |
+
+### Metriques Core Web Vitals
+
+| Metrique | Seuil Bon | Seuil Acceptable | Description |
+|----------|-----------|------------------|-------------|
+| **LCP** (Largest Contentful Paint) | < 2.5s | < 4.0s | Temps de chargement du plus grand element visible |
+| **INP** (Interaction to Next Paint) | < 200ms | < 500ms | Reactivite aux interactions utilisateur (remplace FID depuis mars 2024) |
+| **CLS** (Cumulative Layout Shift) | < 0.1 | < 0.25 | Stabilite visuelle, decalages inattendus |
+
+### Directives Robots
+
+| Directive | Effet | Usage |
+|-----------|-------|-------|
+| `noindex` | Empeche l'indexation | Pages privees, doublons |
+| `nofollow` | Ne transmet pas le link equity | Liens non approuves |
+| `noarchive` | Pas de version en cache | Contenu sensible |
+| `nosnippet` | Pas d'extrait dans les SERP | Protection contenu |
+
+## Outils et Tarification (2025)
+
+### Crawlers Desktop
+
+| Outil | Prix | Limite Gratuite | Specialite |
+|-------|------|-----------------|------------|
+| **Screaming Frog** | $259/an | 500 URLs | Flexibilite, exports avances |
+| **Sitebulb** | ~$13-46/mois | Essai 14 jours | Visualisations, rapports clients |
+| **Netpeak Spider** | ~$99/an | Limite | Budget-friendly |
+
+### Crawlers Cloud
+
+| Outil | Prix | Capacite | Cas d'usage |
+|-------|------|----------|-------------|
+| **Semrush Site Audit** | Inclus plans Semrush | 140+ checks | SEO all-in-one |
+| **Lumar** (ex-DeepCrawl) | Enterprise | Millions URLs | Grands sites |
+| **Botify** | Enterprise | Haute velocite | E-commerce large |
+| **OnCrawl** | Des $45/mois | Log analysis inclus | Mid-market |
+
+### Outils Gratuits
+
+| Outil | Usage |
+|-------|-------|
+| **Google Search Console** | Indexation, Core Web Vitals, couverture |
+| **Google Rich Results Test** | Validation donnees structurees |
+| **Schema.org Validator** | Syntaxe JSON-LD |
+| **PageSpeed Insights** | Performance, Core Web Vitals |
+| **Chrome DevTools** | Debugging, analyse reseau |
+
+## Codes de Statut HTTP
+
+### Codes Critiques pour SEO
+
+| Code | Signification | Impact SEO |
+|------|---------------|------------|
+| **200** | OK | Normal, page indexable |
+| **301** | Redirection permanente | Transfert ~90-99% link equity |
+| **302** | Redirection temporaire | Eviter pour redirections permanentes |
+| **304** | Non modifie | Cache, reduit crawl |
+| **404** | Non trouve | Perte link equity, experience degradee |
+| **410** | Gone (supprime) | Signal fort de suppression definitive |
+| **500** | Erreur serveur | Bloque crawl, surveiller |
+| **503** | Service indisponible | Temporaire, Google re-essaie |
+
+### Chaines de Redirections
+
+Eviter les chaines de plus de 2 redirections :
+- Perte potentielle de link equity a chaque saut
+- Consommation crawl budget
+- Latence accrue
+
+## Structure Robots.txt Optimale
+
+```
+# Regles generales
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+
+# Crawlers IA (optionnel)
+User-agent: ChatGPT-User
+Disallow: /proprietary/
+
+User-agent: Google-Extended
+Disallow: /training-restricted/
+
+# Sitemap(s) - toujours en URLs absolues
+Sitemap: https://example.com/sitemap.xml
+Sitemap: https://example.com/sitemap-products.xml
+```
+
+## Structure Sitemap XML
+
+### Format Standard
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://example.com/page</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>
+```
+
+### Limites et Bonnes Pratiques
+
+- Maximum 50 000 URLs par fichier sitemap
+- Taille maximale 50 MB non compresse
+- Utiliser sitemap index pour sites volumineux
+- N'inclure que les URLs canoniques et indexables
+- `lastmod` : date reelle de derniere modification significative
+
+## Types Schema.org Prioritaires
+
+### Impact SEO Eleve
+
+| Type | Usage | Rich Results |
+|------|-------|--------------|
+| **Article** | Blog, actualites | Titre, date, auteur |
+| **Product** | E-commerce | Prix, stock, avis |
+| **BreadcrumbList** | Navigation | Fil d'Ariane SERP |
+| **FAQPage** | Questions frequentes | Accordeon FAQ |
+| **LocalBusiness** | Commerce local | Knowledge Panel |
+| **Organization** | Entreprise | Logo, contacts |
+| **WebSite** | Site global | Sitelinks searchbox |
+
+### Validation
+
+1. **Developpement** : Schema.org Validator pour syntaxe
+2. **Production** : Google Rich Results Test pour eligibilite
+3. **Monitoring** : GSC > Ameliorations pour erreurs
+
+## Ressources Officielles
+
+### Documentation Google
+
+- [Google Search Central](https://developers.google.com/search)
+- [Robots.txt Specifications](https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt)
+- [Sitemaps Protocol](https://www.sitemaps.org/protocol.html)
+- [Structured Data Guidelines](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)
+- [Core Web Vitals](https://web.dev/vitals/)
+
+### Documentation Outils
+
+- [Screaming Frog User Guide](https://www.screamingfrog.co.uk/seo-spider/user-guide/)
+- [Sitebulb Documentation](https://sitebulb.com/resources/)
+- [Semrush Site Audit](https://www.semrush.com/kb/site-audit/)
+
+### Publications de Reference
+
+- [Search Engine Land](https://searchengineland.com/)
+- [Search Engine Journal](https://www.searchenginejournal.com/)
+- [Ahrefs Blog](https://ahrefs.com/blog/)
+- [Moz Blog](https://moz.com/blog)
+
+## FAQ Technique
+
+### Q: Quelle difference entre bloquer dans robots.txt et noindex ?
+
+**robots.txt** empeche le crawl mais pas l'indexation si la page a des liens externes. Une page bloquee apres indexation reste dans l'index.
+
+**noindex** empeche l'indexation mais la page doit etre crawlable pour que la directive soit lue.
+
+**Recommandation** : Utiliser noindex pour desindexer, robots.txt pour optimiser le crawl budget.
+
+### Q: Combien de temps pour l'indexation JavaScript ?
+
+Les etudes montrent un delai de 24-48h pour le contenu rendu cote client vs instantane pour le HTML statique. 67% des sites JS experimentent ces delais.
+
+**Recommandation** : SSR ou SSG pour le contenu critique, CSR acceptable pour elements non-SEO.
+
+### Q: Quelle frequence d'audit technique ?
+
+- **Sites high-traffic/dynamiques** : Audit leger mensuel, complet trimestriel
+- **Sites mid-market** : Audit complet tous les 6 mois
+- **Apres refonte/migration** : Audit immediat puis suivi a J+30
+
+### Q: Comment prioriser les corrections ?
+
+1. **Critique** : Bloque indexation pages strategiques
+2. **Haute** : Degrade crawl budget significativement
+3. **Moyenne** : Impact Core Web Vitals
+4. **Basse** : Opportunites d'optimisation
+
+## Historique des Evolutions Majeures
+
+| Date | Evolution | Impact |
+|------|-----------|--------|
+| **Mars 2024** | INP remplace FID | 600k sites echouent au nouveau seuil |
+| **2023** | Crawlers IA emergent | Nouvelles regles robots.txt necessaires |
+| **2021** | Core Web Vitals ranking factor | Performance devient critique |
+| **2020** | Mobile-first indexing par defaut | Version mobile = version principale |
+| **2018** | Speed Update mobile | Vitesse facteur mobile |

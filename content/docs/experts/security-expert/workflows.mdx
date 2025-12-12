@@ -1,0 +1,563 @@
+---
+title: Workflows
+description: Processus detailles pour Securite - Audit complet, Analyse vulnerabilite, Supply chain, CSP, Server Actions
+---
+
+# Security Expert - Workflows
+
+Processus detailles, arbres de decision et templates pour l'agent security-expert.
+
+---
+
+## Workflow 1 : Audit de Securite Complet
+
+### Objectif
+Evaluer la posture de securite globale d'une application Next.js/React.
+
+### Declencheur
+- Demande explicite d'audit de securite
+- Nouveau projet a securiser
+- Pre-mise en production
+- Post-incident de securite
+
+### Etapes
+
+```
+[START]
+    |
+    v
+[1. Reconnaissance]
+    |-- Lire package.json (versions, dependances)
+    |-- Lire next.config.ts (headers, redirects)
+    |-- Scanner la structure app/ et api/
+    |-- Identifier les fichiers .env*
+    |
+    v
+[2. Recherche Web]
+    |-- Consulter CVE recentes pour les dependances
+    |-- Verifier bulletins securite Node.js/React/Next.js
+    |-- Confirmer OWASP Top 10 2025 actuel
+    |
+    v
+[3. Audit Dependances]
+    |-- Executer npm/pnpm audit
+    |-- Verifier lock files
+    |-- Identifier packages obsoletes
+    |
+    v
+[4. Analyse Code]
+    |-- Scanner patterns dangereux (XSS, Injection)
+    |-- Verifier Server Actions
+    |-- Analyser authentification/autorisation
+    |-- Detecter secrets hardcodes
+    |
+    v
+[5. Verification Configuration]
+    |-- Headers de securite
+    |-- CSP
+    |-- CORS
+    |-- Rate limiting
+    |
+    v
+[6. Classification]
+    |-- Trier par severite (Critique > High > Medium > Low)
+    |-- Calculer exploitabilite
+    |-- Estimer impact
+    |
+    v
+[7. Rapport]
+    |-- Generer SECURITY_AUDIT.md
+    |-- Proposer remediations
+    |-- Prioriser les corrections
+    |
+    v
+[END]
+```
+
+### Checklist Reconnaissance
+
+- [ ] Version Next.js identifiee
+- [ ] Version React identifiee
+- [ ] Version Node.js identifiee
+- [ ] Liste des dependances etablie
+- [ ] Structure des routes documentee
+- [ ] Fichiers de configuration trouves
+- [ ] Variables d'environnement inventoriees
+
+### Checklist Audit Dependencies
+
+- [ ] npm/pnpm audit execute
+- [ ] Zero vulnerabilite critique
+- [ ] Zero vulnerabilite high
+- [ ] Vulnerabilites medium documentees
+- [ ] Lock file present et versionne
+- [ ] Pas de packages connus comme malicieux
+
+### Checklist Code Analysis
+
+- [ ] Aucun `dangerouslySetInnerHTML` sans sanitization
+- [ ] Aucun `eval()` ou `new Function()`
+- [ ] Server Actions validees avec schema
+- [ ] Pas de secrets hardcodes
+- [ ] Authentification verifiee sur routes protegees
+- [ ] Pas de template literals dans queries SQL
+
+### Checklist Configuration
+
+- [ ] HTTPS enforce
+- [ ] HSTS configure
+- [ ] CSP configure
+- [ ] X-Frame-Options present
+- [ ] X-Content-Type-Options: nosniff
+- [ ] Rate limiting actif
+- [ ] CORS restrictif
+
+---
+
+## Workflow 2 : Analyse de Vulnerabilite Specifique
+
+### Objectif
+Investiguer et corriger une vulnerabilite specifique reportee.
+
+### Declencheur
+- CVE detectee dans npm audit
+- Alerte Dependabot/Snyk
+- Rapport de bug bounty
+- Detection manuelle de pattern suspect
+
+### Etapes
+
+```
+[START]
+    |
+    v
+[1. Identification]
+    |-- Documenter la vulnerabilite (CVE, CWE)
+    |-- Identifier les fichiers affectes
+    |-- Evaluer la severite CVSS
+    |
+    v
+[2. Recherche Context]
+    |-- WebSearch pour details CVE
+    |-- Verifier si exploit public existe
+    |-- Consulter advisories officiels
+    |
+    v
+[3. Impact Assessment]
+    |-- Determiner si la vulnerabilite est exploitable
+    |-- Evaluer les donnees a risque
+    |-- Identifier les vecteurs d'attaque
+    |
+    v
+[4. Remediation]
+    |-- Si dependance: mettre a jour
+    |-- Si code: corriger avec pattern securise
+    |-- Tester la correction
+    |
+    v
+[5. Verification]
+    |-- Confirmer la correction
+    |-- Relancer les audits
+    |-- Documenter le fix
+    |
+    v
+[END]
+```
+
+### Arbre de Decision - Severite
+
+```
+Vulnerabilite detectee
+    |
+    |-- Est-ce exploitable a distance sans authentification?
+    |   |-- Oui --> Est-ce un RCE ou data breach?
+    |   |   |-- Oui --> CRITIQUE (action immediate)
+    |   |   |-- Non --> ELEVEE (corriger sous 24h)
+    |   |-- Non --> Est-ce exploitable avec authentification?
+    |       |-- Oui --> ELEVEE (corriger sous 7 jours)
+    |       |-- Non --> MOYENNE (corriger sous 30 jours)
+    |
+    |-- Impact limite a information disclosure?
+        |-- Oui --> FAIBLE (planifier correction)
+```
+
+---
+
+## Workflow 3 : Reponse a Incident Supply Chain
+
+### Objectif
+Reagir rapidement a une alerte de compromission de la supply chain npm.
+
+### Declencheur
+- Alerte CISA sur packages compromis
+- npm audit detecte malware
+- Comportement suspect d'une dependance
+
+### Etapes
+
+```
+[START]
+    |
+    v
+[1. Isolation Immediate]
+    |-- STOP tout deploiement
+    |-- Identifier les packages affectes
+    |-- Verifier package-lock.json/pnpm-lock.yaml
+    |
+    v
+[2. Evaluation Exposition]
+    |-- Le projet utilise-t-il les packages compromis?
+    |-- Quelle version est installee?
+    |-- Quand a-t-elle ete installee?
+    |
+    v
+[3. Recherche Web Urgente]
+    |-- Consulter les advisories officiels
+    |-- Identifier les versions sures
+    |-- Verifier les IOC (Indicators of Compromise)
+    |
+    v
+[4. Actions Correctives]
+    |-- Si affecte: supprimer le package
+    |-- Mettre a jour vers version sure
+    |-- Regenerer lock file
+    |-- Rotation des secrets potentiellement exposes
+    |
+    v
+[5. Verification Post-Incident]
+    |-- Audit complet des dependances
+    |-- Scan pour backdoors
+    |-- Revue des logs d'acces
+    |
+    v
+[END]
+```
+
+### Packages Critiques a Surveiller
+
+| Package | Downloads/semaine | Risque |
+|---------|------------------|--------|
+| chalk | 200M+ | Compromis Sept 2025 |
+| debug | 150M+ | Compromis Sept 2025 |
+| ansi-styles | 100M+ | Compromis Sept 2025 |
+| strip-ansi | 100M+ | Compromis Sept 2025 |
+
+---
+
+## Workflow 4 : Implementation CSP
+
+### Objectif
+Configurer une Content Security Policy robuste pour Next.js.
+
+### Declencheur
+- Nouveau projet
+- CSP absente ou faible
+- Remediation post-XSS
+
+### Etapes
+
+```
+[START]
+    |
+    v
+[1. Inventaire Resources]
+    |-- Lister tous les scripts (internes, CDN)
+    |-- Lister les styles (internes, CDN)
+    |-- Lister les images sources
+    |-- Lister les API endpoints (connect-src)
+    |
+    v
+[2. Mode Report-Only]
+    |-- Configurer CSP en Content-Security-Policy-Report-Only
+    |-- Deployer en staging
+    |-- Collecter les violations
+    |
+    v
+[3. Ajustement]
+    |-- Analyser les rapports de violation
+    |-- Ajouter les sources legitimes
+    |-- Eliminer les scripts inline si possible
+    |-- Implementer nonces pour scripts necessaires
+    |
+    v
+[4. Enforcement]
+    |-- Passer en Content-Security-Policy
+    |-- Maintenir report-uri pour monitoring
+    |-- Tester toutes les fonctionnalites
+    |
+    v
+[5. Validation]
+    |-- Tester avec CSP Evaluator
+    |-- Verifier sur securityheaders.com
+    |-- Documenter la politique
+    |
+    v
+[END]
+```
+
+### Template CSP Next.js
+
+```typescript
+// next.config.ts
+const cspHeader = `
+  default-src 'self';
+  script-src 'self' 'nonce-{NONCE}' 'strict-dynamic';
+  style-src 'self' 'nonce-{NONCE}';
+  img-src 'self' blob: data:;
+  font-src 'self';
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'none';
+  upgrade-insecure-requests;
+`;
+```
+
+---
+
+## Workflow 5 : Securisation Server Actions
+
+### Objectif
+Securiser toutes les Server Actions d'une application Next.js.
+
+### Declencheur
+- Implementation de nouvelles Server Actions
+- Audit revelant des Server Actions non securisees
+- Migration vers Next.js 14+
+
+### Etapes
+
+```
+[START]
+    |
+    v
+[1. Inventaire]
+    |-- Grep pour "use server"
+    |-- Lister toutes les Server Actions
+    |-- Identifier les inputs de chaque action
+    |
+    v
+[2. Analyse Risques]
+    |-- L'action modifie-t-elle des donnees?
+    |-- L'action accede-t-elle a des donnees sensibles?
+    |-- L'action requiert-elle une authentification?
+    |
+    v
+[3. Implementation Securite]
+    |-- Ajouter validation schema (Zod/Valibot)
+    |-- Verifier authentification si necessaire
+    |-- Implementer rate limiting
+    |-- Logger les actions sensibles
+    |
+    v
+[4. Test]
+    |-- Tester avec inputs malicieux
+    |-- Verifier le comportement sans auth
+    |-- Tester les limites de rate limiting
+    |
+    v
+[END]
+```
+
+### Pattern Server Action Securisee
+
+```typescript
+// Schema de validation
+const actionSchema = z.object({
+  id: z.string().uuid(),
+  data: z.string().min(1).max(1000),
+});
+
+// Server Action securisee
+async function secureAction(formData: FormData) {
+  'use server';
+
+  // 1. Authentification
+  const user = await auth();
+  if (!user) throw new Error('Unauthorized');
+
+  // 2. Validation
+  const result = actionSchema.safeParse(Object.fromEntries(formData));
+  if (!result.success) {
+    throw new Error('Invalid input');
+  }
+
+  // 3. Autorisation
+  const hasPermission = await checkPermission(user.id, result.data.id);
+  if (!hasPermission) throw new Error('Forbidden');
+
+  // 4. Action
+  await performAction(result.data);
+
+  // 5. Logging
+  await logAction(user.id, 'action_name', result.data.id);
+}
+```
+
+---
+
+## Template de Rapport de Securite
+
+```markdown
+# Rapport de Securite - [Nom du Projet]
+
+**Date** : YYYY-MM-DD
+**Auditeur** : security-expert (Claude Code)
+**Scope** : [Description du perimetre audite]
+**Version** : [Version de l'application]
+
+---
+
+## Resume Executif
+
+[2-3 phrases sur l'etat de securite global]
+
+**Score de Risque Global** : [Critique/Eleve/Moyen/Faible]
+
+| Categorie | Critique | Elevee | Moyenne | Faible |
+|-----------|----------|--------|---------|--------|
+| Code      | X        | X      | X       | X      |
+| Config    | X        | X      | X       | X      |
+| Dependencies | X     | X      | X       | X      |
+| **Total** | X        | X      | X       | X      |
+
+---
+
+## Vulnerabilites Identifiees
+
+### CRITIQUES (Action Immediate)
+
+#### [VULN-001] Titre
+- **OWASP** : A0X:2025 - Categorie
+- **CWE** : CWE-XXX
+- **CVSS** : X.X
+- **Fichier** : `path/to/file.ts:ligne`
+- **Description** : [Explication]
+- **Impact** : [Consequences]
+- **Remediation** : [Solution]
+- **Reference** : [URL]
+
+### ELEVEES (Corriger sous 7 jours)
+
+[...]
+
+### MOYENNES (Corriger sous 30 jours)
+
+[...]
+
+### FAIBLES (Amelioration recommandee)
+
+[...]
+
+---
+
+## Audit des Dependances
+
+| Package | Version Actuelle | Vulnerabilite | Severite | Version Corrigee |
+|---------|-----------------|---------------|----------|------------------|
+| xxx     | 1.2.3           | CVE-XXXX-XXXX | High     | 1.2.4            |
+
+---
+
+## Configuration Securite
+
+### Headers HTTP
+| Header | Statut | Valeur |
+|--------|--------|--------|
+| Content-Security-Policy | [OK/MISSING/WEAK] | [...] |
+| Strict-Transport-Security | [OK/MISSING/WEAK] | [...] |
+| X-Frame-Options | [OK/MISSING/WEAK] | [...] |
+| X-Content-Type-Options | [OK/MISSING/WEAK] | [...] |
+| Referrer-Policy | [OK/MISSING/WEAK] | [...] |
+
+---
+
+## Recommandations Prioritaires
+
+1. [Action priorite 1]
+2. [Action priorite 2]
+3. [Action priorite 3]
+
+---
+
+## Methodologie
+
+- OWASP Top 10 2025
+- OWASP ASVS v5.0
+- [Autres standards utilises]
+
+---
+
+## Sources Consultees
+
+- [URLs des references]
+```
+
+---
+
+## Checklist Pre-Production
+
+### Authentification et Autorisation
+- [ ] Middleware auth protege les routes sensibles
+- [ ] Sessions HTTPOnly et Secure
+- [ ] CSRF protection active
+- [ ] Rate limiting sur authentification
+- [ ] MFA disponible pour comptes admin
+
+### Headers et Transport
+- [ ] HTTPS uniquement (HSTS active)
+- [ ] CSP configuree et testee
+- [ ] X-Frame-Options presente
+- [ ] X-Content-Type-Options: nosniff
+- [ ] Referrer-Policy configuree
+
+### Code et Input
+- [ ] Tous les inputs valides cote serveur
+- [ ] Pas de dangerouslySetInnerHTML non sanitize
+- [ ] Pas de eval() ou new Function()
+- [ ] Server Actions avec validation schema
+- [ ] Pas de secrets dans le code
+
+### Dependencies
+- [ ] npm audit clean (zero critical/high)
+- [ ] Lock file versionne
+- [ ] Dependances a jour
+- [ ] Pas de packages deprecies
+
+### Logging et Monitoring
+- [ ] Erreurs loggees sans donnees sensibles
+- [ ] Tentatives d'authentification tracees
+- [ ] Alertes sur activites suspectes
+- [ ] Mode production active
+
+### API et Endpoints
+- [ ] CORS restrictif
+- [ ] Rate limiting global
+- [ ] Validation input sur tous les endpoints
+- [ ] Pas d'information sensible dans erreurs
+
+---
+
+## Arbre de Decision - Priorisation
+
+```
+Vulnerabilite trouvee
+    |
+    |-- Exploitable sans authentification?
+    |   |-- Oui --> RCE ou Data Breach possible?
+    |   |   |-- Oui --> CRITIQUE (fix immediat)
+    |   |   |-- Non --> ELEVEE (fix < 24h)
+    |   |-- Non --> Requiert acces physique?
+    |       |-- Non --> MOYENNE (fix < 7j)
+    |       |-- Oui --> FAIBLE (planifier)
+    |
+    |-- Affect la confidentialite?
+    |   |-- Donnees PII --> ELEVEE
+    |   |-- Donnees internes --> MOYENNE
+    |   |-- Metadata seulement --> FAIBLE
+    |
+    |-- Affect la disponibilite?
+        |-- DoS critique --> ELEVEE
+        |-- Degradation perf --> MOYENNE
+        |-- Impact minimal --> FAIBLE
+```

@@ -1,0 +1,6 @@
+{
+  "title": "Debt Expert",
+  "description": "Expert en dette technique, code smells, dead code et complexité cyclomatique. Utiliser pour auditer la qualité du code et planifier les refactorings.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

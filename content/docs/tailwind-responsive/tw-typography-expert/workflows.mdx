@@ -1,0 +1,570 @@
+---
+title: Workflows
+description: Processus detailles et cas d'usage pour la typographie avec Tailwind CSS
+---
+
+# Workflows - Typography Expert
+
+Processus detailles et cas d'usage pour la typographie avec Tailwind CSS.
+
+---
+
+## Workflow 1 : Creation d'une Hierarchie Typographique
+
+### Contexte
+
+L'utilisateur demarre un projet et doit etablir une hierarchie typographique coherente pour l'ensemble du site.
+
+### Processus
+
+**Phase 1 - Analyse du Projet**
+
+1. Identifier le type de projet (marketing, app, editorial)
+2. Determiner le ton (corporate, playful, minimal)
+3. Evaluer la densite de contenu
+4. Lister les types d'elements textuels necessaires
+
+**Phase 2 - Definition de l'Echelle**
+
+Etablir la progression des tailles :
+
+**Marketing/Landing :**
+
+| Element | Classes |
+|---------|---------|
+| H1 | `text-4xl` → `text-5xl` → `text-6xl` |
+| H2 | `text-3xl` → `text-4xl` |
+| H3 | `text-2xl` → `text-3xl` |
+| Body | `text-base` → `text-lg` |
+| Small | `text-sm` |
+
+**Application/Dashboard :**
+
+| Element | Classes |
+|---------|---------|
+| H1 | `text-2xl` → `text-3xl` |
+| H2 | `text-xl` → `text-2xl` |
+| H3 | `text-lg` |
+| Body | `text-sm` → `text-base` |
+| Small | `text-xs` |
+
+**Phase 3 - Configuration des Weights**
+
+Associer les poids aux niveaux :
+
+| Element | Weight |
+|---------|--------|
+| Headlines (H1-H2) | `font-bold` ou `font-extrabold` |
+| Subheadings (H3-H4) | `font-semibold` |
+| Body | `font-normal` |
+| Emphasis | `font-medium` |
+| Labels | `font-medium uppercase` |
+
+**Phase 4 - Configuration Line-Height**
+
+Adapter le leading par taille :
+
+| Element | Leading |
+|---------|---------|
+| Headlines gros (text-4xl+) | `leading-tight` ou `leading-none` |
+| Headlines moyens (text-2xl-3xl) | `leading-tight` |
+| Body content | `leading-relaxed` |
+| UI compact | `leading-snug` |
+
+**Phase 5 - Creation des Compositions**
+
+Documenter les classes completes :
+
+| Element | Classes |
+|---------|---------|
+| H1 | `text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight` |
+| H2 | `text-3xl md:text-4xl font-bold leading-tight` |
+| H3 | `text-2xl md:text-3xl font-semibold` |
+| Body | `text-base md:text-lg leading-relaxed` |
+| Caption | `text-sm text-gray-500` |
+
+**Phase 6 - Validation**
+
+1. Tester la hierarchie visuelle
+2. Verifier la lisibilite sur mobile
+3. Confirmer l'accessibilite (contraste, tailles)
+4. Documenter pour l'equipe
+
+---
+
+## Workflow 2 : Configuration du Plugin Prose
+
+### Contexte
+
+L'utilisateur a du contenu markdown/CMS a styler automatiquement.
+
+### Processus
+
+**Phase 1 - Installation**
+
+- Tailwind v4 : ajouter `@plugin "@tailwindcss/typography"` dans le CSS
+- Tailwind v3 : ajouter `require('@tailwindcss/typography')` aux plugins
+
+**Phase 2 - Usage de Base**
+
+Appliquer la classe prose au container de contenu :
+
+| Type | Classes |
+|------|---------|
+| Container basique | `prose` |
+| Avec taille responsive | `prose prose-sm md:prose-base lg:prose-lg` |
+| Avec dark mode | `prose dark:prose-invert` |
+
+**Phase 3 - Personnalisation des Couleurs**
+
+Choisir une palette de gris :
+
+| Classe | Style |
+|--------|-------|
+| `prose-gray` | Defaut |
+| `prose-slate` | Plus bleute |
+| `prose-zinc` | Neutre |
+
+Combiner : `prose prose-slate dark:prose-invert`
+
+**Phase 4 - Modification d'Elements Specifiques**
+
+Utiliser les modificateurs d'elements :
+
+| Usage | Classes |
+|-------|---------|
+| Links personnalises | `prose prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline` |
+| Headings personnalises | `prose prose-headings:font-serif prose-headings:text-gray-900` |
+| Images arrondies | `prose prose-img:rounded-lg prose-img:shadow-md` |
+| Code style | `prose prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded` |
+
+**Phase 5 - Gestion des Exclusions**
+
+Pour les elements non-textuels dans le contenu :
+
+**Exclure un composant :**
+```html
+<div class="not-prose">
+  <!-- Composant custom non affecte par prose -->
+</div>
+```
+
+**Supprimer la largeur max :**
+`prose max-w-none` (pour les layouts full-width)
+
+**Phase 6 - Responsive**
+
+Adapter la taille selon le viewport :
+`prose prose-sm md:prose-base lg:prose-lg xl:prose-xl`
+
+La taille de base et tous les elements s'adaptent.
+
+**Phase 7 - Test**
+
+1. Verifier tous les types d'elements (h1-h6, p, ul, ol, blockquote, code, table)
+2. Tester le dark mode
+3. Confirmer la lisibilite
+4. Valider les liens et images
+
+---
+
+## Workflow 3 : Implementation de Fluid Typography
+
+### Contexte
+
+L'utilisateur veut une typographie qui scale fluidement entre mobile et desktop sans breakpoints abrupts.
+
+### Processus
+
+**Phase 1 - Evaluer le Besoin**
+
+Questions :
+1. Quels elements beneficient du fluid ? (headlines, body, ou tout)
+2. Quelles sont les tailles min/max souhaitees ?
+3. Quel viewport min/max pour le calcul ?
+
+Candidats ideaux :
+- Hero titles
+- Section headings
+- Display text
+- Optionnellement : body text
+
+**Phase 2 - Choix de l'Approche**
+
+| Option | Methode |
+|--------|---------|
+| Valeurs Arbitraires | `text-[clamp(1.5rem,3vw+1rem,3rem)]` |
+| Configuration Custom | Dans tailwind.config.js : `fontSize: { 'fluid-xl': 'clamp(...)' }` |
+| Plugin fluid-tailwind | Syntaxe `~` : `~text-xl ~text-4xl` |
+
+**Phase 3 - Calcul des Valeurs**
+
+Utiliser Utopia (utopia.fyi) ou calculer manuellement :
+
+Exemple pour H1 :
+- Mobile (320px) : 2rem (32px)
+- Desktop (1200px) : 4rem (64px)
+- Formule : `clamp(2rem, 1.27rem + 3.64vw, 4rem)`
+
+**Phase 4 - Application**
+
+| Element | Classes |
+|---------|---------|
+| Headlines | `text-[clamp(2rem,1.27rem+3.64vw,4rem)] font-bold tracking-tight` |
+| Body (optionnel) | `text-[clamp(1rem,0.95rem+0.25vw,1.125rem)] leading-relaxed` |
+
+**Phase 5 - Accessibilite WCAG**
+
+Verifier SC 1.4.4 :
+- Le texte doit rester lisible a 200% zoom
+- Le plugin fluid-tailwind inclut des safeguards
+- Tester manuellement avec zoom navigateur
+
+**Phase 6 - Fallback**
+
+Pour les navigateurs sans support clamp() (rare) :
+- Prevoir une taille fixe comme fallback
+- Ou accepter que 91%+ des navigateurs supportent
+
+**Phase 7 - Validation**
+
+1. Redimensionner le navigateur de 320px a 1920px
+2. Observer la transition fluide
+3. Verifier la lisibilite aux extremes
+4. Tester le zoom a 200%
+
+---
+
+## Workflow 4 : Typography Responsive avec Breakpoints
+
+### Contexte
+
+L'utilisateur prefere des tailles fixes par breakpoint plutot que du fluid typography.
+
+### Processus
+
+**Phase 1 - Definir les Breakpoints Cibles**
+
+Standard Tailwind :
+- Mobile : base (< 640px)
+- Tablette : md (768px+)
+- Desktop : lg (1024px+)
+- Large : xl (1280px+)
+
+**Phase 2 - Etablir les Progressions**
+
+**Headlines :**
+
+| Element | Classes |
+|---------|---------|
+| H1 | `text-3xl md:text-4xl lg:text-5xl xl:text-6xl` |
+| H2 | `text-2xl md:text-3xl lg:text-4xl` |
+| H3 | `text-xl md:text-2xl lg:text-3xl` |
+
+**Body :**
+
+| Type | Classes |
+|------|---------|
+| Standard | `text-sm md:text-base lg:text-lg` |
+| Compact | `text-sm` (uniforme) |
+
+**Phase 3 - Considerations Line-Height**
+
+Attention : chaque classe text-* a son propre line-height par defaut. Un leading-* explicite sera override par un text-* responsive.
+
+**Solution shorthand :**
+`text-base/relaxed md:text-lg/relaxed`
+
+**Ou repeter le leading :**
+`text-base md:text-lg leading-relaxed`
+
+**Phase 4 - Letter-Spacing Responsive (si necessaire)**
+
+Rarement necessaire, mais possible :
+`tracking-tight md:tracking-normal`
+
+**Phase 5 - Simplification**
+
+Eviter trop de breakpoints. Souvent base + md: ou base + lg: suffit.
+
+| Mauvais | Mieux |
+|---------|-------|
+| `text-sm sm:text-base md:text-lg lg:text-xl` | `text-sm md:text-base lg:text-lg` |
+
+**Phase 6 - Validation**
+
+1. Tester chaque breakpoint
+2. S'assurer que le texte reste lisible
+3. Verifier la coherence de la hierarchie
+4. Confirmer sur devices reels si possible
+
+---
+
+## Workflow 5 : Optimisation de la Lisibilite Long-Form
+
+### Contexte
+
+L'utilisateur a du contenu long (articles, documentation) et veut optimiser la lisibilite.
+
+### Processus
+
+**Phase 1 - Largeur de Lecture**
+
+Limiter la longueur de ligne :
+
+| Methode | Classes |
+|---------|---------|
+| Avec prose | `prose` (inclut max-w-65ch) |
+| Sans prose | `max-w-prose` (65ch), `max-w-2xl` (42rem), `max-w-3xl` (48rem) |
+
+Recommandation : 45-75 caracteres par ligne.
+
+**Phase 2 - Taille de Texte**
+
+Pour la lecture prolongee :
+
+| Breakpoint | Classe |
+|------------|--------|
+| Desktop | `text-lg` ou `text-xl` |
+| Mobile | `text-base` |
+
+Eviter text-sm pour le corps d'article.
+
+**Phase 3 - Line-Height Optimal**
+
+Pour le long-form :
+
+| Classe | Usage |
+|--------|-------|
+| `leading-relaxed` (1.625) | Standard recommande |
+| `leading-loose` (2) | Accessibilite maximale |
+
+WCAG recommande minimum 1.5.
+
+**Phase 4 - Espacement des Paragraphes**
+
+Entre paragraphes :
+
+| Methode | Classes |
+|---------|---------|
+| Avec prose | Automatique |
+| Sans prose | `space-y-4` ou `space-y-6` entre les elements |
+
+**Phase 5 - Headings dans le Contenu**
+
+Creer des breaks visuels :
+
+| Element | Classes |
+|---------|---------|
+| H2 | `mt-12 mb-4` ou `mt-16 mb-6` |
+| H3 | `mt-8 mb-3` |
+
+Assez d'espace avant pour separer les sections.
+
+**Phase 6 - Considerations Typographiques**
+
+| Aspect | Recommandation |
+|--------|----------------|
+| Letter-spacing | `tracking-normal` (ne pas serrer le body) |
+| Font | Preferer des fonts concues pour la lecture (Inter, Source Sans, etc.) |
+| Contraste | Minimum 4.5:1, idealement 7:1 |
+
+**Phase 7 - Test de Lecture**
+
+1. Lire un paragraphe complet
+2. Evaluer la fatigue visuelle
+3. Tester sur differents ecrans
+4. Demander feedback utilisateurs
+
+---
+
+## Workflow 6 : Typography pour UI Dense
+
+### Contexte
+
+L'utilisateur construit un dashboard ou une interface avec beaucoup d'informations.
+
+### Processus
+
+**Phase 1 - Reduction de l'Echelle**
+
+Partir d'une base plus petite :
+
+| Element | Classe |
+|---------|--------|
+| Body principal | `text-sm` (14px) |
+| Labels | `text-xs` (12px) |
+| Headings | `text-base` a `text-xl` max |
+
+**Phase 2 - Line-Height Compact**
+
+Reduire sans sacrifier la lisibilite :
+
+| Usage | Classe |
+|-------|--------|
+| Listes | `leading-snug` (1.375) |
+| Paragraphes | `leading-normal` (1.5) |
+| Labels one-line | `leading-tight` (1.25) |
+
+**Phase 3 - Utilisation des Weights**
+
+Creer de la hierarchie avec le poids plutot que la taille :
+
+| Element | Classes |
+|---------|---------|
+| Titre de section | `text-sm font-semibold` |
+| Label | `text-xs font-medium` |
+| Valeur | `text-sm font-normal` |
+| Stat importante | `text-sm font-bold` |
+
+**Phase 4 - Tracking pour les Petites Tailles**
+
+Eviter de serrer le petit texte :
+
+| Usage | Classes |
+|-------|---------|
+| text-xs standard | `text-xs tracking-normal` (pas tracking-tight) |
+| Labels uppercase | `text-xs uppercase tracking-wide` |
+
+**Phase 5 - Couleurs pour la Hierarchie**
+
+Utiliser les variations de gris :
+
+| Niveau | Classe |
+|--------|--------|
+| Primaire | `text-gray-900` |
+| Secondaire | `text-gray-600` |
+| Tertiaire | `text-gray-400` |
+
+**Phase 6 - Validation**
+
+1. Verifier la lisibilite a 100% zoom
+2. Tester l'accessibilite (contraste)
+3. Confirmer que 12px est le minimum
+4. S'assurer que les elements importants restent visibles
+
+---
+
+## Workflow 7 : Debug des Problemes Typographiques
+
+### Contexte
+
+Le texte ne s'affiche pas comme prevu.
+
+### Processus
+
+**Phase 1 - Identification du Probleme**
+
+Symptomes courants :
+- Line-height incorrect
+- Taille qui ne change pas au breakpoint
+- Font-weight non applique
+- Letter-spacing bizarre
+
+**Phase 2 - Inspection DevTools**
+
+1. Selectionner l'element texte
+2. Verifier les styles computed
+3. Identifier les classes appliquees
+4. Chercher les overrides
+
+**Phase 3 - Problemes Line-Height**
+
+**Line-height inattendu apres changement de taille :**
+Chaque text-* definit son propre line-height. `md:text-lg` override le `leading-relaxed` precedent.
+
+**Solution :**
+`text-base/relaxed md:text-lg/relaxed`
+Ou : `text-base md:text-lg leading-relaxed md:leading-relaxed`
+
+**Phase 4 - Problemes de Font**
+
+**Font non chargee :**
+- Verifier le @font-face
+- Confirmer le chemin du fichier
+- Verifier la config fontFamily
+
+**Font non appliquee :**
+- Verifier que font-sans/font-serif est present
+- Confirmer que la config est correcte
+
+**Phase 5 - Problemes de Responsive**
+
+**Taille ne change pas au breakpoint :**
+- Verifier l'orthographe (md: pas MD:)
+- Confirmer que le breakpoint est atteint
+- Inspecter les media queries dans DevTools
+
+**Phase 6 - Problemes Prose**
+
+**Styles non appliques :**
+- Confirmer que prose est sur le container parent
+- Verifier que le plugin est installe
+- S'assurer que les elements sont des enfants directs ou imbriques correctement
+
+**Element non style :**
+- Peut-etre dans un not-prose
+- Verifier la structure HTML
+
+---
+
+## Cas d'Usage Speciaux
+
+### Cas 1 : Texte sur Image
+
+Assurer la lisibilite sur backgrounds varies :
+
+| Technique | Classes |
+|-----------|---------|
+| Overlay sombre | `relative` + Image `object-cover` + Overlay `absolute inset-0 bg-black/50` + Text `relative z-10 text-white` |
+| Text shadow | `text-white drop-shadow-lg` ou `[text-shadow:0_2px_4px_rgba(0,0,0,0.5)]` |
+| Gradient overlay | `bg-gradient-to-t from-black/70 to-transparent` |
+
+### Cas 2 : Texte Tronque
+
+| Type | Classes |
+|------|---------|
+| Une ligne | `truncate` (overflow-hidden text-ellipsis whitespace-nowrap) |
+| Plusieurs lignes | `line-clamp-2` (2 lignes max), `line-clamp-3` (3 lignes max) |
+
+### Cas 3 : Responsive Font pour CTA
+
+Bouton avec texte qui s'adapte :
+
+| Approche | Classes |
+|----------|---------|
+| Breakpoints | `text-sm md:text-base px-4 md:px-6 py-2 md:py-3` |
+| Fluid | `text-[clamp(0.875rem,0.8rem+0.2vw,1rem)]` |
+
+### Cas 4 : Typography Multilingue
+
+Certaines langues necessitent des ajustements :
+
+**CJK (Chinois, Japonais, Coreen) :**
+- Peut necessiter plus de line-height
+- `leading-loose` recommande
+
+**RTL (Arabe, Hebreu) :**
+- `dir="rtl"` sur le container
+- `text-right` ou `text-start`
+
+**Caracteres etendus :**
+- S'assurer que la font supporte les caracteres
+
+---
+
+## Ressources et References
+
+### Documentation Officielle
+
+- Tailwind CSS Font Size
+- Tailwind CSS Line Height
+- Tailwind CSS Letter Spacing
+- @tailwindcss/typography Plugin
+
+### Outils
+
+- Utopia (utopia.fyi) : generateur fluid typography
+- Type Scale (type-scale.com) : ratios typographiques
+- Contrast Checker (webaim.org) : validation WCAG
+- fluid-tailwind (fluid.tw) : plugin Tailwind

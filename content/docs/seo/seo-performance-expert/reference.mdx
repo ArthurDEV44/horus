@@ -1,0 +1,571 @@
+---
+title: Reference
+description: Documentation technique approfondie sur les metriques de performance, Core Web Vitals, optimisations d'images, JavaScript, CSS, fonts et scripts tiers.
+---
+
+# SEO Performance Expert - Reference Technique
+
+## Glossaire des Metriques
+
+### Core Web Vitals (2025)
+
+| Metrique | Nom Complet | Description | Seuil Bon |
+|----------|-------------|-------------|-----------|
+| LCP | Largest Contentful Paint | Temps pour afficher le plus grand element visible | < 2.5s |
+| INP | Interaction to Next Paint | Latence des interactions utilisateur (remplace FID depuis mars 2024) | < 200ms |
+| CLS | Cumulative Layout Shift | Stabilite visuelle, mesure les decalages de mise en page | < 0.1 |
+
+### Metriques Complementaires
+
+| Metrique | Description | Seuil Recommande |
+|----------|-------------|------------------|
+| TTFB | Time to First Byte - temps avant le premier octet recu | < 800ms |
+| FCP | First Contentful Paint - premier rendu de contenu | < 1.8s |
+| TBT | Total Blocking Time - temps total de blocage du main thread | < 200ms |
+| SI | Speed Index - vitesse de remplissage visuel | < 3.4s |
+| TTI | Time to Interactive - temps avant interactivite complete | < 3.8s |
+
+### Poids Lighthouse 12 (2025)
+
+| Metrique | Poids |
+|----------|-------|
+| TBT (Total Blocking Time) | 30% |
+| LCP (Largest Contentful Paint) | 25% |
+| CLS (Cumulative Layout Shift) | 25% |
+| FCP (First Contentful Paint) | 10% |
+| SI (Speed Index) | 10% |
+
+---
+
+## Elements LCP Courants
+
+Le LCP mesure le plus grand element visible dans le viewport. Elements typiques :
+
+<lcp-elements>
+Images :
+- Image hero pleine largeur
+- Banniere promotionnelle
+- Image produit principale
+- Thumbnail de video avec poster
+
+Texte :
+- Titre H1 principal
+- Bloc de paragraphe important
+- Citation mise en avant
+
+Video :
+- Element video avec poster
+- Player embed (YouTube, Vimeo)
+</lcp-elements>
+
+### Facteurs Impactant le LCP
+
+1. Temps de reponse serveur (TTFB)
+2. Temps de blocage du rendu (CSS/JS)
+3. Temps de chargement de la ressource
+4. Temps de rendu cote client
+
+---
+
+## Composantes de l'INP
+
+L'INP se decompose en trois phases :
+
+<inp-components>
+1. Input Delay (Delai d'entree)
+   - Temps d'attente avant execution du handler
+   - Cause : Long Tasks bloquant le main thread
+   - Solution : Yield to main thread, code splitting
+
+2. Processing Time (Temps de traitement)
+   - Duree d'execution des event handlers
+   - Cause : JavaScript complexe, manipulation DOM
+   - Solution : Optimiser les handlers, Web Workers
+
+3. Presentation Delay (Delai de presentation)
+   - Temps de recalcul du layout et repaint
+   - Cause : DOM complexe, animations couteuses
+   - Solution : content-visibility, will-change
+</inp-components>
+
+### Techniques d'Optimisation INP
+
+<inp-optimization>
+Yield to Main Thread :
+- scheduler.yield() (API moderne)
+- setTimeout() avec delay 0
+- requestIdleCallback() pour taches non urgentes
+- requestAnimationFrame() pour animations
+
+Reduction Processing Time :
+- Debouncing pour evenements frequents
+- Throttling pour scroll/resize
+- Virtualisation pour longues listes
+- Web Workers pour calculs lourds
+
+Reduction Presentation Delay :
+- content-visibility: auto
+- Limiter la taille du DOM (< 1500 elements)
+- Eviter les forced synchronous layouts
+- Utiliser transform/opacity pour animations
+</inp-optimization>
+
+---
+
+## Causes Communes de CLS
+
+<cls-causes>
+Images et Medias :
+- Dimensions non specifiees (width/height)
+- Images chargees dynamiquement
+- Iframes sans dimensions
+- Publicites sans espace reserve
+
+Fonts :
+- Flash of Unstyled Text (FOUT)
+- Flash of Invisible Text (FOIT)
+- Taille de fallback font differente
+
+Contenu Dynamique :
+- Bannieres cookies/notifications
+- Contenu injecte par JavaScript
+- Embeds sociaux (Twitter, Instagram)
+- Lazy loading mal implemente
+
+Animations :
+- Transitions modifiant layout
+- Elements apparaissant/disparaissant
+</cls-causes>
+
+### Solutions CLS
+
+<cls-solutions>
+Pour les medias :
+- Toujours specifier width et height
+- Utiliser aspect-ratio en CSS
+- Reserver l'espace avec min-height
+- next/image gere automatiquement
+
+Pour les fonts :
+- font-display: swap ou optional
+- size-adjust pour matcher la fallback
+- Preload des fonts critiques
+- next/font pour optimisation auto
+
+Pour le contenu dynamique :
+- Reserver l'espace avec skeleton/placeholder
+- Utiliser transform au lieu de margin/padding
+- Positionner en fixed/absolute si possible
+</cls-solutions>
+
+---
+
+## Optimisation des Images
+
+### Formats Modernes
+
+| Format | Compression | Support | Usage |
+|--------|-------------|---------|-------|
+| AVIF | Excellent (60-70% vs JPEG) | Chrome, Firefox, Safari 16+ | Photos, illustrations |
+| WebP | Tres bon (25-35% vs JPEG) | Universel | Fallback AVIF |
+| JPEG | Reference | Universel | Fallback final |
+| PNG | Sans perte | Universel | Transparence, graphiques |
+| SVG | Vectoriel | Universel | Icones, logos |
+
+### Implementation Picture Element
+
+```html
+<picture>
+  <source srcset="image.avif" type="image/avif">
+  <source srcset="image.webp" type="image/webp">
+  <img src="image.jpg" alt="Description" width="800" height="600" loading="lazy">
+</picture>
+```
+
+### Tailles Recommandees par Device
+
+| Device | Largeur | Taille Fichier |
+|--------|---------|----------------|
+| Mobile | 480px | 50-100 KB |
+| Tablet | 800px | 100-200 KB |
+| Desktop | 1200px | 200-400 KB |
+| Retina | 2400px | 400-800 KB |
+
+### Attributs Importants
+
+<image-attributes>
+loading="lazy" :
+- Differe le chargement des images hors viewport
+- Ne pas utiliser sur images above-the-fold
+- Support natif universel
+
+decoding="async" :
+- Permet le decodage asynchrone
+- Evite de bloquer le main thread
+
+fetchpriority="high" :
+- Indique au navigateur la priorite
+- Utiliser pour l'image LCP
+- Equivalent a `priority={true}` dans next/image
+</image-attributes>
+
+---
+
+## Optimisation JavaScript
+
+### Strategies de Chargement
+
+| Strategie | Comportement | Usage |
+|-----------|--------------|-------|
+| Normal | Bloque le parsing HTML | A eviter |
+| async | Telecharge en parallele, execute des que pret | Scripts independants |
+| defer | Telecharge en parallele, execute apres parsing | Scripts dependants du DOM |
+| type="module" | Differe par defaut, scope module | ES Modules |
+
+### Code Splitting
+
+<code-splitting>
+Dynamic Imports :
+- Charger les modules a la demande
+- Reduire le bundle initial
+- next/dynamic pour Next.js
+
+Route-based Splitting :
+- Un chunk par route (automatique Next.js)
+- Prefetch des routes probables
+
+Component-based Splitting :
+- Composants lourds charges a la demande
+- Modales, editeurs, graphiques
+</code-splitting>
+
+### Techniques de Reduction
+
+<js-reduction>
+Tree Shaking :
+- Eliminer le code mort
+- Importer uniquement ce qui est utilise
+- `import { fn } from 'lib'` vs `import lib`
+
+Bundle Analysis :
+- @next/bundle-analyzer
+- Identifier les dependances lourdes
+- Alternatives plus legeres
+
+Externalisation :
+- Charger depuis CDN pour libraries populaires
+- HTTP/2 multiplex benefique
+</js-reduction>
+
+---
+
+## Optimisation CSS
+
+### Critical CSS
+
+<critical-css>
+Definition :
+- CSS necessaire pour le rendu above-the-fold
+- Inline dans `<head>` pour eviter le blocage
+- Reste du CSS charge en asynchrone
+
+Implementation :
+- Outils : critical, critters
+- Next.js : optimisation automatique partielle
+- Manuel : identifier les styles critiques
+
+Limite :
+- Garder < 14KB pour tenir dans premier RTT
+- Trop de CSS inline = contre-productif
+</critical-css>
+
+### Reduction CSS
+
+<css-reduction>
+Purge CSS non utilise :
+- PurgeCSS, Tailwind built-in
+- Attention aux classes dynamiques
+
+Minification :
+- cssnano, lightningcss
+- Automatique en production Next.js
+
+Compression :
+- Brotli prefere a Gzip
+- Gain 15-20% supplementaire
+</css-reduction>
+
+### Eviter le Render Blocking
+
+<render-blocking>
+Media Queries :
+- `<link media="print">` ne bloque pas
+- Separer CSS par breakpoint
+
+Preload + async pattern :
+- Preload le CSS
+- Appliquer apres chargement
+- Attention a FOUC
+
+Font-display :
+- swap : texte visible immediatement
+- optional : texte ou rien (evite CLS)
+</render-blocking>
+
+---
+
+## Optimisation des Fonts
+
+### Strategies font-display
+
+| Valeur | Comportement | CLS | Usage |
+|--------|--------------|-----|-------|
+| swap | Fallback puis swap | Oui | Usage general |
+| optional | Fallback si non cache | Non | Performance max |
+| fallback | Block court puis fallback | Possible | Compromis |
+| block | Invisible 3s puis fallback | Non | A eviter |
+| auto | Depend navigateur | Variable | A eviter |
+
+### Preload des Fonts
+
+```html
+<link
+  rel="preload"
+  href="/fonts/main.woff2"
+  as="font"
+  type="font/woff2"
+  crossorigin
+>
+```
+
+### Bonnes Pratiques
+
+<font-best-practices>
+Format :
+- WOFF2 uniquement (support universel)
+- Gain 30% vs WOFF
+
+Subsetting :
+- Inclure uniquement les glyphes necessaires
+- Unicode-range pour langues specifiques
+- Outils : glyphhanger, fonttools
+
+Hebergement :
+- Local prefere a Google Fonts
+- next/font automatise tout
+- Evite requete DNS supplementaire
+
+Size-adjust :
+- Matcher la taille de la fallback
+- Reduit CLS lors du swap
+</font-best-practices>
+
+---
+
+## Scripts Tiers
+
+### Impact Typique
+
+| Categorie | Impact Moyen | Exemples |
+|-----------|--------------|----------|
+| Analytics | 100-300ms TBT | Google Analytics, Mixpanel |
+| Publicite | 500-1500ms TBT | Google Ads, AdSense |
+| Social | 200-400ms TBT | Facebook SDK, Twitter widgets |
+| Chat | 300-600ms TBT | Intercom, Drift |
+| A/B Testing | 200-500ms TBT | Optimizely, VWO |
+
+### Strategies de Mitigation
+
+<third-party-strategies>
+Chargement Differe :
+- Script avec defer ou async
+- next/script strategy="lazyOnload"
+- Charger apres interaction utilisateur
+
+Facades :
+- Remplacer embeds par images statiques
+- Charger le vrai embed au clic
+- lite-youtube-embed, lite-vimeo-embed
+
+Web Workers :
+- Partytown pour isoler scripts tiers
+- next/script strategy="worker"
+- Experimental mais prometteur
+
+Limitation :
+- Auditer regulierement les scripts
+- Supprimer ceux non utilises
+- Consolider les analytics si possible
+</third-party-strategies>
+
+---
+
+## Infrastructure et Caching
+
+### Headers de Cache
+
+| Ressource | Cache-Control |
+|-----------|---------------|
+| HTML | no-cache, must-revalidate |
+| CSS/JS (hashed) | max-age=31536000, immutable |
+| Images (hashed) | max-age=31536000, immutable |
+| Fonts | max-age=31536000, immutable |
+| API responses | Variable selon fraicheur |
+
+### CDN et Edge
+
+<cdn-benefits>
+Avantages :
+- Reduction latence (serveur proche)
+- Cache edge pour contenus statiques
+- Compression automatique
+- HTTP/2 et HTTP/3
+- Protection DDoS
+
+Configuration Vercel :
+- CDN global inclus
+- Edge caching automatique
+- Headers configurables via next.config.js
+- Stale-while-revalidate supporte
+</cdn-benefits>
+
+### Compression
+
+| Algorithme | Compression | Support | Usage |
+|------------|-------------|---------|-------|
+| Brotli | Excellent | Universel (HTTPS) | Defaut |
+| Gzip | Bon | Universel | Fallback |
+| Zstd | Meilleur | Experimental | Futur |
+
+---
+
+## Outils de Diagnostic
+
+### PageSpeed Insights
+
+<psi-usage>
+Donnees Terrain (CrUX) :
+- Metriques reelles sur 28 jours
+- Base sur utilisateurs Chrome
+- 75e percentile (p75)
+- Seules donnees pour SEO ranking
+
+Donnees Lab (Lighthouse) :
+- Test synthetique
+- Conditions controlees
+- Utile pour debug
+- Ne compte pas pour SEO
+</psi-usage>
+
+### Chrome DevTools
+
+<devtools-panels>
+Performance Panel :
+- Timeline d'execution
+- Identification Long Tasks
+- Flame charts
+- Layout shifts
+
+Network Panel :
+- Waterfall des requetes
+- Timing detaille
+- Simulation throttling
+
+Coverage :
+- CSS/JS non utilise
+- Opportunites de reduction
+
+Lighthouse :
+- Audit integre
+- Recommendations actionnables
+</devtools-panels>
+
+### WebPageTest
+
+<webpagetest-features>
+Avantages :
+- Tests multi-localisations
+- Video frame-by-frame
+- Comparaison avant/apres
+- Waterfall detaille
+- Gratuit (open source)
+
+Configuration :
+- Tester depuis localisation proche utilisateurs
+- Mobile Moto G4 pour conditions realistes
+- 3G lent pour stress test
+</webpagetest-features>
+
+---
+
+## FAQ Technique
+
+### Pourquoi mon score Lighthouse est bon mais CrUX echoue ?
+
+<faq-lighthouse-crux>
+Causes possibles :
+- Lighthouse teste en conditions ideales
+- CrUX mesure les vrais utilisateurs
+- Utilisateurs sur appareils lents
+- Variabilite reseau reelle
+- Population geographique differente
+
+Solution :
+- Se fier aux donnees terrain
+- Tester sur appareils mid-range
+- Simuler conditions reseau degradees
+</faq-lighthouse-crux>
+
+### Comment prioriser les optimisations ?
+
+<faq-priority>
+Ordre recommande :
+1. Ce qui impacte les Core Web Vitals terrain
+2. Ce qui a le meilleur ratio impact/effort
+3. Ce qui affecte le plus de pages
+4. Ce qui beneficie le plus d'utilisateurs
+
+Eviter :
+- Optimiser ce qui est deja vert
+- Micro-optimisations sur metriques lab
+- Changements sans mesure d'impact
+</faq-priority>
+
+### Combien de temps pour voir les resultats dans Search Console ?
+
+<faq-timeline>
+Delais typiques :
+- CrUX : 28 jours de collecte
+- Search Console : mise a jour mensuelle
+- Impact SEO : variable (semaines a mois)
+
+Recommandation :
+- Implementer les fixes
+- Valider en lab immediatement
+- Attendre 28+ jours pour terrain
+- Ne pas paniquer si pas immediat
+</faq-timeline>
+
+---
+
+## Ressources Externes
+
+### Documentation Officielle
+
+- [web.dev/vitals](https://web.dev/vitals) - Guide Core Web Vitals Google
+- [web.dev/learn/performance](https://web.dev/learn/performance) - Cours Performance
+- [developer.chrome.com/docs/lighthouse](https://developer.chrome.com/docs/lighthouse) - Doc Lighthouse
+- [nextjs.org/docs/app/building-your-application/optimizing](https://nextjs.org/docs/app/building-your-application/optimizing) - Optimisation Next.js
+
+### Outils
+
+- [PageSpeed Insights](https://pagespeed.web.dev) - Test performance Google
+- [WebPageTest](https://webpagetest.org) - Test avance gratuit
+- [Lighthouse Scoring Calculator](https://googlechrome.github.io/lighthouse/scorecalc/) - Simulateur score
+- [CrUX Dashboard](https://developer.chrome.com/docs/crux/dashboard/) - Tableau de bord CrUX
+
+### Blogs Techniques
+
+- [web.dev Blog](https://web.dev/blog) - Actualites performance Google
+- [DebugBear Blog](https://www.debugbear.com/blog) - Analyses techniques
+- [Smashing Magazine Performance](https://www.smashingmagazine.com/category/performance/) - Articles approfondis

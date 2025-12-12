@@ -1,0 +1,804 @@
+---
+title: Workflows
+description: Processus detailles et scenarios d'utilisation pour l'audit et l'optimisation des performances SEO, incluant LCP, INP, CLS, images et scripts tiers.
+---
+
+# SEO Performance Expert - Workflows
+
+## Workflow 1 : Audit Performance Complet
+
+### Scenario
+
+L'utilisateur demande un audit complet de la performance d'un site ou d'une page specifique.
+
+### Etapes
+
+<workflow-audit>
+**Etape 1 : Identification des Pages Cibles**
+
+Determiner les pages a auditer en priorite :
+- Homepage (point d'entree principal)
+- Pages produits ou services (conversion)
+- Pages de blog populaires (trafic organique)
+- Landing pages campagnes
+- Pages signalees comme lentes
+
+Poser la question si non precise : "Quelles pages souhaitez-vous auditer en priorite ?"
+
+---
+
+**Etape 2 : Collecte Donnees Terrain (CrUX)**
+
+Acceder aux donnees reelles via PageSpeed Insights :
+1. Ouvrir pagespeed.web.dev
+2. Entrer l'URL cible
+3. Attendre l'analyse complete
+4. Noter les metriques CrUX (section "Decouvrez l'experience de vos utilisateurs reels")
+
+Donnees a relever :
+- LCP : valeur et statut (vert/orange/rouge)
+- INP : valeur et statut
+- CLS : valeur et statut
+- FCP et TTFB si disponibles
+
+Si donnees CrUX absentes : le site manque de trafic suffisant, se baser sur donnees lab.
+
+---
+
+**Etape 3 : Audit Lighthouse**
+
+Executer Lighthouse via DevTools ou PSI :
+1. Mode mobile en priorite (mobile-first indexing)
+2. Mode desktop en complement
+3. Relever le score Performance global
+4. Noter chaque metrique individuelle
+
+Analyser les sections :
+- Diagnostics : problemes detectes
+- Opportunities : gains potentiels
+- Passed Audits : ce qui fonctionne
+
+---
+
+**Etape 4 : Analyse Approfondie**
+
+Pour chaque Core Web Vital en echec :
+
+LCP rouge/orange :
+- Identifier l'element LCP (visible dans Lighthouse)
+- Verifier le chemin de chargement de cette ressource
+- Analyser le TTFB
+- Verifier les ressources bloquantes
+
+INP rouge/orange :
+- Identifier les Long Tasks via DevTools Performance
+- Analyser la quantite de JS execute
+- Chercher les event handlers couteux
+
+CLS rouge/orange :
+- Identifier les elements causant les shifts (DevTools)
+- Verifier les dimensions des medias
+- Analyser le chargement des fonts
+
+---
+
+**Etape 5 : Rapport et Recommandations**
+
+Structurer le rapport :
+1. Resume executif (scores actuels vs cibles)
+2. Problemes identifies par priorite
+3. Plan d'action avec estimations d'impact
+4. Quick wins implementables immediatement
+5. Optimisations necessitant plus d'effort
+
+Format recommande :
+| Probleme | Metrique Impactee | Priorite | Action |
+|----------|-------------------|----------|--------|
+| ... | ... | ... | ... |
+
+</workflow-audit>
+
+---
+
+## Workflow 2 : Optimisation LCP
+
+### Scenario
+
+Le LCP est identifie comme problematique (> 2.5s sur mobile).
+
+### Etapes
+
+<workflow-lcp>
+**Etape 1 : Identification Element LCP**
+
+Methodes pour identifier l'element :
+- Lighthouse : section "Largest Contentful Paint element"
+- DevTools Performance : timeline avec marqueur LCP
+- Web Vitals extension : overlay en temps reel
+
+Elements typiques :
+- Image hero
+- Video avec poster
+- Titre H1 volumineux
+- Background image
+
+---
+
+**Etape 2 : Analyse Waterfall**
+
+Dans DevTools Network ou WebPageTest :
+1. Identifier quand commence le telechargement de l'element LCP
+2. Verifier les ressources qui bloquent avant
+3. Mesurer le temps de telechargement de la ressource
+4. Identifier les goulots d'etranglement
+
+Decomposition du temps :
+- TTFB : temps avant premier octet
+- Resource Discovery : temps avant que le navigateur decouvre la ressource
+- Download : temps de telechargement
+- Render : temps de rendu
+
+---
+
+**Etape 3 : Optimisations par Type**
+
+Si LCP est une Image :
+
+1. Optimiser le format et la compression
+   - Convertir en AVIF avec fallback WebP
+   - Compresser sans perte visible de qualite
+   - Dimensionner correctement (pas plus grand que necessaire)
+
+2. Prioritiser le chargement
+   - Ajouter fetchpriority="high"
+   - Preload si decouverte tardive
+   - Utiliser priority={true} dans next/image
+
+3. Eliminer les bloqueurs
+   - Supprimer JS/CSS bloquant avant l'image
+   - Inline critical CSS
+   - Defer scripts non essentiels
+
+Si LCP est du Texte :
+
+1. Optimiser les fonts
+   - Preload la font utilisee
+   - font-display: swap ou optional
+   - Heberger localement
+
+2. Reduire le CSS bloquant
+   - Inline critical CSS
+   - Charger reste en asynchrone
+
+3. Optimiser le serveur
+   - Reduire TTFB (< 800ms)
+   - Activer compression
+   - Verifier cache
+
+---
+
+**Etape 4 : Verification**
+
+Apres chaque modification :
+1. Tester via Lighthouse (plusieurs fois pour stabilite)
+2. Comparer waterfall avant/apres
+3. Verifier absence de regression sur autres metriques
+4. Documenter le gain obtenu
+
+</workflow-lcp>
+
+---
+
+## Workflow 3 : Optimisation INP
+
+### Scenario
+
+L'INP depasse 200ms, indiquant des problemes de reactivite.
+
+### Etapes
+
+<workflow-inp>
+**Etape 1 : Identification des Interactions Lentes**
+
+Methodes de diagnostic :
+- Chrome DevTools Performance : enregistrer une session utilisateur
+- Web Vitals extension : rapport INP en temps reel
+- Lighthouse : section "Avoid long main-thread tasks"
+
+Interactions a tester :
+- Clics sur boutons/liens
+- Ouverture de menus/modales
+- Soumission de formulaires
+- Scroll et interactions tactiles
+
+---
+
+**Etape 2 : Analyse des Long Tasks**
+
+Dans DevTools Performance :
+1. Enregistrer une interaction type
+2. Identifier les taches > 50ms (marquees en rouge)
+3. Analyser le flame chart pour comprendre la cause
+4. Noter les scripts responsables
+
+Causes communes :
+- Bibliotheques JS volumineuses
+- Event handlers complexes
+- Rendu de composants lourds
+- Scripts tiers (analytics, chat)
+
+---
+
+**Etape 3 : Strategies d'Optimisation**
+
+Reduction Input Delay :
+- Code splitting pour reduire JS initial
+- Defer scripts non critiques
+- Lazy load des composants lourds
+
+Reduction Processing Time :
+- Optimiser les event handlers
+- Debounce/throttle evenements frequents
+- Utiliser Web Workers pour calculs
+- Virtualiser les longues listes
+
+Reduction Presentation Delay :
+- Simplifier le DOM (< 1500 elements)
+- Utiliser content-visibility: auto
+- Eviter forced synchronous layouts
+- Preferer transform/opacity pour animations
+
+---
+
+**Etape 4 : Implementation Next.js**
+
+Strategies next/script :
+- strategy="afterInteractive" : apres hydratation
+- strategy="lazyOnload" : au idle
+- strategy="worker" : dans Web Worker (experimental)
+
+Dynamic imports :
+- next/dynamic pour composants lourds
+- Charger modales/drawers a la demande
+- Suspense boundaries pour loading states
+
+---
+
+**Etape 5 : Validation**
+
+Mesurer l'impact :
+1. Comparer INP avant/apres
+2. Verifier Long Tasks eliminees
+3. Tester sur appareil mid-range
+4. Valider avec donnees terrain apres 28 jours
+
+</workflow-inp>
+
+---
+
+## Workflow 4 : Optimisation CLS
+
+### Scenario
+
+Le CLS depasse 0.1, causant des decalages visuels genants.
+
+### Etapes
+
+<workflow-cls>
+**Etape 1 : Identification des Shifts**
+
+Outils de diagnostic :
+- DevTools Performance : activer "Layout Shift Regions"
+- Lighthouse : section "Avoid large layout shifts"
+- Web Vitals extension : visualisation des shifts
+
+Localiser :
+- A quel moment du chargement les shifts se produisent
+- Quels elements causent les decalages
+- L'amplitude de chaque shift
+
+---
+
+**Etape 2 : Analyse par Categorie**
+
+Shifts lies aux Images/Medias :
+- Verifier presence width et height
+- Verifier aspect-ratio CSS
+- Identifier images sans dimensions
+
+Shifts lies aux Fonts :
+- Observer le swap de font
+- Mesurer difference de taille fallback/web font
+- Verifier font-display
+
+Shifts lies au Contenu Dynamique :
+- Bannieres cookies apparaissant tardivement
+- Publicites sans espace reserve
+- Contenu injecte par JS
+
+---
+
+**Etape 3 : Corrections**
+
+Pour Images et Videos :
+1. Ajouter width et height explicites
+2. Ou utiliser aspect-ratio en CSS
+3. Utiliser next/image qui gere automatiquement
+
+Pour Fonts :
+1. Utiliser font-display: optional (elimine CLS)
+2. Ou font-display: swap + size-adjust
+3. Preload fonts critiques
+4. Utiliser next/font
+
+Pour Contenu Dynamique :
+1. Reserver l'espace avec min-height
+2. Utiliser skeleton loaders
+3. Positionner en fixed/absolute si possible
+4. Charger avant le rendu si possible
+
+Pour Publicites :
+1. Reserver l'espace exact
+2. Utiliser placeholder de meme taille
+3. Eviter les formats variables
+
+---
+
+**Etape 4 : Verification**
+
+Process de test :
+1. Recharger la page plusieurs fois (vider cache)
+2. Verifier en mode throttle network
+3. Tester sur mobile
+4. Confirmer CLS < 0.1 dans Lighthouse
+
+</workflow-cls>
+
+---
+
+## Workflow 5 : Optimisation Images
+
+### Scenario
+
+Les images sont identifiees comme facteur principal de lenteur.
+
+### Etapes
+
+<workflow-images>
+**Etape 1 : Audit des Images**
+
+Analyse via DevTools Network :
+1. Filtrer par type "Img"
+2. Trier par taille decroissante
+3. Identifier les images volumineuses
+4. Noter les formats utilises
+
+Verifier :
+- Taille fichier vs dimensions affichees
+- Format utilise (JPEG, PNG, WebP, AVIF)
+- Presence de lazy loading
+- Images above-the-fold vs below-the-fold
+
+---
+
+**Etape 2 : Strategie de Conversion**
+
+Ordre de preference des formats :
+1. AVIF (meilleure compression, support moderne)
+2. WebP (excellent compromis, support universel)
+3. JPEG (fallback photos)
+4. PNG (transparence uniquement)
+
+Regles de conversion :
+- Photos : AVIF > WebP > JPEG
+- Illustrations : AVIF > WebP > PNG
+- Icones : SVG prefere
+- Logos : SVG ou PNG optimise
+
+---
+
+**Etape 3 : Dimensionnement**
+
+Principes :
+- Ne jamais servir plus grand que necessaire
+- Creer plusieurs tailles pour srcset
+- Considerer DPR (Device Pixel Ratio)
+
+Breakpoints recommandes :
+- Mobile 1x : 480px
+- Mobile 2x : 960px
+- Tablet : 800px
+- Desktop : 1200px
+- Desktop 2x : 2400px
+
+---
+
+**Etape 4 : Implementation Next.js**
+
+Configuration next/image :
+- Utiliser le composant Image de next/image
+- Configurer formats dans next.config.js
+- Activer AVIF : formats: ['image/avif', 'image/webp']
+
+Attributs importants :
+- priority : pour image LCP
+- placeholder="blur" : evite CLS
+- sizes : pour responsive correct
+- quality : ajuster selon besoin (defaut 75)
+
+---
+
+**Etape 5 : Lazy Loading**
+
+Strategie :
+- Above-the-fold : `priority={true}`, pas de lazy
+- Below-the-fold : `loading="lazy"` natif
+- Images critiques : preload dans `<head>`
+
+Verification :
+- Network panel : verifier que images below-fold ne chargent pas initialement
+- Scroll : verifier chargement au fur et mesure
+
+</workflow-images>
+
+---
+
+## Workflow 6 : Audit Scripts Tiers
+
+### Scenario
+
+Les scripts tiers sont suspectes d'impacter les performances.
+
+### Etapes
+
+<workflow-third-party>
+**Etape 1 : Inventaire des Scripts**
+
+Methodes d'identification :
+- DevTools Network : filtrer par Domain
+- Lighthouse : section "Third-party usage"
+- WebPageTest : third-party breakdown
+
+Categoriser :
+- Analytics (Google Analytics, Mixpanel, etc.)
+- Marketing (pixels, tags)
+- Social (Facebook SDK, Twitter)
+- Chat/Support (Intercom, Zendesk)
+- Publicite (Google Ads, AdSense)
+- A/B Testing (Optimizely, VWO)
+
+---
+
+**Etape 2 : Mesure d'Impact**
+
+Pour chaque script :
+1. Mesurer la taille (KB)
+2. Mesurer le temps de blocage (TBT contribution)
+3. Identifier les requetes en chaine
+4. Noter l'impact sur INP
+
+Test comparatif :
+- Performance avec tous les scripts
+- Performance en bloquant les scripts (DevTools)
+- Calculer la difference
+
+---
+
+**Etape 3 : Priorisation**
+
+Matrice de decision :
+| Script | Valeur Business | Impact Perf | Action |
+|--------|-----------------|-------------|--------|
+| Eleve | Faible | Conserver tel quel |
+| Eleve | Eleve | Optimiser le chargement |
+| Faible | Faible | Evaluer la necessite |
+| Faible | Eleve | Supprimer ou remplacer |
+
+---
+
+**Etape 4 : Optimisations**
+
+Chargement differe :
+- async pour scripts independants
+- defer pour scripts dependants
+- strategy="lazyOnload" dans next/script
+
+Facades :
+- Remplacer YouTube embed par lite-youtube
+- Remplacer widgets par images cliquables
+- Charger le vrai script au clic/hover
+
+Consolidation :
+- Google Tag Manager pour centraliser les tags
+- Un seul outil analytics si possible
+- Reduire les pixels redondants
+
+---
+
+**Etape 5 : Monitoring**
+
+Mettre en place :
+- Alertes si nouveaux scripts ajoutes
+- Review periodique des scripts
+- Budget performance a ne pas depasser
+- Documentation des scripts autorises
+
+</workflow-third-party>
+
+---
+
+## Workflow 7 : Optimisation TTFB
+
+### Scenario
+
+Le TTFB depasse 800ms, impactant toutes les autres metriques.
+
+### Etapes
+
+<workflow-ttfb>
+**Etape 1 : Diagnostic**
+
+Mesurer via :
+- DevTools Network : colonne "Waiting (TTFB)"
+- WebPageTest : first byte time
+- PageSpeed Insights : metrique TTFB
+
+Decomposer le temps :
+- DNS resolution
+- TCP connection
+- TLS negotiation
+- Server processing
+- Network latency
+
+---
+
+**Etape 2 : Analyse des Causes**
+
+Causes serveur :
+- Traitement backend lent
+- Requetes base de donnees lentes
+- Absence de cache serveur
+- Serveur sous-dimensionne
+
+Causes reseau :
+- Distance geographique
+- Absence de CDN
+- DNS lent
+- Pas de HTTP/2 ou HTTP/3
+
+---
+
+**Etape 3 : Optimisations Backend**
+
+Base de donnees :
+- Optimiser les requetes lentes
+- Ajouter les index manquants
+- Implementer un cache (Redis)
+- Reduire les requetes par page
+
+Cache serveur :
+- Full page cache pour pages statiques
+- Object cache pour donnees frequentes
+- Stale-while-revalidate pour fraicheur
+
+Code backend :
+- Profiler et optimiser les goulots
+- Reduire les appels externes
+- Paralleliser quand possible
+
+---
+
+**Etape 4 : Optimisations Reseau**
+
+CDN :
+- Implementer un CDN global
+- Configurer le cache edge
+- Activer HTTP/2 et HTTP/3
+
+DNS :
+- Utiliser un DNS rapide
+- Preconnect aux domaines critiques
+- DNS prefetch si necessaire
+
+Compression :
+- Activer Brotli (prioritaire)
+- Fallback Gzip
+- Compresser HTML, CSS, JS
+
+---
+
+**Etape 5 : Optimisations Next.js/Vercel**
+
+Strategies de rendu :
+- SSG pour pages statiques (TTFB minimal)
+- ISR pour contenu semi-dynamique
+- Edge runtime pour latence reduite
+
+Configuration :
+- Headers de cache optimaux
+- Revalidation appropriee
+- Edge functions si pertinent
+
+---
+
+**Etape 6 : Validation**
+
+Tester depuis plusieurs localisations :
+- WebPageTest multi-location
+- Verifier TTFB < 800ms partout
+- Comparer avant/apres
+
+</workflow-ttfb>
+
+---
+
+## Workflow 8 : Benchmark Pre/Post Optimisation
+
+### Scenario
+
+Documenter les gains de performance apres optimisations.
+
+### Etapes
+
+<workflow-benchmark>
+**Etape 1 : Baseline (Avant)**
+
+Collecter systematiquement :
+1. Scores Lighthouse (mobile et desktop)
+2. Donnees CrUX si disponibles
+3. Metriques individuelles (LCP, INP, CLS, TTFB, FCP, TBT)
+4. Taille des ressources (JS, CSS, images)
+5. Nombre de requetes
+
+Format de documentation :
+| Metrique | Avant | Cible | Statut |
+|----------|-------|-------|--------|
+| LCP | 3.2s | < 2.5s | Rouge |
+| INP | 280ms | < 200ms | Orange |
+| ... | ... | ... | ... |
+
+---
+
+**Etape 2 : Implementation**
+
+Pour chaque optimisation :
+1. Implementer le changement
+2. Tester immediatement
+3. Documenter l'impact individuel
+4. Verifier absence de regression
+
+Journal des changements :
+| Date | Changement | Impact LCP | Impact INP | Impact CLS |
+|------|------------|------------|------------|------------|
+| ... | ... | ... | ... | ... |
+
+---
+
+**Etape 3 : Mesure (Apres)**
+
+Collecter les memes metriques :
+1. Attendre stabilisation (vider caches, plusieurs tests)
+2. Executer memes tests que baseline
+3. Documenter chaque metrique
+
+Calculer les deltas :
+- Gain absolu : Avant - Apres
+- Gain relatif : (Avant - Apres) / Avant * 100
+
+---
+
+**Etape 4 : Rapport Final**
+
+Structure du rapport :
+1. Resume executif
+   - Score avant vs apres
+   - Principaux gains
+
+2. Details par metrique
+   - Evolution de chaque Core Web Vital
+   - Graphiques comparatifs
+
+3. Actions realisees
+   - Liste des optimisations
+   - Impact de chacune
+
+4. Recommandations futures
+   - Optimisations non realisees
+   - Monitoring a mettre en place
+
+---
+
+**Etape 5 : Suivi Long Terme**
+
+A planifier :
+- Verification CrUX apres 28 jours
+- Verification Search Console apres mise a jour
+- Alertes si regression detectee
+- Audits periodiques (mensuel/trimestriel)
+
+</workflow-benchmark>
+
+---
+
+## Points de Decision
+
+### Quand privilegier le Lab vs le Field ?
+
+<decision-lab-field>
+Utiliser donnees Lab (Lighthouse) :
+- Debugging et investigation
+- Test immediat apres changement
+- Conditions controlees pour comparaison
+- Pas assez de trafic pour CrUX
+
+Utiliser donnees Field (CrUX) :
+- Evaluation de la situation reelle
+- Decisions strategiques
+- Impact SEO (seul compte pour Google)
+- Vision sur 28 jours
+</decision-lab-field>
+
+### Quand optimiser vs quand ignorer ?
+
+<decision-optimize>
+Optimiser en priorite :
+- Core Web Vitals en rouge
+- Metriques impactant l'experience utilisateur
+- Pages a fort trafic ou conversion
+- Problemes identifies par les utilisateurs
+
+Peut attendre :
+- Core Web Vitals en orange (amelioration)
+- Metriques lab seulement
+- Pages secondaires a faible trafic
+- Micro-optimisations sans impact mesurable
+</decision-optimize>
+
+### Quel niveau de detail pour les rapports ?
+
+<decision-report>
+Rapport executif :
+- Scores cles avant/apres
+- Actions principales
+- Prochaines etapes
+- Pour : stakeholders, management
+
+Rapport technique :
+- Toutes les metriques
+- Analyse detaillee par probleme
+- Recommendations specifiques
+- Pour : developpeurs, equipe technique
+
+Rapport de suivi :
+- Evolution dans le temps
+- Alertes et regressions
+- Actions correctives
+- Pour : monitoring continu
+</decision-report>
+
+---
+
+## Checklist Rapide
+
+### Pre-Audit
+- [ ] URLs cibles identifiees
+- [ ] Acces aux outils (PSI, DevTools, Search Console)
+- [ ] Baseline documentee
+
+### Audit
+- [ ] Donnees CrUX collectees
+- [ ] Audit Lighthouse mobile execute
+- [ ] Audit Lighthouse desktop execute
+- [ ] Problemes identifies et priorises
+
+### Optimisations
+- [ ] Quick wins implementes
+- [ ] Tests intermediaires effectues
+- [ ] Pas de regression constatee
+- [ ] Documentation a jour
+
+### Post-Optimisation
+- [ ] Benchmark final realise
+- [ ] Gains documentes
+- [ ] Rapport delivre
+- [ ] Suivi CrUX planifie (28 jours)

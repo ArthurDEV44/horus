@@ -1,0 +1,15 @@
+{
+  "title": "SEO",
+  "description": "Agents pour l'optimisation du référencement",
+  "pages": [
+    "index",
+    "seo-metadata-expert",
+    "seo-content-expert",
+    "seo-schema-expert",
+    "seo-performance-expert",
+    "seo-image-expert",
+    "seo-crawl-expert",
+    "seo-rendering-expert"
+  ],
+  "defaultOpen": false
+}

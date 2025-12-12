@@ -1,0 +1,542 @@
+---
+title: Reference
+description: Documentation technique des types Schema.org, proprietes requises, formats de donnees et outils de validation pour l'implementation de donnees structurees JSON-LD.
+---
+
+# SEO Schema Expert - Documentation Technique
+
+## Glossaire
+
+| Terme | Definition |
+|-------|------------|
+| **@context** | Declaration du vocabulaire utilise (toujours "https://schema.org") |
+| **@id** | Identifiant unique d'une entite, permet les references croisees |
+| **@type** | Type d'entite selon le vocabulaire Schema.org |
+| **Aggregate Rating** | Note moyenne calculee a partir de plusieurs avis |
+| **BreadcrumbList** | Fil d'Ariane structure pour la navigation |
+| **Graph** | Ensemble d'entites liees dans un meme JSON-LD via @graph |
+| **ItemList** | Liste ordonnee d'elements (produits, articles, etc.) |
+| **JSON-LD** | JavaScript Object Notation for Linked Data, format prefere de Google |
+| **Linked Data** | Donnees connectees via identifiants et references |
+| **Microdata** | Format alternatif de structured data (attributs HTML) |
+| **Nesting** | Imbrication d'entites dans une structure parent-enfant |
+| **RDFa** | Format alternatif de structured data (Resource Description Framework) |
+| **Rich Results** | Resultats enrichis dans les SERP (etoiles, FAQ, images, etc.) |
+| **Rich Snippets** | Autre nom pour Rich Results |
+| **Schema.org** | Vocabulaire standardise maintenu par Google, Microsoft, Yahoo, Yandex |
+| **SERP** | Search Engine Results Page - page de resultats de recherche |
+| **Structured Data** | Donnees structurees aidant les moteurs a comprendre le contenu |
+
+---
+
+## Types Schema.org Essentiels
+
+### Organization
+
+Represente une entreprise, association ou organisation.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Organization" |
+| name | Oui | Nom officiel |
+| url | Oui | URL du site web |
+| logo | Recommande | URL de l'image du logo (min 112x112px) |
+| description | Recommande | Description courte |
+| contactPoint | Recommande | Point de contact (telephone, email) |
+| sameAs | Recommande | URLs des profils sociaux (array) |
+| address | Pour entites physiques | Adresse postale structuree |
+| foundingDate | Optionnel | Date de creation (YYYY-MM-DD) |
+
+### LocalBusiness
+
+Extension d'Organization pour les commerces avec adresse physique.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | Sous-type precis (Restaurant, Dentist, etc.) |
+| name | Oui | Nom commercial |
+| address | Oui | Adresse structuree (PostalAddress) |
+| telephone | Recommande | Numero de telephone |
+| geo | Recommande | Coordonnees GPS (GeoCoordinates) |
+| openingHoursSpecification | Recommande | Horaires d'ouverture detailles |
+| priceRange | Optionnel | Gamme de prix (€, €€, €€€) |
+| areaServed | Pour services a domicile | Zones geographiques desservies |
+| image | Recommande | Images du lieu |
+| aggregateRating | Si avis disponibles | Note moyenne |
+
+**Sous-types LocalBusiness courants :**
+- Restaurant, Bakery, CafeOrCoffeeShop
+- Dentist, Physician, Hospital
+- BeautySalon, DaySpa, HairSalon
+- LegalService, FinancialService
+- Plumber, Electrician, HVAC
+- RealEstateAgent, TravelAgency
+- FitnessCenter, GolfCourse
+
+### Article / BlogPosting
+
+Pour les articles de blog et contenus editoriaux.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Article" ou "BlogPosting" |
+| headline | Recommande | Titre de l'article |
+| author | Recommande | Auteur (Person ou Organization) |
+| datePublished | Recommande | Date de publication (ISO 8601) |
+| dateModified | Recommande | Date de derniere modification |
+| image | Recommande | Image principale (URL ou ImageObject) |
+| publisher | Recommande | Editeur (Organization) |
+| description | Optionnel | Resume de l'article |
+| articleBody | Optionnel | Contenu complet (rarement utilise) |
+
+**Note 2025 :** Google a supprime la limite de 110 caracteres pour headline.
+
+### Product
+
+Pour les pages produits e-commerce.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Product" |
+| name | Oui | Nom du produit |
+| image | Recommande | Images du produit (array) |
+| description | Recommande | Description du produit |
+| offers | Oui pour prix | Offre de vente (Offer) |
+| aggregateRating | Si avis | Note moyenne |
+| review | Optionnel | Avis detailles |
+| brand | Recommande | Marque (Brand) |
+| sku | Recommande | Reference produit |
+| gtin | Recommande | Code-barres international |
+
+**Offre (Offer) :**
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Offer" |
+| price | Oui | Prix numerique |
+| priceCurrency | Oui | Code devise (EUR, USD) |
+| availability | Recommande | InStock, OutOfStock, PreOrder |
+| url | Recommande | URL de la page produit |
+| priceValidUntil | Optionnel | Date de fin de validite |
+
+### Service
+
+Pour les prestations de service.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Service" |
+| name | Oui | Nom du service |
+| provider | Recommande | Prestataire (Organization ou Person) |
+| description | Recommande | Description du service |
+| areaServed | Recommande | Zone geographique |
+| serviceType | Optionnel | Type de service |
+| offers | Optionnel | Tarification |
+| aggregateRating | Si avis | Note moyenne |
+
+### FAQPage
+
+Pour les pages de questions frequentes.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "FAQPage" |
+| mainEntity | Oui | Array de Question |
+
+**Question :**
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Question" |
+| name | Oui | Texte de la question |
+| acceptedAnswer | Oui | Reponse (Answer) |
+
+**Answer :**
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Answer" |
+| text | Oui | Texte de la reponse |
+
+**Avertissement 2025 :** Les rich results FAQ sont desormais limites aux sites gouvernementaux et de sante reconnus. Le schema reste utile pour la comprehension semantique et les AI.
+
+### BreadcrumbList
+
+Fil d'Ariane structure.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "BreadcrumbList" |
+| itemListElement | Oui | Array de ListItem ordonnes |
+
+**ListItem :**
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "ListItem" |
+| position | Oui | Position dans le fil (1, 2, 3...) |
+| name | Oui | Texte du lien |
+| item | Oui | URL de la page |
+
+### WebSite
+
+Pour le site global (generalement sur la page d'accueil).
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "WebSite" |
+| name | Oui | Nom du site |
+| url | Oui | URL racine |
+| potentialAction | Optionnel | SearchAction pour sitelinks search box |
+| inLanguage | Recommande | Code langue (fr-FR) |
+
+### Person
+
+Pour les pages de profil personnel.
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Person" |
+| name | Oui | Nom complet |
+| image | Recommande | Photo de profil |
+| jobTitle | Recommande | Titre professionnel |
+| worksFor | Recommande | Employeur (Organization) |
+| sameAs | Recommande | Profils sociaux (array) |
+| email | Optionnel | Adresse email |
+| url | Optionnel | Site personnel |
+
+### Review / AggregateRating
+
+Pour les avis et notes.
+
+**Review (avis individuel) :**
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "Review" |
+| author | Oui | Auteur (Person) |
+| reviewRating | Oui | Note (Rating) |
+| itemReviewed | Oui | Element evalue |
+| reviewBody | Recommande | Texte de l'avis |
+| datePublished | Recommande | Date de l'avis |
+
+**AggregateRating :**
+
+| Propriete | Obligatoire | Description |
+|-----------|-------------|-------------|
+| @type | Oui | "AggregateRating" |
+| ratingValue | Oui | Note moyenne |
+| reviewCount | Oui | Nombre d'avis |
+| bestRating | Recommande | Note maximale (defaut: 5) |
+| worstRating | Optionnel | Note minimale (defaut: 1) |
+
+**Mise a jour 2025 :** Google recommande des avis accompagnes d'un commentaire textuel et du nom de l'auteur pour plus de contexte.
+
+---
+
+## Depreciations Google Juin 2025
+
+Google a retire le support Search Console pour les types suivants :
+
+| Type Retire | Alternative | Notes |
+|-------------|-------------|-------|
+| Course Info | Aucune | Peu utilise, impact minimal |
+| Claim Review | Aucune | Fact-checking limite |
+| Estimated Salary | Aucune | Job postings simplifies |
+| Learning Video | Aucune | Contenu educatif via VideoObject |
+| Special Announcement | Aucune | COVID-related, obsolete |
+| Vehicle Listing | Aucune | Marche automobile specifique |
+| Book Actions | Aucune | Actions d'achat |
+
+**Impact :** Ces types n'affectent plus le ranking. Les pages existantes peuvent les conserver sans penalite.
+
+---
+
+## Format JSON-LD
+
+### Structure de Base
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "TypeName",
+  "property1": "value1",
+  "property2": "value2"
+}
+```
+
+### Graph pour Entites Multiples
+
+Utiliser @graph pour combiner plusieurs entites independantes :
+
+```json
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "#organization",
+      "name": "..."
+    },
+    {
+      "@type": "WebSite",
+      "@id": "#website",
+      "name": "..."
+    }
+  ]
+}
+```
+
+### References avec @id
+
+Pour lier des entites entre elles :
+
+```json
+{
+  "@type": "Article",
+  "author": {
+    "@id": "#author"
+  },
+  "publisher": {
+    "@id": "#organization"
+  }
+}
+```
+
+### Types Imbriques
+
+Pour les sous-entites directes :
+
+```json
+{
+  "@type": "LocalBusiness",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "123 rue Example",
+    "addressLocality": "Nice",
+    "postalCode": "06000",
+    "addressCountry": "FR"
+  }
+}
+```
+
+---
+
+## Formats de Donnees
+
+### Dates (ISO 8601)
+
+| Format | Exemple | Usage |
+|--------|---------|-------|
+| Date seule | 2025-12-09 | datePublished, foundingDate |
+| Date + heure | 2025-12-09T14:30:00 | Events, articles |
+| Date + heure + timezone | 2025-12-09T14:30:00+01:00 | Events precis |
+
+### URLs
+
+- Toujours absolues (https://example.com/page)
+- Accessibles publiquement
+- Coherentes avec canonical
+- Pas de parametres de tracking inutiles
+
+### Images
+
+- URLs absolues
+- Formats supportes : JPEG, PNG, GIF, WebP
+- Dimensions recommandees selon le type
+- Accessibles par Googlebot (pas derriere auth)
+
+### Numeros de Telephone
+
+Format international recommande : +33 4 93 XX XX XX
+
+---
+
+## Implementation Next.js
+
+### Pattern Recommande
+
+Creer un composant reutilisable qui :
+
+1. Accepte les donnees en props typees
+2. Stringifie le JSON avec sanitization
+3. Rend un script type="application/ld+json"
+
+### Sanitization XSS
+
+Remplacer `<` par `\u003c` pour eviter les injections :
+
+```javascript
+JSON.stringify(data).replace(/</g, '\\u003c')
+```
+
+### Placement
+
+- Placer le composant dans le body de la page
+- Un script par type de schema (ou utiliser @graph)
+- Pour les pages dynamiques, construire a partir des donnees fetchees
+
+### Memoization
+
+Les donnees utilisees pour le JSON-LD peuvent etre partagees avec le composant page grace a la memoization automatique de Next.js sur les appels fetch().
+
+---
+
+## Outils de Validation
+
+### Google Rich Results Test
+
+| Aspect | Details |
+|--------|---------|
+| URL | search.google.com/test/rich-results |
+| Focus | Types eligibles aux rich results Google |
+| JavaScript | Non rendu (HTML statique) |
+| Avantages | Previsualisation des rich results |
+| Limites | Ne valide pas tous les types schema.org |
+
+### Schema Markup Validator
+
+| Aspect | Details |
+|--------|---------|
+| URL | validator.schema.org |
+| Focus | Validation syntaxique complete schema.org |
+| Maintenu par | Schema.org (Google, Microsoft, Yahoo, Yandex) |
+| Avantages | Couvre tous les types schema.org |
+| Limites | Pas d'indication d'eligibilite rich results |
+
+### JSON-LD Playground
+
+| Aspect | Details |
+|--------|---------|
+| URL | json-ld.org/playground |
+| Focus | Syntaxe JSON-LD pure |
+| Avantages | Expansion, compactage, visualisation graph |
+| Limites | Pas de validation schema.org |
+
+### Strategie de Validation
+
+1. **Rich Results Test** : Verifier l'eligibilite et previsualiser
+2. **Schema Markup Validator** : Valider la syntaxe complete
+3. **JSON-LD Playground** : Debug des references et imbrications
+
+---
+
+## Erreurs Courantes
+
+### Syntaxe JSON
+
+| Erreur | Solution |
+|--------|----------|
+| Virgule trailing | Retirer la virgule apres le dernier element |
+| Guillemets simples | Utiliser des guillemets doubles |
+| Caracteres non echappes | Echapper les caracteres speciaux (\n, \t, \\) |
+| JSON invalide | Valider avec un linter JSON |
+
+### Contenu
+
+| Erreur | Solution |
+|--------|----------|
+| Donnees absentes de la page | Aligner JSON-LD avec contenu visible |
+| Prix incorrect | Synchroniser avec le prix affiche |
+| Fausses reviews | Utiliser uniquement des avis authentiques |
+| Dates dans le futur | Verifier datePublished coherent |
+
+### Structure
+
+| Erreur | Solution |
+|--------|----------|
+| @context manquant | Ajouter "@context": "https://schema.org" |
+| @type incorrect | Verifier le type exact sur schema.org |
+| Proprietes requises absentes | Consulter documentation Google |
+| URLs relatives | Convertir en URLs absolues |
+
+### Configuration
+
+| Erreur | Solution |
+|--------|----------|
+| Script bloque par CSP | Ajuster Content-Security-Policy |
+| JSON-LD non rendu (SSR) | Verifier le rendu cote serveur |
+| Schemas multiples conflictuels | Utiliser @graph ou un seul schema |
+
+---
+
+## Compatibilite AI/LLM (2025)
+
+### Importance pour les LLMs
+
+Les donnees structurees aident les AI a :
+
+- Extraire les informations cles de maniere fiable
+- Comprendre les relations entre entites
+- Generer des reponses plus precises
+- Inclure votre contenu dans les resumes AI
+
+### Optimisations Specifiques
+
+1. **Exhaustivite** : Remplir le maximum de proprietes pertinentes
+2. **Coherence** : Aligner parfaitement avec le contenu visible
+3. **References** : Utiliser @id pour lier les entites
+4. **Mise a jour** : Maintenir les donnees a jour (dateModified)
+
+### Plateformes Compatibles
+
+- Google Gemini
+- ChatGPT (via Bing)
+- Bing Chat / Copilot
+- Amazon Alexa
+- Google Assistant
+- Perplexity AI
+
+---
+
+## Ressources Officielles
+
+### Documentation Google
+
+- Intro Structured Data : developers.google.com/search/docs/appearance/structured-data/intro-structured-data
+- Search Gallery (tous les types) : developers.google.com/search/docs/appearance/structured-data/search-gallery
+- Guidelines generales : developers.google.com/search/docs/appearance/structured-data/sd-policies
+
+### Documentation Schema.org
+
+- Full Hierarchy : schema.org/docs/full.html
+- Developer Guide : schema.org/docs/developers.html
+- Extensions : schema.org/docs/extension.html
+
+### Specifications JSON-LD
+
+- W3C Recommendation : w3.org/TR/json-ld11/
+- Best Practices : w3c.github.io/json-ld-bp/
+- JSON-LD Framing : w3.org/TR/json-ld11-framing/
+
+### Next.js
+
+- JSON-LD Guide : nextjs.org/docs/app/guides/json-ld
+
+---
+
+## FAQ
+
+### Puis-je utiliser plusieurs types sur une meme page ?
+
+Oui, via @graph ou plusieurs scripts distincts. Exemple : Organization + BreadcrumbList + Article sur une page blog.
+
+### JSON-LD dans le head ou le body ?
+
+Les deux fonctionnent. Google recommande traditionnellement le head, mais Next.js le place dans le body pour des raisons techniques. Les deux sont valides.
+
+### Dois-je implementer tous les types ?
+
+Non, concentrez-vous sur les types pertinents pour votre contenu. Qualite > quantite.
+
+### Les rich results sont-ils garantis ?
+
+Non, Google ne garantit jamais l'affichage des rich results meme avec un schema valide. L'eligibilite est une condition necessaire mais pas suffisante.
+
+### Combien de temps avant de voir les rich results ?
+
+Comptez 2-4 semaines apres l'indexation pour que Google traite les structured data et affiche potentiellement les rich results.
+
+### FAQ schema vaut-il encore le coup ?
+
+Oui pour la comprehension semantique et les AI, mais les rich results visuels sont limites aux sites gouvernementaux/sante depuis 2023.

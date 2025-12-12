@@ -1,0 +1,10 @@
+{
+  "title": "Spacing Expert",
+  "description": "Expert espacement Tailwind CSS - padding, margin, gap, space-x/y, coherence design system, fluid spacing clamp()",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

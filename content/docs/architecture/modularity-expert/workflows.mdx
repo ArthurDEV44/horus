@@ -1,0 +1,150 @@
+---
+title: Workflows
+description: Processus de restructuration modulaire
+---
+
+# Modularity Expert - Workflows
+
+## Workflow 1 : Audit de Modularité
+
+### Objectif
+Évaluer la qualité modulaire d'un projet existant et identifier les axes d'amélioration.
+
+### Étapes
+
+Étape 1 - Cartographier la Structure
+Utiliser Glob pour lister l'arborescence complète du projet avec focus sur src/. Identifier l'approche actuelle entre layer-based avec dossiers components, hooks, utils séparés, feature-based avec dossiers par fonctionnalité, ou hybride mélangeant les deux. Documenter la profondeur moyenne de l'arborescence et le nombre de fichiers par dossier.
+
+Étape 2 - Analyser les Barrel Files
+Rechercher tous les fichiers index.ts et index.tsx avec Glob. Pour chaque barrel file trouvé, lire son contenu et compter le nombre d'exports. Identifier les exports wildcard avec export asterisk from. Classifier chaque barrel comme minimal avec moins de cinq exports explicites, modéré avec cinq à quinze exports, ou massif avec plus de quinze exports ou des wildcards.
+
+Étape 3 - Évaluer les Patterns d'Import
+Utiliser Grep pour analyser les déclarations import dans le projet. Identifier le ratio entre imports directs vers fichiers sources et imports vers index. Détecter les imports profonds qui traversent plusieurs niveaux de dossiers. Repérer les imports circulaires potentiels entre dossiers.
+
+Étape 4 - Mesurer la Cohésion
+Pour chaque dossier principal, évaluer si les fichiers qu'il contient partagent un objectif commun. Un dossier cohésif a des fichiers qui s'importent mutuellement et traitent du même domaine. Un dossier incohésif contient des fichiers sans rapport qui pourraient être ailleurs.
+
+Étape 5 - Produire le Rapport
+Synthétiser les observations en rapport structuré avec score de modularité global, liste des barrel files problématiques à refactorer, liste des violations d'encapsulation détectées, et recommandations priorisées d'amélioration.
+
+## Workflow 2 : Migration vers Feature-Based
+
+### Objectif
+Transformer une structure layer-based en organisation feature-based progressive.
+
+### Étapes
+
+Étape 1 - Identifier les Features
+Analyser le code existant pour découper en domaines fonctionnels. Chaque feature correspond à une fonctionnalité utilisateur cohérente comme authentification, dashboard, paramètres, panier. Lister les features identifiées avec les fichiers actuels qui leur correspondent.
+
+Étape 2 - Concevoir la Structure Cible
+Définir l'arborescence feature-based cible avec src/features contenant un dossier par feature. Chaque feature suit la structure interne standardisée avec components, hooks, utils, types, api et index.ts. Prévoir le dossier src/shared pour le code véritablement transversal.
+
+Étape 3 - Prioriser la Migration
+Commencer par la feature la plus isolée ayant peu de dépendances externes. Planifier la migration feature par feature en ordre de complexité croissante. Prévoir des points de validation après chaque feature migrée.
+
+Étape 4 - Migrer une Feature
+Créer le dossier de la feature avec sa structure interne. Déplacer les fichiers correspondants depuis leurs emplacements actuels. Mettre à jour tous les imports dans le projet pour pointer vers les nouveaux chemins. Créer l'index.ts minimal exposant uniquement l'API publique. Vérifier que les tests passent après la migration.
+
+Étape 5 - Extraire le Shared
+Une fois les features migrées, identifier le code utilisé par plusieurs features. Migrer ce code vers src/shared avec structure ui, hooks, utils, types. Mettre à jour les imports des features vers shared. Valider que shared ne contient pas de logique métier spécifique.
+
+Étape 6 - Nettoyer les Résidus
+Supprimer les dossiers layer-based devenus vides. Vérifier qu'aucun import ne pointe vers les anciens chemins. Mettre à jour les alias TypeScript si configurés. Documenter la nouvelle structure dans le README.
+
+## Workflow 3 : Élimination des Barrel Files
+
+### Objectif
+Remplacer les barrel files problématiques par des imports directs pour optimiser le build.
+
+### Étapes
+
+Étape 1 - Inventorier les Barrel Files
+Lister tous les fichiers index.ts avec Glob. Analyser chaque fichier pour compter les exports et détecter les wildcards. Prioriser les barrel files massifs avec plus de dix exports ou des export asterisk.
+
+Étape 2 - Analyser les Consommateurs
+Pour chaque barrel file ciblé, utiliser Grep pour trouver tous les fichiers qui importent depuis ce barrel. Documenter quels exports sont réellement utilisés par chaque consommateur. Identifier les exports jamais utilisés candidats à suppression.
+
+Étape 3 - Convertir les Imports
+Pour chaque consommateur, remplacer l'import depuis le barrel par un import direct vers le fichier source. Transformer `import { Button, Input } from './components'` en imports séparés vers `components/Button` et `components/Input`. Procéder fichier par fichier avec validation.
+
+Étape 4 - Réduire le Barrel
+Une fois tous les consommateurs migrés vers imports directs, réduire le barrel file. Supprimer tous les exports wildcard. Ne garder que les exports explicites de l'API publique essentielle. Si le barrel n'a plus d'utilité, le supprimer entièrement.
+
+Étape 5 - Mesurer l'Impact
+Comparer les temps de build avant et après l'élimination. Analyser la taille du bundle pour détecter l'amélioration du tree-shaking. Documenter les gains obtenus pour justifier l'effort.
+
+## Workflow 4 : Conception d'API Publique
+
+### Objectif
+Définir une API publique claire et stable pour un module existant ou nouveau.
+
+### Étapes
+
+Étape 1 - Identifier les Consommateurs
+Lister tous les modules et fichiers qui importent depuis le module cible. Comprendre leurs besoins réels en analysant ce qu'ils importent et comment ils l'utilisent. Distinguer les usages légitimes des contournements de l'encapsulation.
+
+Étape 2 - Classifier les Exports
+Catégoriser chaque élément exporté actuellement. Les éléments essentiels sont requis par les consommateurs légitimes. Les éléments internes sont utilisés uniquement au sein du module. Les éléments obsolètes ne sont plus utilisés nulle part.
+
+Étape 3 - Concevoir l'Interface
+Définir l'API publique minimale répondant aux besoins des consommateurs. Chaque export doit avoir une justification claire. Préférer des interfaces stables aux types concrets. Grouper les exports liés logiquement.
+
+Étape 4 - Implémenter l'Index
+Créer ou réécrire le fichier index.ts avec les exports explicites uniquement. Chaque ligne exporte un élément nommé depuis son fichier source. Ajouter un commentaire de section pour organiser composants, hooks, types et utils.
+
+Étape 5 - Migrer les Imports Internes
+Les imports au sein du module utilisent des chemins relatifs directs sans passer par l'index. Mettre à jour les imports internes si certains passaient par le barrel. Cette pratique évite les cycles et clarifie la distinction public/privé.
+
+Étape 6 - Documenter le Contrat
+Ajouter des commentaires JSDoc sur les exports publics principaux. Créer un README dans le dossier du module expliquant son objectif et son usage. Lister les dépendances attendues et les garanties de stabilité.
+
+## Workflow 5 : Création de Module Feature
+
+### Objectif
+Créer un nouveau module feature respectant les bonnes pratiques de modularité dès le départ.
+
+### Étapes
+
+Étape 1 - Définir le Périmètre
+Clarifier la responsabilité unique du module avec l'utilisateur. Identifier les fonctionnalités incluses et explicitement exclues. Nommer le module de manière descriptive et cohérente avec les features existantes.
+
+Étape 2 - Créer la Structure
+Créer le dossier dans src/features avec le nom du module. Créer les sous-dossiers standards components, hooks, utils, types et api. Créer le fichier index.ts vide qui recevra l'API publique.
+
+Étape 3 - Implémenter les Fondations
+Créer les types de base dans le dossier types définissant les entités du domaine. Créer les hooks principaux dans hooks encapsulant la logique métier. Créer les composants UI dans components utilisant les hooks.
+
+Étape 4 - Définir l'API Publique
+Exporter dans index.ts uniquement les éléments destinés aux consommateurs externes. Typiquement le composant principal, le hook d'accès aux données, et les types du contrat. Les utilitaires internes et composants auxiliaires restent privés.
+
+Étape 5 - Connecter aux Dépendances
+Importer depuis shared les utilitaires communs nécessaires. Si dépendance vers autre feature, importer uniquement depuis son API publique. Documenter les dépendances inter-modules dans un commentaire en tête de l'index.
+
+Étape 6 - Valider l'Isolation
+Vérifier que le module peut être testé en isolation en mockant ses dépendances. Confirmer qu'aucun fichier externe n'importe depuis l'intérieur du module. Valider que la suppression hypothétique du module ne casserait que les imports de son API publique.
+
+## Workflow 6 : Refactoring de Module Shared
+
+### Objectif
+Restructurer un dossier shared devenu trop volumineux ou mal organisé.
+
+### Étapes
+
+Étape 1 - Auditer le Contenu Actuel
+Lister tous les fichiers dans shared avec leur taille et complexité. Pour chaque fichier, identifier les features qui l'importent. Repérer les éléments importés par une seule feature qui ne devraient pas être shared.
+
+Étape 2 - Classifier les Éléments
+Catégoriser chaque élément en véritablement transversal utilisé par trois features ou plus, spécifique à une feature à déplacer vers cette feature, ou obsolète plus utilisé à supprimer.
+
+Étape 3 - Rapatrier vers les Features
+Déplacer chaque élément spécifique vers la feature qui l'utilise principalement. Mettre à jour les imports de cette feature vers le nouveau chemin local. Si d'autres features importaient cet élément, évaluer s'il devient partie de l'API publique de la feature propriétaire.
+
+Étape 4 - Restructurer le Shared
+Organiser le shared restant en catégories claires avec ui pour composants génériques, hooks pour hooks utilitaires, utils pour fonctions pures, et types pour types communs. Chaque catégorie a son propre index.ts minimal.
+
+Étape 5 - Supprimer les Obsolètes
+Supprimer les éléments identifiés comme non utilisés. Vérifier avec Grep qu'aucune référence ne subsiste. Nettoyer les imports devenus orphelins dans les fichiers index.
+
+Étape 6 - Établir les Règles
+Documenter les critères d'admission dans shared en commentaire ou README. Configurer une règle de linting si possible pour alerter quand un élément shared n'a qu'un consommateur. Communiquer les nouvelles conventions à l'équipe.

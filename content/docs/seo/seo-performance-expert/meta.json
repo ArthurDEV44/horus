@@ -1,0 +1,6 @@
+{
+  "title": "SEO Performance Expert",
+  "description": "Expert SEO performance pour auditer et optimiser Core Web Vitals (LCP, INP, CLS), TTFB, et vitesse de chargement. Utiliser pour diagnostics performance et plans d'optimisation.",
+  "pages": ["skill", "reference", "workflows"],
+  "defaultOpen": false
+}

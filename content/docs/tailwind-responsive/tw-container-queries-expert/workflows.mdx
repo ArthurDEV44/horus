@@ -1,0 +1,562 @@
+---
+title: Workflows
+description: Processus detailles et cas d'usage pour les container queries avec Tailwind CSS v4
+---
+
+# Workflows - Container Queries
+
+Processus detailles et cas d'usage pour les container queries avec Tailwind CSS v4.
+
+---
+
+## Workflow 1 : Card Responsive Reutilisable
+
+### Contexte
+
+L'utilisateur veut creer une card qui s'adapte a son conteneur, utilisable dans une grille, une sidebar, ou en pleine largeur.
+
+### Processus
+
+**Phase 1 - Analyse**
+
+1. Identifier les variations de layout souhaitees
+2. Determiner les breakpoints de changement
+3. Lister les elements de la card (image, titre, description, actions)
+4. Evaluer les contextes d'utilisation
+
+**Phase 2 - Structure HTML**
+
+```html
+<article class="@container overflow-hidden">
+  <div class="flex flex-col @sm:flex-row">
+    <div class="w-full @sm:w-1/3">Image</div>
+    <div class="p-4 @sm:flex-1">Contenu</div>
+  </div>
+</article>
+```
+
+**Phase 3 - Layout par Defaut (Mobile/Petit)**
+
+- `flex flex-col` : layout vertical stack
+- Image : `w-full aspect-video`
+- Contenu : `p-4`
+- Actions : `flex gap-2`
+
+**Phase 4 - Layout Medium (@sm:)**
+
+Quand container >= 24rem :
+- `@sm:flex-row` pour horizontal
+- Image : `@sm:w-1/3` pour proportion
+- Contenu : `@sm:flex-1`
+
+**Phase 5 - Layout Large (@lg:)**
+
+Quand container >= 32rem :
+- `@lg:gap-6` pour plus d'espace
+- Texte : `@lg:text-lg`
+- Actions : `@lg:justify-end`
+
+**Phase 6 - Test dans Differents Contextes**
+
+Tester la card dans :
+- Grid 3 colonnes (petite)
+- Grid 2 colonnes (moyenne)
+- Pleine largeur (grande)
+- Sidebar (variable)
+
+**Phase 7 - Validation**
+
+1. Transitions fluides entre les layouts
+2. Contenu lisible a toutes les tailles
+3. Proportions visuellement equilibrees
+4. Aucune dependance au viewport
+
+---
+
+## Workflow 2 : Dashboard avec Widgets
+
+### Contexte
+
+L'utilisateur construit un dashboard avec des widgets redimensionnables ou dans differentes zones.
+
+### Processus
+
+**Phase 1 - Analyse des Widgets**
+
+1. Lister tous les types de widgets
+2. Definir le contenu min/max de chaque widget
+3. Identifier les layouts possibles (compact, normal, etendu)
+4. Determiner les zones du dashboard
+
+**Phase 2 - Structure du Dashboard**
+
+Layout principal (media queries) : `grid lg:grid-cols-12 gap-4`
+
+Zones avec containers : chaque zone de widget utilise `@container/zone-name`
+
+**Phase 3 - Widget Generique**
+
+```html
+<div class="@container/widget">
+  <header>Toujours visible</header>
+  <main class="hidden @sm/widget:block">Contenu principal</main>
+  <footer class="hidden @md/widget:flex">Actions/Details</footer>
+</div>
+```
+
+**Phase 4 - Variations du Widget**
+
+| Taille | Comportement |
+|--------|--------------|
+| Compact (< 24rem) | Header avec titre tronque, donnees essentielles, footer hidden |
+| Normal (>= 24rem) | Header complet, `@sm:block` pour details, `@sm:flex` pour actions |
+| Etendu (>= 32rem) | `@lg:flex-row` dans le body, graphiques etendus |
+
+**Phase 5 - Named Containers pour Zones**
+
+- Sidebar : `@container/sidebar`
+- Main : `@container/main`
+
+Widgets adaptent selon leur zone :
+- `@md/sidebar:` pour les widgets en sidebar
+- `@lg/main:` pour les widgets en zone principale
+
+**Phase 6 - Grille Responsive**
+
+Widget dans la grille : `col-span-6 lg:col-span-4 xl:col-span-3`
+
+La taille en colonnes determine la largeur du container. Le widget s'adapte automatiquement.
+
+**Phase 7 - Validation**
+
+1. Widgets fonctionnels a toutes les tailles
+2. Informations prioritaires toujours visibles
+3. Layout coherent dans chaque zone
+
+---
+
+## Workflow 3 : Sidebar Collapsible
+
+### Contexte
+
+L'utilisateur a une sidebar qui peut etre reduite/etendue et dont le contenu doit s'adapter.
+
+### Processus
+
+**Phase 1 - Etats de la Sidebar**
+
+| Etat | Largeur |
+|------|---------|
+| Collapsed | 64px (w-16) |
+| Normal | 256px (w-64) |
+| Expanded | 320px (w-80) |
+
+**Phase 2 - Structure**
+
+```html
+<aside class="@container/sidebar w-16 transition-all duration-300">
+  <nav>...</nav>
+</aside>
+```
+
+**Phase 3 - Logo**
+
+- Collapsed : icone centree, texte hidden
+- Normal : `@md/sidebar:flex gap-2`, `@md/sidebar:inline` pour le texte
+
+**Phase 4 - Navigation**
+
+```html
+<li class="@md/sidebar:flex @md/sidebar:gap-2">
+  <icon />
+  <span class="hidden @sm/sidebar:inline">Label</span>
+</li>
+```
+
+Tooltip pour collapsed : afficher au hover quand label hidden.
+
+**Phase 5 - Sous-menus**
+
+- Collapsed : flyout ou hidden
+- Normal : `@md/sidebar:block` pour affichage inline, indentation avec `pl-8`
+
+**Phase 6 - User Info**
+
+- Collapsed : avatar seulement, centered
+- Normal : `@sm/sidebar:flex gap-3`, nom et role visibles
+
+**Phase 7 - Toggle**
+
+Bouton pour changer la largeur (w-16 / w-64 / w-80). Container queries s'adaptent automatiquement.
+
+**Phase 8 - Validation**
+
+1. Transitions fluides
+2. Icones toujours cliquables
+3. Tooltips fonctionnels en collapsed
+4. Pas de layout shift
+
+---
+
+## Workflow 4 : Article dans Differents Contextes
+
+### Contexte
+
+L'utilisateur a un composant article qui apparait dans une liste, une grille, en featured, ou en pleine page.
+
+### Processus
+
+**Phase 1 - Analyse des Contextes**
+
+| Contexte | Caracteristiques |
+|----------|------------------|
+| Liste verticale | Largeur complete, layout horizontal |
+| Grille | Width variable, layout vertical |
+| Featured | Grande taille, layout horizontal |
+| Pleine page | max-width, centre |
+
+**Phase 2 - Structure du Composant**
+
+```html
+<article class="@container/article">
+  <img />
+  <div>
+    <span>Metadata</span>
+    <h2>Titre</h2>
+    <p>Excerpt</p>
+    <span>Author</span>
+  </div>
+</article>
+```
+
+**Phase 3 - Layout Compact (< 24rem)**
+
+- Image : `aspect-video w-full`
+- Titre : `text-base font-semibold line-clamp-2`
+- Excerpt : hidden ou `line-clamp-2`
+- Metadata : `text-xs`
+
+**Phase 4 - Layout Medium (>= 24rem)**
+
+- `@sm/article:flex-row` pour horizontal
+- Image : `@sm/article:w-1/3`
+- Titre : `@sm/article:text-lg`
+- Excerpt : `@sm/article:line-clamp-3`
+
+**Phase 5 - Layout Large (>= 32rem)**
+
+- `@lg/article:gap-6`
+- Titre : `@lg/article:text-xl`
+- Excerpt : `@lg/article:block` (full)
+- Author : `@lg/article:flex` visible
+
+**Phase 6 - Featured (>= 42rem)**
+
+- Layout peut inverser (image a droite)
+- Titre : `@2xl/article:text-2xl`
+- Plus d'espace breathing
+
+**Phase 7 - Utilisation**
+
+Tous les contextes utilisent le meme composant :
+- En liste : wrapper pleine largeur
+- En grille : wrapper avec width selon colonnes
+- Featured : wrapper large
+
+**Phase 8 - Validation**
+
+1. Composant identique, layouts differents
+2. Transitions entre tailles fluides
+3. Contenu prioritaire visible a toutes les tailles
+
+---
+
+## Workflow 5 : Modal avec Contenu Adaptatif
+
+### Contexte
+
+L'utilisateur a une modal dont le contenu doit s'adapter a sa taille.
+
+### Processus
+
+**Phase 1 - Tailles de Modal**
+
+| Device | Taille |
+|--------|--------|
+| Mobile | Plein ecran (w-full h-full) |
+| Tablet | max-w-lg |
+| Desktop | max-w-2xl ou max-w-4xl |
+
+**Phase 2 - Structure**
+
+```html
+<div class="@container/modal">
+  <header>Titre, close</header>
+  <main>Contenu principal</main>
+  <footer>Actions</footer>
+</div>
+```
+
+**Phase 3 - Layout Mobile (< 28rem)**
+
+- Header : titre `text-lg`, close button visible
+- Body : padding reduit `p-4`, contenu empile verticalement
+- Footer : buttons full-width, `flex-col gap-2`
+
+**Phase 4 - Layout Tablet (>= 28rem)**
+
+- Header : `@md/modal:text-xl`
+- Body : `@md/modal:p-6`
+- Footer : `@md/modal:flex-row @md/modal:justify-end`
+
+**Phase 5 - Layout Desktop (>= 36rem)**
+
+- Body : layout en colonnes si applicable
+- `@xl/modal:grid-cols-2` pour formulaires
+- Footer : plus d'espace
+
+**Phase 6 - Contenu Specifique**
+
+Formulaire dans modal : `@md/modal:grid-cols-2` pour les champs, labels side-by-side sur desktop.
+
+Image dans modal : `@lg/modal:flex-row` pour image + description.
+
+**Phase 7 - Validation**
+
+1. Modal utilisable a toutes les tailles
+2. Actions accessibles (pas de scroll pour Submit)
+3. Contenu ne deborde pas
+4. Close toujours accessible
+
+---
+
+## Workflow 6 : Navigation Contextuelle
+
+### Contexte
+
+L'utilisateur a une navigation qui peut etre dans un header large, une sidebar, ou un dropdown mobile.
+
+### Processus
+
+**Phase 1 - Contextes de Navigation**
+
+| Contexte | Layout |
+|----------|--------|
+| Header desktop | Horizontal, full |
+| Header tablet | Horizontal, condense |
+| Sidebar | Vertical |
+| Mobile dropdown | Vertical, full-width |
+
+**Phase 2 - Structure du Composant Nav**
+
+```html
+<nav class="@container/nav">
+  <ul>
+    <li><a>Item</a></li>
+  </ul>
+</nav>
+```
+
+**Phase 3 - Layout Vertical (< 32rem)**
+
+Default pour sidebar et mobile :
+- `flex flex-col`
+- Items : `w-full py-2`
+- Sous-menus : nested avec indentation
+
+**Phase 4 - Layout Horizontal (>= 32rem)**
+
+- `@lg/nav:flex-row`
+- Items : `@lg/nav:px-4`
+- Sous-menus : `@lg/nav:absolute` dropdown
+
+**Phase 5 - Variations d'Items**
+
+| Taille | Contenu |
+|--------|---------|
+| Compact | Icone seulement ou abreviation |
+| Normal (@sm/nav:) | Texte complet `@sm/nav:inline` |
+| Avec description (@lg/nav:) | `@lg/nav:flex-col` pour label + description |
+
+**Phase 6 - Sous-menus**
+
+- Vertical : expandable inline
+- Horizontal : dropdown au hover/click
+
+**Phase 7 - Validation**
+
+1. Navigation accessible dans tous les contextes
+2. Sous-menus fonctionnels
+3. Focus management correct
+4. Keyboard navigation
+
+---
+
+## Workflow 7 : Galerie Adaptative
+
+### Contexte
+
+L'utilisateur cree une galerie d'images dont le nombre de colonnes depend de l'espace disponible.
+
+### Processus
+
+**Phase 1 - Structure**
+
+```html
+<section class="@container/gallery">
+  <div class="grid grid-cols-2 @sm:grid-cols-3 @lg:grid-cols-4 @2xl:grid-cols-5 gap-2 @sm:gap-3 @lg:gap-4">
+    <!-- Images -->
+  </div>
+</section>
+```
+
+**Phase 2 - Grid Configuration**
+
+| Taille container | Colonnes |
+|-----------------|----------|
+| Base (tres petit) | 2 colonnes |
+| >= 24rem (@sm:) | 3 colonnes |
+| >= 32rem (@lg:) | 4 colonnes |
+| >= 42rem (@2xl:) | 5 colonnes |
+| >= 56rem (@4xl:) | 6 colonnes |
+
+**Phase 3 - Items de Galerie**
+
+Chaque image : `aspect-square object-cover`
+
+Overlay info (optionnel) : `@lg:opacity-0 @lg:hover:opacity-100` (visible par defaut sur petit, hover sur grand)
+
+**Phase 4 - Actions**
+
+- Bouton voir plus : `@sm:text-base @max-sm:text-sm`
+- Filtres : `@md:flex-row` pour horizontal, vertical par defaut
+
+**Phase 5 - Validation**
+
+1. Colonnes s'adaptent fluidement
+2. Images toujours carrees (ou ratio coherent)
+3. Pas de lignes orphelines trop courtes
+4. Performance acceptable avec beaucoup d'images
+
+---
+
+## Workflow 8 : Debug Container Queries
+
+### Contexte
+
+Les container queries ne fonctionnent pas comme prevu.
+
+### Processus
+
+**Phase 1 - Verification de Base**
+
+Checklist :
+1. `@container` est-il sur le parent correct ?
+2. Le parent a-t-il une largeur definie ?
+3. La syntaxe utilise-t-elle `@` devant le breakpoint ?
+4. Les variants sont-ils sur les enfants (pas le container) ?
+
+**Phase 2 - Inspection DevTools**
+
+1. Selectionner l'element avec `@container`
+2. Verifier computed styles : `container-type` doit etre "inline-size"
+3. Verifier la largeur computed du container
+
+**Phase 3 - Probleme : Variants Non Appliques**
+
+| Cause | Solution |
+|-------|----------|
+| @container manquant sur le parent | Ajouter `@container` au bon parent |
+| Syntaxe sans @ (`lg:` au lieu de `@lg:`) | Corriger avec `@lg:` |
+| Container trop petit pour le breakpoint | Verifier la largeur reelle vs breakpoint |
+| Specificite CSS override | Inspecter les overrides CSS |
+
+**Phase 4 - Probleme : Container Sans Taille**
+
+| Cause | Solution |
+|-------|----------|
+| Container sans width explicite | Ajouter `w-full` ou `w-[size]` |
+| Container en position absolute sans dimensions | Definir les dimensions |
+| Contenu qui ne force pas de taille | S'assurer que le contenu etablit une taille |
+
+**Phase 5 - Probleme : Named Container Non Cible**
+
+| Cause | Solution |
+|-------|----------|
+| Typo dans le nom | Verifier `@container/name` exact |
+| Mauvais container cible | Utiliser `@lg/exact-name:` |
+| Container name non defini | Confirmer le `container-name` dans DevTools |
+
+**Phase 6 - Probleme : Imbrication Confuse**
+
+Symptome : mauvais container cible
+
+Solution : utiliser named containers
+- `@container/outer` sur l'externe
+- `@container/inner` sur l'interne
+- Cibler explicitement : `@lg/outer:` ou `@lg/inner:`
+
+**Phase 7 - Test Isole**
+
+Creer un exemple minimal :
+1. Un container simple avec `@container`
+2. Un enfant avec `@md:bg-red-500`
+3. Redimensionner manuellement le container
+4. Confirmer que le style change
+
+Si ca marche isole, le probleme est dans le contexte.
+
+---
+
+## Cas d'Usage Speciaux
+
+### Cas 1 : Combinaison Container + Media Queries
+
+Layout de page (media queries) :
+
+```html
+<div class="lg:flex">
+  <aside class="lg:w-64">Sidebar</aside>
+  <main class="lg:flex-1">Main</main>
+</div>
+```
+
+Composant interne (container queries) :
+
+```html
+<section class="@container">
+  <article class="@md:flex-row">...</article>
+</section>
+```
+
+La page definit les largeurs avec viewport. Les composants s'adaptent a leur espace alloue.
+
+### Cas 2 : Container Query avec Animation
+
+```html
+<div class="@container">
+  <div class="@sm:animate-fade-in @max-sm:animate-slide-up">...</div>
+</div>
+```
+
+L'animation depend de la taille du container.
+
+### Cas 3 : Server Components
+
+Container queries sont CSS-only. Fonctionnent parfaitement avec Next.js Server Components, Astro, et tout SSR/SSG. Pas de JavaScript requis.
+
+---
+
+## Ressources et References
+
+### Documentation Officielle
+
+- Tailwind CSS v4 Container Queries
+- MDN Container Queries
+- CSS Containment Spec
+
+### Outils
+
+- Chrome DevTools : inspection container queries
+- Firefox DevTools : support container queries
+- Can I Use : verification compatibilite

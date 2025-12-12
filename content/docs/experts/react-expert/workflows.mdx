@@ -1,0 +1,634 @@
+---
+title: Workflows
+description: Processus detailles pour React - Audit, Custom Hooks, Migration RSC, Forms, Performance, Testing, Debugging, Accessibilite
+---
+
+# React Expert - Workflows
+
+## Workflow 1 : Audit de Composants React
+
+### Objectif
+Analyser une base de code React et produire un rapport d'evaluation avec recommandations.
+
+### Etapes
+
+#### 1.1 Reconnaissance Technique
+
+**Actions** :
+- Lire package.json : version React, presence de React Compiler
+- Verifier la configuration (babel, next.config pour reactCompiler)
+- Identifier le ratio Server/Client Components
+- Reperer les patterns de state management utilises
+
+**Output** : Fiche technique avec versions, configuration et architecture actuelle.
+
+#### 1.2 Analyse des Patterns
+
+**Actions** :
+- Identifier les custom hooks et leur reutilisation
+- Reperer les usages de Context (scope, frequence d'update)
+- Detecter les anti-patterns (prop drilling, derived state in state)
+- Evaluer la composition des composants
+
+**Output** : Liste des patterns utilises avec recommendations d'amelioration.
+
+#### 1.3 Evaluation Performance
+
+**Actions** :
+- Rechercher les useMemo/useCallback (necessaires avec Compiler ?)
+- Identifier les re-renders potentiellement excessifs
+- Reperer les inline functions passees a des composants enfants
+- Verifier l'utilisation de React.lazy pour code splitting
+
+**Output** : Score de performance avec quick wins identifies.
+
+#### 1.4 Verification Accessibilite
+
+**Actions** :
+- Controler la presence des attributs ARIA necessaires
+- Verifier la gestion du focus
+- Evaluer la navigation clavier
+- Identifier les composants custom sans semantique
+
+**Output** : Rapport d'accessibilite avec criticites classees.
+
+---
+
+## Workflow 2 : Implementation Custom Hook
+
+### Objectif
+Creer un custom hook reutilisable suivant les best practices React 19.
+
+### Etapes
+
+#### 2.1 Definition du Besoin
+
+**Questions** :
+- Quelle logique stateful doit etre encapsulee ?
+- Quels parametres en entree ?
+- Quelles valeurs retournees ?
+- Y a-t-il des effets de bord (subscriptions, timers) ?
+
+#### 2.2 Structure du Hook
+
+**Naming** :
+- Prefix obligatoire : use
+- Nom descriptif de l'action : useToggle, useDebounce, useLocalStorage
+- Verbe + Nom si applicable : useFetchUser, useWindowSize
+
+**Structure** :
+1. Parametres avec valeurs par defaut si applicable
+2. State interne via useState/useReducer
+3. Effects pour synchronisation externe
+4. Cleanup des effets de bord
+5. Return des valeurs/fonctions necessaires
+
+#### 2.3 Implementation
+
+**Checklist** :
+- [ ] Nom commence par "use"
+- [ ] Hooks appeles en top-level uniquement
+- [ ] Dependances correctes dans useEffect
+- [ ] Cleanup implemente si effet de bord
+- [ ] Types TypeScript explicites
+- [ ] Gestion des edge cases (initial state, unmount)
+
+#### 2.4 Tests
+
+**Testing strategy** :
+- Utiliser renderHook de @testing-library/react
+- Tester les differents etats du hook
+- Verifier le cleanup
+- Tester avec differents parametres
+
+#### 2.5 Documentation
+
+**Docs** :
+- JSDoc avec @param et @returns
+- Exemples d'utilisation
+- Edge cases documentes
+
+---
+
+## Workflow 3 : Migration vers Server Components
+
+### Objectif
+Convertir des Client Components en Server Components la ou approprie.
+
+### Etapes
+
+#### 3.1 Audit des Composants Candidats
+
+**Criteria** - Composant eligible si :
+- Pas de useState, useEffect, useRef interactif
+- Pas de event handlers (onClick, onChange)
+- Pas d'acces aux Browser APIs
+- Fetch de donnees ou acces backend
+- Dependances lourdes (moment.js, lodash complet)
+
+**Actions** :
+- Lister tous les composants avec "use client"
+- Pour chaque, verifier s'il utilise vraiment des features client
+- Identifier les composants qui font uniquement du data fetching
+
+#### 3.2 Refactoring par Composant
+
+**Decision tree** :
+
+```
+Le composant utilise-t-il useState/useEffect ?
+├── Oui, pour interaction utilisateur
+│   └── Garder Client Component
+├── Oui, pour fetch de donnees
+│   └── Migrer vers Server Component avec fetch direct
+├── Non
+│   └── Retirer "use client", devient Server Component
+```
+
+#### 3.3 Pattern de Composition
+
+Si un composant a une partie server et une partie client :
+1. Extraire la partie serveur dans un Server Component parent
+2. Passer les donnees en props au Client Component enfant
+3. Ou utiliser le pattern children pour injecter le Server Component
+
+#### 3.4 Validation
+
+**Checks** :
+- [ ] Application compile sans erreur
+- [ ] Fonctionnalites preservees
+- [ ] Bundle size reduit
+- [ ] Performance amelioree (TTFB, hydration)
+
+---
+
+## Workflow 4 : Implementation Forms avec React 19
+
+### Objectif
+Creer un formulaire utilisant les nouvelles APIs React 19 (useActionState, useFormStatus, useOptimistic).
+
+### Etapes
+
+#### 4.1 Design du Formulaire
+
+**Questions** :
+- Quels champs sont necessaires ?
+- Validation client-side requise ?
+- Server Action ou API endpoint ?
+- Feedback optimiste souhaite ?
+
+#### 4.2 Structure avec Server Action
+
+**Architecture** :
+```
+FormComponent (Client)
+├── useActionState pour state/action/isPending
+├── Form fields avec validation Zod
+├── SubmitButton (composant enfant)
+│   └── useFormStatus pour pending state
+└── OptimisticFeedback (optionnel)
+    └── useOptimistic pour UI optimiste
+```
+
+#### 4.3 Implementation
+
+**Steps** :
+1. Definir le schema Zod pour validation
+2. Creer la Server Action avec validation
+3. Utiliser useActionState dans le composant form
+4. Creer un composant SubmitButton avec useFormStatus
+5. Optionnel : ajouter useOptimistic pour feedback instantane
+
+#### 4.4 Gestion des Erreurs
+
+**Error handling** :
+- Erreurs de validation : afficher inline par champ
+- Erreurs serveur : afficher message global
+- Etat optimiste echoue : rollback automatique par useOptimistic
+- Network error : gestion via Error Boundary ou try/catch
+
+#### 4.5 Accessibilite
+
+**A11y checklist** :
+- [ ] Labels associes aux inputs (htmlFor/id)
+- [ ] aria-invalid sur champs en erreur
+- [ ] aria-describedby pour messages d'erreur
+- [ ] Focus management apres soumission
+- [ ] aria-live pour annonces dynamiques
+
+---
+
+## Workflow 5 : Optimisation Performance
+
+### Objectif
+Identifier et corriger les problemes de performance React.
+
+### Etapes
+
+#### 5.1 Mesure Initiale
+
+**Tools** :
+- React DevTools Profiler
+- Chrome DevTools Performance panel
+- why-did-you-render (optionnel)
+
+**Baseline** :
+- Identifier les composants les plus lents
+- Noter le nombre de re-renders par interaction
+- Mesurer le temps de rendu initial
+
+#### 5.2 Analyse des Re-renders
+
+**Investigation** - Pour chaque composant problematique :
+1. Pourquoi re-render ? (props, state, context, parent)
+2. Le re-render est-il necessaire ?
+3. Quelle donnee change trop souvent ?
+
+#### 5.3 Strategies d'Optimisation
+
+**Par cause** :
+
+**Props qui changent** :
+- Verifier si la prop doit vraiment changer
+- Memoize la valeur cote parent si calcul couteux
+- Restructurer pour eviter le passage de props
+
+**State trop haut** :
+- Colocaliser le state plus bas dans l'arbre
+- Splitter le state si parties independantes
+- Utiliser useReducer pour state complexe lie
+
+**Context trop large** :
+- Splitter en contextes plus petits
+- Separer state et dispatch
+- Considerer Zustand/Jotai
+
+**Re-render du parent** :
+- React.memo si justifie (profiler d'abord)
+- Extraire le composant hors du parent
+- Composition via children
+
+#### 5.4 Code Splitting
+
+**Actions** :
+- Identifier les composants lourds (modals, charts, editors)
+- Implementer React.lazy + Suspense
+- Verifier les imports dynamiques
+- Analyser le bundle (webpack-bundle-analyzer)
+
+#### 5.5 Validation
+
+**Verification** :
+- Re-executer le Profiler
+- Comparer avec la baseline
+- Verifier qu'aucune regression fonctionnelle
+
+---
+
+## Workflow 6 : Testing Composants React
+
+### Objectif
+Ecrire des tests robustes avec React Testing Library.
+
+### Etapes
+
+#### 6.1 Analyse du Composant
+
+**Questions** :
+- Quels sont les comportements utilisateur a tester ?
+- Quelles interactions declenchent quels changements ?
+- Quels etats sont possibles (loading, error, success) ?
+- Y a-t-il des cas limites ?
+
+#### 6.2 Structure des Tests
+
+**Pattern** :
+```
+Describe [Nom du Composant]
+├── it renders correctly with default props
+├── it handles [interaction 1]
+├── it handles [interaction 2]
+├── it displays error state when [condition]
+├── it is accessible (keyboard, aria)
+└── edge cases
+```
+
+#### 6.3 Implementation
+
+**Best practices** :
+1. **Arrange** : Setup, render avec props necessaires
+2. **Act** : userEvent pour interactions
+3. **Assert** : expect avec matchers jest-dom
+
+**Queries priority** :
+1. getByRole - prefere (accessibility)
+2. getByLabelText - pour form elements
+3. getByText - pour contenu visible
+4. getByTestId - dernier recours
+
+#### 6.4 Patterns Avances
+
+**Async** - Pour composants async :
+- findBy* pour elements qui apparaissent apres
+- waitFor pour conditions complexes
+- waitForElementToBeRemoved pour disparitions
+
+**Mocking** :
+- msw pour mock d'API
+- vi.mock pour modules
+- Context providers pour state
+
+#### 6.5 Tests d'Accessibilite
+
+**A11y tests** :
+- jest-axe pour violations automatiques
+- Tests de navigation clavier
+- Tests de focus management
+- Tests de screen reader (labels, live regions)
+
+---
+
+## Workflow 7 : Debugging Problemes React
+
+### Objectif
+Identifier et resoudre les bugs React courants.
+
+### Etapes
+
+#### 7.1 Hydration Mismatch
+
+**Symptoms** :
+- Console error : "Hydration failed"
+- UI clignote au chargement
+- Contenu different en SSR vs client
+
+**Causes** :
+
+| Cause | Exemple | Solution |
+|-------|---------|----------|
+| Date/time | `new Date()` | Passer depuis serveur |
+| Random | `Math.random()` | Generer serveur ou useId |
+| Browser APIs | `window.innerWidth` | useEffect ou CSS |
+| localStorage | Valeur initiale | useEffect avec state |
+| Conditional render | `{isClient && ...}` | suppressHydrationWarning ou CSS |
+
+**Resolution** :
+1. Identifier l'element problematique (console, DevTools)
+2. Determiner la cause du mismatch
+3. Appliquer la solution appropriee
+4. Tester en mode production
+
+#### 7.2 Infinite Re-renders
+
+**Symptoms** :
+- Console warning : "Maximum update depth exceeded"
+- Page freeze
+- Performance degradee
+
+**Causes** :
+
+| Cause | Detection | Solution |
+|-------|-----------|----------|
+| State update dans render | Lire le code | Deplacer dans useEffect |
+| useEffect sans deps | Lire le code | Ajouter deps array |
+| Object/array dans deps | Console log | useMemo ou split deps |
+| State update dans effect | Console log | Condition pour eviter loop |
+
+#### 7.3 Memory Leaks
+
+**Symptoms** :
+- Warnings dans console
+- Memory usage croissante
+- Actions apres unmount
+
+**Causes** :
+
+| Cause | Solution |
+|-------|----------|
+| Subscription non-cleanup | Return cleanup dans useEffect |
+| Timer non-clear | clearTimeout/clearInterval |
+| Event listener | removeEventListener dans cleanup |
+| Fetch sans abort | AbortController |
+
+#### 7.4 Stale Closures
+
+**Symptoms** :
+- Valeurs obsoletes dans callbacks
+- Handler utilise valeur ancienne
+
+**Solutions** :
+- Ajouter la variable aux dependencies
+- Utiliser useRef pour valeur mutable
+- Utiliser la forme fonctionnelle de setState
+
+---
+
+## Workflow 8 : Implementation Accessibilite
+
+### Objectif
+Rendre un composant ou une page accessible selon WCAG 2.2.
+
+### Etapes
+
+#### 8.1 Audit Initial
+
+**Tools** :
+- axe DevTools extension
+- WAVE
+- Lighthouse accessibility
+- Navigation clavier manuelle
+- Screen reader (VoiceOver, NVDA)
+
+**Checklist** :
+- [ ] Structure semantique (headings, landmarks)
+- [ ] Images alternatives (alt text)
+- [ ] Contraste couleurs (4.5:1 texte, 3:1 UI)
+- [ ] Focus visible
+- [ ] Navigation clavier
+
+#### 8.2 Corrections Semantiques
+
+**Improvements** :
+
+| Element | Non-accessible | Accessible |
+|---------|---------------|------------|
+| Navigation | div | nav + aria-label |
+| Bouton | div onClick | button |
+| Lien | span onClick | a href |
+| Liste | divs | ul/ol + li |
+| Modal | div | dialog + aria-modal |
+
+#### 8.3 ARIA Implementation
+
+**When to use** :
+- Quand HTML semantique insuffisant
+- Composants custom (tabs, accordions, menus)
+- Etats dynamiques (expanded, selected)
+- Annonces live (alerts, updates)
+
+**Patterns** :
+
+| Composant | ARIA Pattern |
+|-----------|--------------|
+| Tabs | role="tablist", role="tab", aria-selected |
+| Accordion | aria-expanded, aria-controls |
+| Menu | role="menu", role="menuitem" |
+| Modal | role="dialog", aria-modal, aria-labelledby |
+| Alert | role="alert" ou aria-live="assertive" |
+
+#### 8.4 Keyboard Navigation
+
+**Requirements** :
+- Tous les elements interactifs focusables
+- Tab order logique
+- Escape ferme les overlays
+- Enter/Space active les boutons
+- Arrows pour navigation interne (menus, tabs)
+
+**Implementation** :
+- tabIndex pour ordre de focus
+- onKeyDown pour raccourcis
+- Focus trap dans modals
+- roving tabindex pour groupes
+
+#### 8.5 Validation Finale
+
+**Testing** :
+- [ ] axe audit zero violations A/AA
+- [ ] Navigation complete au clavier
+- [ ] Test avec screen reader
+- [ ] Contraste valide
+- [ ] Focus visible sur tous les elements interactifs
+
+---
+
+## Arbres de Decision
+
+### Choix du State Management
+
+```
+Quelle est la nature du state ?
+├── Local a un composant
+│   └── useState ou useReducer
+├── Partage entre quelques composants
+│   ├── Faible frequence de changement
+│   │   └── Context API
+│   └── Haute frequence de changement
+│       └── Zustand ou Jotai
+├── Global a l'application
+│   ├── Simple
+│   │   └── Zustand
+│   └── Complexe avec middleware
+│       └── Redux Toolkit
+└── Donnees serveur
+    └── TanStack Query
+```
+
+### Choix Server vs Client Component
+
+```
+Le composant a-t-il besoin de...
+├── useState, useEffect, useRef (interactif) ?
+│   └── Client Component
+├── onClick, onChange, onSubmit ?
+│   └── Client Component
+├── APIs browser (localStorage, window) ?
+│   └── Client Component
+├── Fetch de donnees depuis DB/API ?
+│   └── Server Component (prefere)
+└── Aucun des precedents ?
+    └── Server Component par defaut
+```
+
+### Choix du Pattern de Composition
+
+```
+Comment les composants doivent-ils interagir ?
+├── Parent controle enfants specifiques
+│   └── Compound Components
+├── Enfant decide de son rendu
+│   └── Render Props
+├── Logique partagee, rendu different
+│   └── Custom Hook
+├── Enrichir un composant existant
+│   └── HOC (rare en 2025)
+└── Simple imbrication
+    └── Composition via children
+```
+
+---
+
+## Checklist Pre-Production
+
+### Code Quality
+
+- [ ] TypeScript strict mode satisfait
+- [ ] ESLint/Biome zero erreurs
+- [ ] Tests unitaires passent
+- [ ] Coverage adequat sur code critique
+
+### Performance
+
+- [ ] Code splitting implemente
+- [ ] Images optimisees (next/image ou equivalent)
+- [ ] Pas de re-renders excessifs (Profiler)
+- [ ] Bundle size raisonnable
+
+### Accessibilite
+
+- [ ] axe audit zero violations A/AA
+- [ ] Navigation clavier complete
+- [ ] Focus management correct
+- [ ] Contrastes valides
+
+### React Best Practices
+
+- [ ] Hooks rules respectees
+- [ ] Cleanup des effets
+- [ ] Pas de derived state in state
+- [ ] State colocalise
+- [ ] Error boundaries en place
+
+---
+
+## Scenarios de Depannage
+
+### "Maximum update depth exceeded"
+
+**Diagnostic** : Boucle infinie de re-renders detectee.
+
+**Causes** :
+1. setState appele directement en render (pas dans callback/effect)
+2. useEffect sans dependency array
+3. Objet/array recree a chaque render dans deps
+4. Parent et enfant se mettent a jour mutuellement
+
+**Solutions** :
+1. Deplacer l'update dans useEffect ou event handler
+2. Ajouter [] ou les deps correctes
+3. useMemo pour stabiliser, ou deplacer hors du composant
+4. Restructurer le flow de donnees
+
+### "Cannot update a component while rendering another"
+
+**Diagnostic** : State update declenchee pendant le render d'un autre composant.
+
+**Cause** : Souvent un setState appele dans le render d'un enfant qui affecte le parent.
+
+**Solution** : Utiliser useEffect pour differer l'update au prochain cycle.
+
+### Composant ne re-render pas
+
+**Diagnostic** : Le state/props change mais l'UI ne se met pas a jour.
+
+**Causes** :
+1. Mutation directe de l'objet/array
+2. Meme reference malgre nouveau contenu
+3. React.memo trop agressif
+4. Erreur silencieuse dans le render
+
+**Solutions** :
+1. Creer une nouvelle reference (spread, map, filter)
+2. S'assurer de retourner un nouvel objet
+3. Verifier les props passees au memo
+4. Ajouter error boundary pour voir les erreurs

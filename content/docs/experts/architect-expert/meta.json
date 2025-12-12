@@ -1,0 +1,10 @@
+{
+  "title": "Architect Expert",
+  "description": "Expert Architecture Logicielle - Clean Architecture, SOLID, DDD",
+  "pages": [
+    "skill",
+    "reference",
+    "workflows"
+  ],
+  "defaultOpen": false
+}

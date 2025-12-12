@@ -1,0 +1,570 @@
+---
+title: Reference
+description: Documentation technique Architecture Logicielle - Glossaire, Clean Architecture, SOLID, DDD, Patterns, Metriques
+---
+
+# Architect Expert - Documentation Technique
+
+## Glossaire
+
+| Terme | Definition |
+|-------|------------|
+| **Agregat** | Groupe d'entites et value objects traites comme unite dans DDD |
+| **Anti-pattern** | Solution recurrente qui produit des consequences negatives |
+| **Bounded Context** | Frontiere explicite dans laquelle un modele de domaine s'applique |
+| **Clean Architecture** | Architecture en couches avec dependances pointant vers le domaine |
+| **Couplage** | Degre d'interdependance entre modules |
+| **CQRS** | Command Query Responsibility Segregation, separation lecture/ecriture |
+| **Dette Technique** | Cout implicite de refactoring futur du a des choix expeditifs |
+| **DDD** | Domain-Driven Design, conception guidee par le domaine metier |
+| **DIP** | Dependency Inversion Principle, dependre des abstractions |
+| **Entite** | Objet avec identite propre, mutable dans le temps |
+| **Event Sourcing** | Stockage de l'etat via sequence d'evenements |
+| **Hexagonal** | Architecture Ports & Adapters, domaine isole |
+| **ISP** | Interface Segregation Principle, interfaces specifiques |
+| **LSP** | Liskov Substitution Principle, substituabilite des sous-types |
+| **OCP** | Open/Closed Principle, ouvert extension, ferme modification |
+| **Onion Architecture** | Variante de Clean Architecture en couches concentriques |
+| **Port** | Interface definissant un point d'interaction dans Hexagonal |
+| **Repository** | Pattern d'acces aux donnees abstrait |
+| **SRP** | Single Responsibility Principle, une seule raison de changer |
+| **Ubiquitous Language** | Langage commun entre developpeurs et experts metier |
+| **Value Object** | Objet sans identite, defini par ses attributs, immutable |
+| **Vertical Slice** | Organisation par fonctionnalite plutot que par couche technique |
+
+---
+
+## Clean Architecture en Detail
+
+### Diagramme des Couches
+
+```
++-------------------------------------------------------+
+|                    Frameworks & Drivers               |
+|  (Express, React, Prisma, APIs externes)              |
++-------------------------------------------------------+
+         |                                    ^
+         v                                    |
++-------------------------------------------------------+
+|                   Interface Adapters                  |
+|  (Controllers, Presenters, Gateways, ViewModels)      |
++-------------------------------------------------------+
+         |                                    ^
+         v                                    |
++-------------------------------------------------------+
+|                    Application Layer                  |
+|  (Use Cases, Application Services, DTOs)              |
++-------------------------------------------------------+
+         |                                    ^
+         v                                    |
++-------------------------------------------------------+
+|                    Domain Layer                       |
+|  (Entities, Value Objects, Domain Services)           |
++-------------------------------------------------------+
+```
+
+### Regles de Dependance
+
+| Couche | Peut Dependre De | Ne Peut Pas Dependre De |
+|--------|------------------|------------------------|
+| Domain | Rien (autonome) | Application, Adapters, Frameworks |
+| Application | Domain | Adapters, Frameworks |
+| Adapters | Application, Domain | Frameworks (idealement) |
+| Frameworks | Toutes les couches | - |
+
+### Structure de Repertoires Recommandee
+
+```
+src/
+├── domain/                 # Couche Domain
+│   ├── entities/           # Entites metier
+│   ├── value-objects/      # Objets valeur
+│   ├── services/           # Services domaine
+│   ├── events/             # Evenements domaine
+│   └── repositories/       # Interfaces repository (ports)
+│
+├── application/            # Couche Application
+│   ├── use-cases/          # Cas d'utilisation
+│   ├── services/           # Services applicatifs
+│   ├── dtos/               # Data Transfer Objects
+│   └── interfaces/         # Ports vers l'exterieur
+│
+├── infrastructure/         # Couche Infrastructure (Adapters)
+│   ├── persistence/        # Implementations repository
+│   ├── external/           # Services externes
+│   ├── messaging/          # Message queues
+│   └── config/             # Configuration
+│
+└── presentation/           # Couche Presentation (Adapters)
+    ├── api/                # Route handlers, controllers
+    ├── components/         # Composants UI
+    └── view-models/        # ViewModels, formatters
+```
+
+---
+
+## Hexagonal Architecture (Ports & Adapters)
+
+### Concepts Cles
+
+| Element | Description | Exemple |
+|---------|-------------|---------|
+| **Domain Core** | Logique metier pure, zero dependance | Calcul de prix, validation |
+| **Primary Port** | Interface exposee par le domain | `UserService` interface |
+| **Secondary Port** | Interface requise par le domain | `UserRepository` interface |
+| **Primary Adapter** | Connecte l'exterieur au domain | REST Controller, CLI |
+| **Secondary Adapter** | Implemente les ports secondaires | PrismaUserRepository |
+
+### Flux de Donnees
+
+```
+[Client] → [Primary Adapter] → [Primary Port] → [Domain] → [Secondary Port] → [Secondary Adapter] → [DB]
+   API        Controller         Use Case        Logic       Repository        Prisma Impl        PostgreSQL
+```
+
+### Avantages
+
+| Avantage | Description |
+|----------|-------------|
+| Testabilite | Domain testable sans infrastructure |
+| Flexibilite | Adapters interchangeables |
+| Isolation | Changements infra n'affectent pas le domain |
+| Clarte | Frontieres explicites |
+
+---
+
+## SOLID Applique a TypeScript/React
+
+### Single Responsibility Principle (SRP)
+
+**Mauvais** :
+```
+UserComponent gere :
+- Affichage du profil
+- Validation du formulaire
+- Appels API
+- Gestion du state local
+- Formatage des dates
+```
+
+**Bon** :
+```
+UserProfile         → Affichage uniquement
+useUserForm         → Logique formulaire
+userApi             → Appels API
+useUserState        → Gestion state
+formatDate          → Utilitaire pur
+```
+
+### Open/Closed Principle (OCP)
+
+**Principe** : Ouvert a l'extension, ferme a la modification.
+
+| Approche | Implementation |
+|----------|----------------|
+| Props extensibles | `interface ButtonProps extends BaseProps` |
+| Composition | `<Card><CustomContent /></Card>` |
+| Render props | `<List renderItem={(item) => ...} />` |
+| Slots | `<Layout header={<Header />} />` |
+
+### Liskov Substitution Principle (LSP)
+
+**Regle** : Les sous-types doivent etre substituables a leur type de base.
+
+| Bon | Mauvais |
+|-----|---------|
+| `PrimaryButton` respecte `ButtonProps` | `PrimaryButton` ignore certaines props |
+| Meme comportement onClick | onClick avec effets inattendus |
+| Props optionnelles restent optionnelles | Props requises ajoutees |
+
+### Interface Segregation Principle (ISP)
+
+**Mauvais** :
+```typescript
+interface UserComponentProps {
+  user: User;
+  onEdit: () => void;
+  onDelete: () => void;
+  onShare: () => void;
+  onExport: () => void;
+  isAdmin: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  showActions: boolean;
+  // ... 20 autres props
+}
+```
+
+**Bon** :
+```typescript
+interface UserDisplayProps {
+  user: User;
+}
+
+interface UserActionsProps {
+  onEdit?: () => void;
+  onDelete?: () => void;
+}
+
+interface UserPermissionsProps {
+  canEdit: boolean;
+  canDelete: boolean;
+}
+```
+
+### Dependency Inversion Principle (DIP)
+
+**Principe** : Dependre des abstractions, pas des implementations.
+
+| Pattern | Implementation React |
+|---------|---------------------|
+| Context | `const ApiContext = createContext<ApiInterface>()` |
+| Props | `<Component repository={userRepo} />` |
+| Hooks | `useRepository()` retourne interface |
+| Factory | `createUserService(deps)` |
+
+---
+
+## Domain-Driven Design (DDD)
+
+### Building Blocks
+
+| Block | Caracteristiques | Exemple |
+|-------|-----------------|---------|
+| **Entity** | Identite, mutable, cycle de vie | User, Order |
+| **Value Object** | Sans identite, immutable, egalite par valeur | Email, Money |
+| **Aggregate** | Cluster d'entites, racine unique | Order + OrderLines |
+| **Repository** | Acces aux agregats | UserRepository |
+| **Domain Service** | Logique inter-agregats | PaymentProcessor |
+| **Domain Event** | Notification de changement | OrderPlaced |
+| **Factory** | Creation d'agregats complexes | OrderFactory |
+
+### Bounded Context
+
+| Aspect | Description |
+|--------|-------------|
+| Definition | Frontiere semantique d'un modele |
+| Langage | Memes termes, memes definitions dans le contexte |
+| Integration | Communication explicite entre contextes |
+| Autonomie | Chaque contexte peut evoluer independamment |
+
+### Context Mapping Patterns
+
+| Pattern | Usage |
+|---------|-------|
+| Shared Kernel | Code partage entre contextes (a minimiser) |
+| Customer/Supplier | Un contexte fournit, l'autre consomme |
+| Conformist | Adoption du modele du fournisseur |
+| Anti-Corruption Layer | Traduction entre modeles |
+| Open Host Service | API ouverte avec protocole publie |
+| Published Language | Format d'echange standardise |
+
+---
+
+## Patterns Architecturaux Avances
+
+### CQRS (Command Query Responsibility Segregation)
+
+| Aspect | Command | Query |
+|--------|---------|-------|
+| Intention | Modifier l'etat | Lire l'etat |
+| Retour | Succes/echec | Donnees |
+| Modele | Write model optimise ecriture | Read model optimise lecture |
+| Validation | Complete, regles metier | Minimale |
+| Cache | Non | Oui |
+
+### Event Sourcing
+
+| Concept | Description |
+|---------|-------------|
+| Event Store | Stocke tous les evenements, jamais de suppression |
+| Projection | Vue materialisee depuis les evenements |
+| Replay | Reconstruction de l'etat depuis les evenements |
+| Temporal Query | Etat a n'importe quel moment passe |
+
+### Vertical Slice Architecture
+
+**Organisation traditionnelle (par couche)** :
+```
+Controllers/
+Models/
+Services/
+Repositories/
+```
+
+**Vertical Slice (par fonctionnalite)** :
+```
+Features/
+├── CreateUser/
+│   ├── CreateUserCommand.ts
+│   ├── CreateUserHandler.ts
+│   └── CreateUserEndpoint.ts
+├── GetUser/
+│   ├── GetUserQuery.ts
+│   ├── GetUserHandler.ts
+│   └── GetUserEndpoint.ts
+```
+
+---
+
+## Metriques de Qualite
+
+### Metriques de Code
+
+| Metrique | Description | Seuil Bon | Seuil Alarme |
+|----------|-------------|-----------|--------------|
+| **Complexite Cyclomatique** | Nombre de chemins independants | `<= 10` | > 20 |
+| **Couplage Afferent (Ca)** | Nombre de classes qui dependent de ce module | Contextuel | Tres eleve |
+| **Couplage Efferent (Ce)** | Nombre de classes dont ce module depend | `<= 7` | > 12 |
+| **Instabilite (I)** | Ce / (Ca + Ce), 0=stable, 1=instable | Depends | - |
+| **Abstractness (A)** | Ratio d'abstractions | Balance | - |
+| **Distance (D)** | |A + I - 1|, distance de la ligne principale | ~0 | > 0.3 |
+
+### Indicateurs Qualitatifs
+
+| Signal | Bon | Mauvais |
+|--------|-----|---------|
+| Facilite de test | Tests unitaires simples | Mocks complexes partout |
+| Temps de comprehension | `< 30min` pour nouveau dev | Heures pour comprendre |
+| Impact changement | Localise | Cascade de modifications |
+| Duplication | DRY respecte | Copy-paste frequent |
+| Nommage | Explicite, coherent | Vague, inconsistant |
+
+---
+
+## Anti-patterns Detailles
+
+### God Object / God Class
+
+**Symptomes** :
+- Fichier > 500 lignes
+- Responsabilites multiples non liees
+- Importe de nombreux modules
+- Difficile a nommer precisement
+
+**Detection** :
+```bash
+# Fichiers les plus longs
+wc -l src/**/*.ts | sort -rn | head -20
+
+# Fichiers avec beaucoup d'imports
+grep -c "^import" src/**/*.ts | sort -t: -k2 -rn | head -20
+```
+
+**Remediation** :
+1. Identifier les responsabilites distinctes
+2. Extraire en modules/classes separees
+3. Definir des interfaces claires entre eux
+
+### Anemic Domain Model
+
+**Symptomes** :
+- Entites avec uniquement getters/setters
+- Logique metier dans les services
+- Entites = structures de donnees passives
+
+**Detection** :
+- Entites sans methodes metier
+- Services avec noms en "-Manager", "-Handler", "-Processor"
+
+**Remediation** :
+- Deplacer la logique dans les entites
+- Encapsuler les invariants dans le domain
+
+### Leaky Abstraction
+
+**Symptomes** :
+- Details d'implementation qui remontent
+- Exceptions specifiques a l'infra propagees
+- Dependances transitives exposees
+
+**Detection** :
+- Types Prisma dans les interfaces publiques
+- Erreurs HTTP dans le domain
+- ORM visible hors de la couche persistence
+
+**Remediation** :
+- Mapper vers types du domain
+- Wrapper les erreurs en exceptions domain
+- Interfaces explicites a chaque frontiere
+
+### Feature Envy
+
+**Symptomes** :
+- Methode utilise principalement une autre classe
+- Nombreux appels sur un meme objet externe
+- Logique qui "devrait etre ailleurs"
+
+**Detection** :
+```typescript
+// Cette methode envie la classe Order
+function calculateDiscount(order: Order) {
+  const total = order.getTotal();
+  const items = order.getItems();
+  const customer = order.getCustomer();
+  // ... calcul utilisant uniquement Order
+}
+```
+
+**Remediation** :
+- Deplacer la methode dans la classe enviee
+- Ou extraire les donnees necessaires en parametres
+
+---
+
+## Patterns de Refactoring
+
+### Extract Method
+
+| Avant | Apres |
+|-------|-------|
+| Bloc de code avec commentaire | Methode nommee explicitement |
+| Code duplique | Methode partagee |
+| Fonction longue | Fonctions courtes composees |
+
+### Extract Class
+
+| Signal | Action |
+|--------|--------|
+| Classe avec prefixes communs dans les methodes | Nouvelle classe avec ce prefixe |
+| Groupe de champs toujours utilises ensemble | Value Object |
+| Responsabilite clairement distincte | Classe separee |
+
+### Replace Conditional with Polymorphism
+
+| Avant | Apres |
+|-------|-------|
+| `if (type === 'A') ... else if (type === 'B')` | Interface + implementations |
+| Switch sur type | Strategy pattern |
+| Conditions repetees partout | Polymorphisme |
+
+### Introduce Parameter Object
+
+| Avant | Apres |
+|-------|-------|
+| `function(a, b, c, d, e, f)` | `function(options: Options)` |
+| Parametres souvent passes ensemble | Objet groupant les parametres |
+| Changement = modifier N signatures | Changement = modifier l'objet |
+
+---
+
+## Integration Next.js / React
+
+### Structure Recommandee pour Next.js
+
+```
+src/
+├── app/                    # Routes Next.js (Presentation)
+│   ├── api/                # Route Handlers
+│   └── [routes]/           # Pages
+│
+├── components/             # Composants UI (Presentation)
+│   ├── ui/                 # Primitives (Button, Input)
+│   └── features/           # Composants metier
+│
+├── domain/                 # Logique metier pure
+│   ├── entities/
+│   ├── services/
+│   └── repositories/       # Interfaces
+│
+├── application/            # Use Cases
+│   ├── use-cases/
+│   └── dtos/
+│
+├── infrastructure/         # Implementations
+│   ├── persistence/        # Prisma, APIs
+│   └── services/           # Implementations services
+│
+├── hooks/                  # Hooks React (Adapters)
+│   ├── queries/            # React Query hooks
+│   └── mutations/          # Mutation hooks
+│
+└── lib/                    # Utilitaires
+```
+
+### Server Components et Architecture
+
+| Type | Role Architectural |
+|------|-------------------|
+| Server Component | Peut acceder directement a l'infrastructure |
+| Client Component | Presentation pure, pas d'acces DB |
+| Server Action | Use Case expose, point d'entree mutation |
+| Route Handler | API adapter, pour clients externes |
+
+### Separation des Concerns
+
+| Concern | Localisation |
+|---------|--------------|
+| Routing | `app/` structure |
+| Data fetching | Server Components, hooks |
+| Business logic | `domain/`, `application/` |
+| State management | Client Components, Context |
+| Styling | Components, `styles/` |
+| Validation | `lib/schemas.ts`, domain |
+
+---
+
+## Outils d'Analyse
+
+### TypeScript Strict Mode
+
+Options recommandees dans `tsconfig.json` :
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true
+  }
+}
+```
+
+### Dependency Cruiser
+
+Configuration pour detecter les violations :
+- Dependances circulaires
+- Imports interdits (domain → infrastructure)
+- Orphelins (fichiers non importes)
+
+### Analyse Manuelle avec Grep
+
+| Recherche | Commande |
+|-----------|----------|
+| any TypeScript | `grep -rn ": any" --include="*.ts"` |
+| TODO/FIXME | `grep -rn "TODO\|FIXME\|HACK" --include="*.ts"` |
+| console.log | `grep -rn "console\." --include="*.ts"` |
+| eslint-disable | `grep -rn "eslint-disable" --include="*.ts"` |
+| Magic numbers | `grep -rn "[^a-zA-Z][0-9]{2,}[^0-9]" --include="*.ts"` |
+
+---
+
+## References Externes
+
+### Livres Fondamentaux
+
+| Titre | Auteur | Theme |
+|-------|--------|-------|
+| Clean Architecture | Robert C. Martin | Architecture en couches |
+| Domain-Driven Design | Eric Evans | DDD tactique et strategique |
+| Implementing DDD | Vaughn Vernon | DDD pratique |
+| Patterns of Enterprise Application Architecture | Martin Fowler | Patterns classiques |
+| Refactoring | Martin Fowler | Techniques de refactoring |
+
+### Ressources en Ligne
+
+| Ressource | URL | Contenu |
+|-----------|-----|---------|
+| Refactoring Guru | refactoring.guru | Patterns et refactoring |
+| Martin Fowler Blog | martinfowler.com | Architecture, DDD |
+| Clean Coder Blog | blog.cleancoder.com | SOLID, Clean Code |
+
+### Documentation Frameworks
+
+| Framework | Documentation Architecture |
+|-----------|---------------------------|
+| Next.js | nextjs.org/docs/app/building-your-application |
+| React | react.dev/learn/thinking-in-react |
+| TypeScript | typescriptlang.org/docs/handbook |

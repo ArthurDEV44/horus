@@ -1,0 +1,712 @@
+---
+title: Workflows
+description: Processus Clerk - Setup Initial, Protection Routes, DAL, Organizations, Webhooks, Theming, Migration, Testing
+---
+
+# Clerk Expert - Workflows
+
+## Workflow 1 : Setup Initial Clerk Next.js
+
+### Objectif
+Integrer Clerk dans une application Next.js App Router depuis zero.
+
+### Etapes
+
+#### 1.1 Prerequis et Installation
+
+<Actions>
+- Verifier la version Next.js (16+ recommande)
+- Installer le package Clerk
+- Creer un compte Clerk et une application
+- Recuperer les cles API depuis le Dashboard
+</Actions>
+
+<Output>
+Package @clerk/nextjs installe, cles API disponibles.
+</Output>
+
+#### 1.2 Configuration Environnement
+
+<Actions>
+- Creer/editer .env.local
+- Ajouter NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+- Ajouter CLERK_SECRET_KEY
+- Configurer les URLs de sign-in/sign-up si custom
+</Actions>
+
+<Variables>
+| Variable | Description |
+|----------|-------------|
+| NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY | Cle publique (pk_...) |
+| CLERK_SECRET_KEY | Cle secrete (sk_...) |
+| NEXT_PUBLIC_CLERK_SIGN_IN_URL | /sign-in (optionnel) |
+| NEXT_PUBLIC_CLERK_SIGN_UP_URL | /sign-up (optionnel) |
+</Variables>
+
+#### 1.3 ClerkProvider Setup
+
+Editer `src/app/layout.tsx` (layout racine)
+
+<Pattern>
+1. Importer ClerkProvider depuis @clerk/nextjs
+2. Wrapper children avec ClerkProvider
+3. Optionnel : configurer appearance pour theming
+4. Optionnel : ajouter localization
+</Pattern>
+
+#### 1.4 Middleware Configuration
+
+Creer `middleware.ts` (ou `proxy.ts` pour Next.js 16) a la racine ou src/
+
+<Pattern>
+1. Importer clerkMiddleware depuis @clerk/nextjs/server
+2. Exporter default clerkMiddleware()
+3. Configurer le matcher pour les routes
+4. Optionnel : ajouter createRouteMatcher pour protection
+</Pattern>
+
+#### 1.5 Pages d'Authentification
+
+**Option A - Composants Hosted (simple)** :
+- Utiliser les URLs Clerk hosted (/sign-in, /sign-up par defaut)
+- Pas de configuration supplementaire
+
+**Option B - Composants Embedded (recommande)** :
+- Creer src/app/sign-in/[[...sign-in]]/page.tsx
+- Creer src/app/sign-up/[[...sign-up]]/page.tsx
+- Utiliser les composants SignIn et SignUp
+
+#### 1.6 Validation
+
+<Validation>
+- [ ] Application demarre sans erreur
+- [ ] Page sign-in accessible
+- [ ] Inscription fonctionne
+- [ ] Connexion fonctionne
+- [ ] Session persistante apres refresh
+- [ ] Deconnexion fonctionne
+</Validation>
+
+---
+
+## Workflow 2 : Protection de Routes avec Middleware
+
+### Objectif
+Configurer la protection de routes avec clerkMiddleware et createRouteMatcher.
+
+### Etapes
+
+#### 2.1 Analyse des Routes
+
+<ContextQuestions>
+- Quelles routes sont publiques ?
+- Quelles routes necessitent authentification ?
+- Y a-t-il des routes avec permissions specifiques ?
+- Y a-t-il des routes API a proteger ?
+</ContextQuestions>
+
+#### 2.2 Definition des Matchers
+
+Routes publiques courantes :
+- '/' (homepage)
+- '/sign-in(.*)'
+- '/sign-up(.*)'
+- '/api/webhooks(.*)'
+- '/pricing'
+- '/about'
+
+Routes protegees courantes :
+- '/dashboard(.*)'
+- '/settings(.*)'
+- '/api/protected(.*)'
+- '/admin(.*)'
+
+#### 2.3 Configuration Middleware
+
+**Strategie public-first** : Definir les routes publiques, proteger le reste.
+1. createRouteMatcher pour routes publiques
+2. Dans clerkMiddleware, si pas public → auth.protect()
+
+**Strategie protected-first** : Definir les routes protegees explicitement.
+1. createRouteMatcher pour routes protegees
+2. Dans clerkMiddleware, si protected → auth.protect()
+
+#### 2.4 Protection Granulaire
+
+| Niveau | Methode |
+|--------|---------|
+| Auth simple | `auth.protect()` |
+| Role specifique | `auth.protect({ role: 'org:admin' })` |
+| Permission | `auth.protect({ permission: 'org:x:y' })` |
+| Callback custom | `auth.protect((has) => has({ ... }))` |
+
+#### 2.5 Validation
+
+<Validation>
+- [ ] Routes publiques accessibles sans auth
+- [ ] Routes protegees redirigent vers sign-in
+- [ ] Apres connexion, redirect vers page demandee
+- [ ] Routes avec permissions refusent si non-autorise
+- [ ] API routes retournent 401 si non-auth
+</Validation>
+
+---
+
+## Workflow 3 : Implementation Data Access Layer (DAL)
+
+### Objectif
+Centraliser la verification d'authentification pour se proteger contre les bypass middleware.
+
+### Etapes
+
+#### 3.1 Contexte Securite
+
+CVE-2025-29927 a demontre que le middleware peut etre bypass.
+Defense in depth : verifier l'auth a chaque point d'acces aux donnees.
+
+#### 3.2 Creation du DAL
+
+Creer `src/lib/dal.ts` (ou `src/lib/auth/dal.ts`)
+
+<Pattern>
+1. Import 'server-only' pour bloquer client
+2. Import auth depuis @clerk/nextjs/server
+3. Import cache depuis react
+4. Fonction verifySession() cachee avec cache()
+5. Fonction getUser() pour donnees utilisateur
+</Pattern>
+
+#### 3.3 Integration dans les Server Components
+
+Pour chaque Server Component acces donnees sensibles :
+1. Importer verifySession ou getUser depuis DAL
+2. Appeler en debut de composant
+3. Gerer le cas non-authentifie (redirect ou null)
+
+#### 3.4 Integration dans les Server Actions
+
+Pour chaque Server Action :
+1. Importer verifySession depuis DAL
+2. Appeler au debut de la fonction
+3. Retourner erreur si non-auth
+4. Continuer avec la logique metier
+
+#### 3.5 Integration dans les Route Handlers
+
+Pour chaque Route Handler :
+1. Importer auth depuis @clerk/nextjs/server
+2. Appeler auth() et verifier userId
+3. Retourner 401 si non-authentifie
+4. Continuer avec la logique
+
+#### 3.6 Validation
+
+<Validation>
+- [ ] Acces direct aux donnees impossible sans auth
+- [ ] Server Components verifient l'auth
+- [ ] Server Actions verifient l'auth
+- [ ] Route Handlers verifient l'auth
+- [ ] Pas de bypass possible via requete directe
+</Validation>
+
+---
+
+## Workflow 4 : Configuration Organizations et RBAC
+
+### Objectif
+Implementer un systeme multi-tenant B2B avec roles et permissions.
+
+### Etapes
+
+#### 4.1 Activation Organizations
+
+Dans Dashboard Clerk → Organizations :
+1. Activer "Organizations"
+2. Configurer les settings (creation, invitations)
+
+#### 4.2 Definition des Roles Custom
+
+Dans Dashboard → Organizations → Roles :
+1. Creer les roles necessaires (ex: owner, editor, viewer)
+2. Definir les permissions pour chaque role
+3. Format: org:\<feature\>:\<action\>
+
+| Role | Permissions |
+|------|-------------|
+| owner | org:*, org:settings:manage |
+| editor | org:projects:read, org:projects:write |
+| viewer | org:projects:read |
+
+#### 4.3 TypeScript Typesafe
+
+Creer types pour les roles et permissions :
+1. Definir ClerkAuthorization interface
+2. Declarer OrganizationCustomRoleKey
+3. Declarer OrganizationCustomPermissionKey
+
+#### 4.4 UI Organization Selector
+
+Composants disponibles :
+- OrganizationSwitcher : Changement d'organisation active
+- OrganizationProfile : Gestion de l'organisation
+- OrganizationList : Liste des organisations
+- CreateOrganization : Creation nouvelle org
+
+#### 4.5 Verification Permissions
+
+**Server-side** :
+- `auth().has({ permission: 'org:projects:read' })`
+- `auth().has({ role: 'org:editor' })`
+
+**Client-side** :
+- `useAuth().has({ permission: '...' })`
+- `<Protect permission="...">...</Protect>`
+
+#### 4.6 Validation
+
+<Validation>
+- [ ] Creation organisation fonctionne
+- [ ] Invitation membres fonctionne
+- [ ] Changement de role fonctionne
+- [ ] Permissions appliquees correctement
+- [ ] Switch entre organisations fonctionne
+- [ ] UI s'adapte aux permissions
+</Validation>
+
+---
+
+## Workflow 5 : Implementation Webhooks Clerk
+
+### Objectif
+Synchroniser les donnees utilisateur Clerk avec une base de donnees locale.
+
+### Etapes
+
+#### 5.1 Configuration Dashboard
+
+1. Dashboard Clerk → Webhooks
+2. Creer nouveau endpoint
+3. URL : https://votre-app.com/api/webhooks/clerk
+4. Selectionner les events (user.created, user.updated, user.deleted)
+5. Copier le Signing Secret
+
+#### 5.2 Configuration Environnement
+
+Ajouter dans .env.local :
+```
+CLERK_WEBHOOK_SECRET=whsec_...
+```
+
+#### 5.3 Installation Svix
+
+Installer le package de verification : `svix`
+
+#### 5.4 Creation Route Handler
+
+Creer `src/app/api/webhooks/clerk/route.ts`
+
+<Pattern>
+1. Import Webhook depuis svix
+2. Import headers depuis next/headers
+3. Fonction POST async
+4. Recuperer le body raw (pas JSON parse)
+5. Extraire headers svix-id, svix-timestamp, svix-signature
+6. Verifier signature avec Webhook.verify()
+7. Parser le payload et router selon event type
+</Pattern>
+
+#### 5.5 Gestion des Events
+
+Pour chaque event :
+
+**user.created** :
+1. Extraire donnees utilisateur (id, email, name, etc.)
+2. Creer l'utilisateur dans votre database
+3. Retourner 200
+
+**user.updated** :
+1. Extraire donnees mises a jour
+2. Update dans votre database
+3. Retourner 200
+
+**user.deleted** :
+1. Extraire userId
+2. Delete ou soft-delete dans votre database
+3. Retourner 200
+
+#### 5.6 Securite et Middleware
+
+**Important** : Le webhook doit etre accessible sans auth !
+Ajouter '/api/webhooks(.*)' aux routes publiques du middleware.
+
+#### 5.7 Validation
+
+<Validation>
+- [ ] Endpoint accessible publiquement
+- [ ] Signature invalide rejetee (401)
+- [ ] user.created cree dans DB
+- [ ] user.updated met a jour DB
+- [ ] user.deleted supprime de DB
+- [ ] Logs adequats pour debug
+- [ ] Retry Clerk fonctionne si erreur
+</Validation>
+
+---
+
+## Workflow 6 : Customization Theme et Composants
+
+### Objectif
+Personnaliser l'apparence des composants Clerk pour matcher le design de l'application.
+
+### Etapes
+
+#### 6.1 Choix de la Strategie
+
+| Besoin | Strategie |
+|--------|-----------|
+| Match shadcn/ui | Theme shadcn built-in |
+| Changements legers | Variables CSS |
+| Customisation moyenne | Appearance prop |
+| Customisation complete | Clerk Elements |
+
+#### 6.2 Theme shadcn/ui
+
+1. Importer `{ shadcn }` depuis `@clerk/themes`
+2. Passer `baseTheme: shadcn` dans ClerkProvider
+3. Les composants matchent automatiquement le theme shadcn
+
+#### 6.3 Variables CSS
+
+1. Definir les variables dans votre CSS global
+2. Variables commencent par --cl-
+3. Clerk les detecte automatiquement
+
+| Variable | Usage |
+|----------|-------|
+| --cl-color-primary | Couleur principale |
+| --cl-color-primary-foreground | Texte sur primary |
+| --cl-color-danger | Couleur erreur |
+| --cl-radius | Border radius |
+| --cl-font-family | Police |
+
+#### 6.4 Appearance Prop
+
+```tsx
+appearance={{
+  baseTheme: undefined | dark | shadcn,
+  variables: {
+    colorPrimary: '#...',
+    colorBackground: '#...',
+  },
+  elements: {
+    formButtonPrimary: 'bg-primary hover:bg-primary/90',
+    card: 'shadow-lg',
+  }
+}}
+```
+
+#### 6.5 Clerk Elements (Advanced)
+
+Utiliser Clerk Elements si :
+- Besoin de layout completement custom
+- Integration avec design system existant
+- Animations personnalisees
+- Flows d'auth custom
+
+#### 6.6 Validation
+
+<Validation>
+- [ ] Theme coherent avec le reste de l'app
+- [ ] Mode dark fonctionne
+- [ ] Accessibilite preservee
+- [ ] Responsive sur mobile
+- [ ] Pas de flash de style au chargement
+</Validation>
+
+---
+
+## Workflow 7 : Migration authMiddleware vers clerkMiddleware
+
+### Objectif
+Migrer une application utilisant l'ancien authMiddleware vers le nouveau clerkMiddleware.
+
+### Etapes
+
+#### 7.1 Audit de l'Existant
+
+<Actions>
+- Lire middleware.ts actuel
+- Identifier les options utilisees :
+  - publicRoutes
+  - ignoredRoutes
+  - afterAuth callback
+  - beforeAuth callback
+- Documenter la logique de protection
+</Actions>
+
+#### 7.2 Mapping des Options
+
+| authMiddleware | clerkMiddleware |
+|----------------|-----------------|
+| `publicRoutes` | `createRouteMatcher` + logique inverse |
+| `ignoredRoutes` | matcher config |
+| `afterAuth` | callback dans clerkMiddleware |
+| `beforeAuth` | callback avant `auth.protect()` |
+| `debug` | `{ debug: true }` |
+
+#### 7.3 Conversion des Routes Publiques
+
+**Avant** :
+```typescript
+authMiddleware({
+  publicRoutes: ['/', '/sign-in', '/sign-up']
+})
+```
+
+**Apres** :
+```typescript
+const isPublicRoute = createRouteMatcher(['/', '/sign-in(.*)', '/sign-up(.*)'])
+
+clerkMiddleware((auth, req) => {
+  if (!isPublicRoute(req)) auth.protect()
+})
+```
+
+#### 7.4 Conversion de la Logique Custom
+
+La logique afterAuth devient le callback de clerkMiddleware.
+
+#### 7.5 Validation
+
+<Validation>
+- [ ] Memes routes publiques accessibles
+- [ ] Memes routes protegees redirigent
+- [ ] Logique custom preservee
+- [ ] Pas de regression fonctionnelle
+- [ ] Performance similaire
+</Validation>
+
+---
+
+## Workflow 8 : Implementation Testing Auth
+
+### Objectif
+Configurer les tests unitaires et d'integration avec authentification Clerk mockee.
+
+### Etapes
+
+#### 8.1 Setup Vitest
+
+1. Creer fichier setup tests (vitest.setup.ts)
+2. Configurer mocks globaux pour Clerk
+3. Creer helpers pour simuler auth/non-auth
+
+#### 8.2 Mock Modules Clerk
+
+Modules a mocker :
+- @clerk/nextjs (composants et hooks client)
+- @clerk/nextjs/server (helpers server)
+
+#### 8.3 Helpers de Test
+
+Creer des helpers reutilisables :
+
+**`mockSignedIn({ userId, orgId, permissions })`** :
+- Configure useAuth/auth pour retourner user connecte
+- Configure has() pour permissions
+
+**`mockSignedOut()`** :
+- Configure useAuth/auth pour retourner non-auth
+- Configure protect() pour throw/redirect
+
+#### 8.4 Tests Unitaires Composants
+
+Pour chaque composant client utilisant Clerk :
+1. Importer helpers mock
+2. Configurer etat auth desire
+3. Render composant
+4. Assert comportement
+
+#### 8.5 Tests Integration Server
+
+Pour Server Components et Actions :
+1. Mocker auth() et currentUser()
+2. Tester avec user connecte
+3. Tester avec user non-connecte
+4. Tester avec permissions differentes
+
+#### 8.6 Tests E2E avec Testing Tokens
+
+1. Generer Testing Token via Backend API
+2. Passer token dans query param __clerk_testing_token
+3. Bot detection bypass
+4. Attention : token expire en 60s
+
+#### 8.7 Validation
+
+<Validation>
+- [ ] Tests passent avec mock auth
+- [ ] Tests passent avec mock non-auth
+- [ ] Tests permissions fonctionnent
+- [ ] E2E avec Testing Tokens fonctionne
+- [ ] Coverage adequate
+</Validation>
+
+---
+
+## Arbres de Decision
+
+### Choix de la Strategie de Protection
+
+```
+Toutes les routes sont-elles protegees sauf quelques-unes ?
+├── Oui → Strategie "public-first"
+│   └── createRouteMatcher pour routes publiques
+│       └── if (!isPublicRoute(req)) auth.protect()
+└── Non → Quelques routes specifiques sont protegees ?
+    ├── Oui → Strategie "protected-first"
+    │   └── createRouteMatcher pour routes protegees
+    │       └── if (isProtectedRoute(req)) auth.protect()
+    └── Non → Pas de protection middleware
+        └── Verifier dans chaque composant/action
+```
+
+### Choix entre auth() et currentUser()
+
+```
+De quelles donnees avez-vous besoin ?
+├── Juste verifier si connecte → auth().isAuthenticated
+├── userId et orgId → auth()
+├── Email, nom, metadata → currentUser()
+└── Verifier permissions → auth().has()
+```
+
+### Choix du Theming
+
+```
+Utilisez-vous shadcn/ui ?
+├── Oui → Theme shadcn built-in
+└── Non → Quelle customisation ?
+    ├── Legere (couleurs) → Variables CSS
+    ├── Moyenne (styles) → Appearance prop
+    └── Complete (layout) → Clerk Elements
+```
+
+---
+
+## Checklist Pre-Production
+
+### Configuration
+
+- [ ] Variables d'environnement production configurees
+- [ ] Domain configure dans Dashboard Clerk
+- [ ] URLs de redirect configurees
+- [ ] Webhooks configures (si utilises)
+
+### Securite
+
+- [ ] Secret key non exposee cote client
+- [ ] Middleware protege les routes sensibles
+- [ ] DAL implemente pour defense in depth
+- [ ] Webhooks verifient la signature
+- [ ] authorizedParties configure si multi-domaine
+
+### Fonctionnalites
+
+- [ ] SignIn/SignUp fonctionnent
+- [ ] Social logins configures et testes
+- [ ] MFA configure (si requis)
+- [ ] Organizations configurees (si B2B)
+- [ ] Roles et permissions definis
+
+### Testing
+
+- [ ] Tests unitaires passent
+- [ ] Tests integration passent
+- [ ] Tests E2E passent
+- [ ] Edge cases couverts
+
+---
+
+## Scenarios de Depannage
+
+### "CLERK_SECRET_KEY is missing"
+
+<Diagnostic>
+Variable d'environnement non trouvee.
+</Diagnostic>
+
+<Causes>
+- .env.local non cree
+- Mauvais nom de variable
+- Serveur non redemarre apres ajout
+</Causes>
+
+<Resolution>
+1. Verifier le fichier .env.local existe
+2. Verifier le nom exact : CLERK_SECRET_KEY
+3. Redemarrer le serveur dev
+4. Verifier que le fichier est bien lu
+</Resolution>
+
+### Middleware ne protege pas les routes
+
+<Diagnostic>
+Routes accessibles sans authentification.
+</Diagnostic>
+
+<Causes>
+- Matcher ne couvre pas les routes
+- auth.protect() non appele
+- Fichier middleware mal place
+- Export default manquant
+</Causes>
+
+<Resolution>
+1. Verifier le matcher inclut les routes
+2. Verifier auth.protect() appele conditionnellement
+3. Fichier doit etre a la racine ou src/
+4. Export default clerkMiddleware(...)
+5. Activer debug: true pour logs
+</Resolution>
+
+### Token JWT expire constamment
+
+<Diagnostic>
+Erreurs d'auth frequentes, deconnexions inattendues.
+</Diagnostic>
+
+<Causes>
+- Probleme reseau (refresh echoue)
+- Clock skew serveur
+- SDK pas a jour
+</Causes>
+
+<Resolution>
+1. Verifier la connectivite reseau
+2. Augmenter clockSkewInMs si necessaire
+3. Mettre a jour @clerk/nextjs
+4. Verifier les logs Clerk Dashboard
+</Resolution>
+
+### Webhook ne recoit pas les events
+
+<Diagnostic>
+Database non synchronisee, events manquants.
+</Diagnostic>
+
+<Causes>
+- URL incorrecte dans Dashboard
+- Route non accessible publiquement
+- Signature verification echoue
+- Erreur dans le handler
+</Causes>
+
+<Resolution>
+1. Verifier l'URL dans Dashboard Clerk
+2. Verifier que la route est publique dans middleware
+3. Verifier le CLERK_WEBHOOK_SECRET
+4. Ajouter logs pour debug
+5. Tester avec "Send test event" dans Dashboard
+6. Verifier les logs de retry Clerk
+</Resolution>

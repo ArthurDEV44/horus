@@ -1,0 +1,553 @@
+---
+title: Reference
+description: Documentation technique TailwindCSS - Glossaire, Architecture CSS-First, @theme, Classes v4, Couleurs OKLCH, Dark Mode, Animations
+---
+
+# TailwindCSS Expert - Documentation Technique
+
+## Glossaire
+
+| Terme | Definition |
+|-------|------------|
+| **@theme** | Directive v4 pour definir les design tokens dans CSS, remplace tailwind.config.js |
+| **@theme inline** | Variante de @theme permettant les references de variables CSS runtime |
+| **@utility** | Directive pour creer des utilities custom avec support complet des variants |
+| **@custom-variant** | Directive pour definir des variants personnalises (ex: dark mode) |
+| **@layer** | Directive CSS pour organiser les styles (base, components, utilities) |
+| **CVA** | Class Variance Authority, librairie pour gerer les variants de composants |
+| **cn()** | Fonction utilitaire combinant clsx et tailwind-merge |
+| **Container Query** | Responsive design base sur la taille du container parent, pas du viewport |
+| **CSS Custom Property** | Variable CSS native (--nom-variable) |
+| **Design Token** | Valeur de design atomique (couleur, spacing, font) |
+| **Lightning CSS** | Moteur CSS ultra-rapide utilise par Tailwind v4 |
+| **OKLCH** | Espace colorimetrique moderne avec perception uniforme |
+| **P3 Color Gamut** | Gamme de couleurs etendue pour ecrans modernes |
+| **Purge/Tree-shaking** | Elimination du CSS inutilise en production |
+| **tailwind-merge** | Librairie pour fusionner intelligemment les classes Tailwind |
+
+---
+
+## Architecture CSS-First v4
+
+### Structure de Fichiers Recommandee
+
+| Fichier | Role |
+|---------|------|
+| `app/globals.css` | Point d'entree, @import "tailwindcss" |
+| `app/styles/theme.css` | Design tokens via @theme |
+| `app/styles/base.css` | Styles de base (typography, reset) |
+| `app/styles/animations.css` | @keyframes et @theme --animate-* |
+| `lib/utils.ts` | Fonction cn() pour fusion de classes |
+
+### Import Principal
+
+En v4, un seul import remplace les 3 directives v3 :
+
+```css
+/* v4 - Une seule ligne */
+@import "tailwindcss";
+
+/* v3 - Ancien (deprecie) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### Ordre des Layers CSS
+
+| Layer | Specificite | Usage |
+|-------|-------------|-------|
+| `base` | La plus basse | Styles HTML elements (h1, p, a) |
+| `components` | Moyenne | Classes composants (.card, .btn) |
+| `utilities` | La plus haute | Utilities Tailwind, overrides tout |
+
+---
+
+## @theme Directive
+
+### Syntaxe de Base
+
+Definir des design tokens avec @theme :
+
+| Type | Pattern Variable | Exemple |
+|------|-----------------|---------|
+| Couleur | `--color-{nom}` | `--color-primary: #3B82F6` |
+| Spacing | `--spacing-{nom}` | `--spacing-18: 4.5rem` |
+| Font Family | `--font-{nom}` | `--font-display: "Satoshi"` |
+| Font Size | `--text-{nom}` | `--text-huge: 5rem` |
+| Breakpoint | `--breakpoint-{nom}` | `--breakpoint-xs: 26.25rem` |
+| Radius | `--radius-{nom}` | `--radius-2xl: 1.5rem` |
+| Animation | `--animate-{nom}` | `--animate-spin: spin 1s linear infinite` |
+
+### @theme vs @theme inline
+
+| Directive | Comportement | Use Case |
+|-----------|--------------|----------|
+| `@theme` | Valeurs statiques, evaluees au build | Design tokens fixes |
+| `@theme inline` | Permet var(), evaluees au runtime | Multi-themes, dynamic |
+
+Pour les systemes multi-themes avec CSS variables dynamiques, utiliser :
+
+```css
+@theme inline {
+  --color-primary: var(--primary);
+}
+
+:root { --primary: blue; }
+.theme-red { --primary: red; }
+```
+
+---
+
+## Classes v4 - Changements
+
+### Classes Renommees (Echelle Decalee)
+
+| v3 | v4 | Notes |
+|----|----|-------|
+| `shadow-sm` | `shadow-xs` | Plus petit |
+| `shadow` | `shadow-sm` | |
+| `shadow-md` | `shadow` | Standard |
+| `shadow-lg` | `shadow-md` | |
+| `rounded-sm` | `rounded-xs` | Plus petit |
+| `rounded` | `rounded-sm` | |
+| `rounded-md` | `rounded` | Standard |
+| `blur-sm` | `blur-xs` | Plus petit |
+| `ring` | `ring` | Maintenant 1px (etait 3px) |
+| - | `ring-3` | Pour retrouver 3px |
+
+### Important Modifier
+
+| v3 | v4 |
+|----|----|
+| `!flex` | `flex!` |
+| `!hidden` | `hidden!` |
+| `!bg-red-500` | `bg-red-500!` |
+
+### Arbitrary Values avec CSS Variables
+
+| v3 | v4 |
+|----|----|
+| `bg-[--brand-color]` | `bg-(--brand-color)` |
+| `text-[--heading-color]` | `text-(--heading-color)` |
+| `w-[--sidebar-width]` | `w-(--sidebar-width)` |
+
+---
+
+## Systeme de Couleurs
+
+### OKLCH vs Hex/RGB
+
+| Aspect | Hex/RGB | OKLCH |
+|--------|---------|-------|
+| Gamut | sRGB (limite) | P3 (etendu) |
+| Perception | Non-uniforme | Uniforme |
+| Interpolation | Couleurs ternes | Couleurs vives |
+| Support | Universel | Navigateurs modernes |
+
+### Syntaxe OKLCH
+
+```
+oklch(L C H)
+     |  |  └── Hue (teinte) : 0-360
+     |  └───── Chroma (saturation) : 0-0.37
+     └──────── Lightness (luminosite) : 0-1
+```
+
+| Couleur | OKLCH |
+|---------|-------|
+| Rouge vif | `oklch(0.63 0.26 29)` |
+| Bleu primaire | `oklch(0.55 0.22 250)` |
+| Vert success | `oklch(0.75 0.18 142)` |
+| Gris neutre | `oklch(0.50 0 0)` |
+
+### Gradients avec Interpolation
+
+| Classe | Effet |
+|--------|-------|
+| `bg-linear-to-r` | Gradient standard sRGB |
+| `bg-linear-to-r/oklch` | Interpolation OKLCH (plus vif) |
+| `bg-linear-to-r/hsl` | Interpolation HSL |
+| `bg-linear-45` | Angle 45 degres |
+
+---
+
+## Responsive Design
+
+### Breakpoints par Defaut
+
+| Breakpoint | Largeur | Usage |
+|------------|---------|-------|
+| `sm` | 640px | Petits tablets |
+| `md` | 768px | Tablets |
+| `lg` | 1024px | Laptops |
+| `xl` | 1280px | Desktops |
+| `2xl` | 1536px | Grands ecrans |
+
+### Breakpoints Custom
+
+Ajouter dans @theme :
+
+```css
+@theme {
+  --breakpoint-xs: 26.25rem;  /* 420px */
+  --breakpoint-3xl: 120rem;   /* 1920px */
+}
+```
+
+### Container Queries (Built-in v4)
+
+| Classe | Effet |
+|--------|-------|
+| `@container` | Definit un container queryable |
+| `@container/name` | Container nomme |
+| `@sm:flex` | Style quand container >= 384px |
+| `@md:flex` | Style quand container >= 448px |
+| `@lg:flex` | Style quand container >= 512px |
+| `@max-md:flex` | Style quand container < 448px |
+
+---
+
+## Dark Mode v4
+
+### Configuration Standard
+
+```css
+@custom-variant dark (&:where(.dark, .dark *));
+```
+
+Cette syntaxe :
+- Applique les styles dark: quand classe `.dark` presente
+- Fonctionne sur l'element et ses descendants
+- Utilise `:where()` pour specificite zero
+
+### Variantes de Configuration
+
+| Approche | Directive |
+|----------|-----------|
+| Classe `.dark` | `@custom-variant dark (&:where(.dark, .dark *))` |
+| Data attribute | `@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *))` |
+| Media query | `@custom-variant dark (@media (prefers-color-scheme: dark))` |
+
+### Eviter le Flash (FOUC)
+
+Script inline dans `<head>` avant le body :
+
+```javascript
+document.documentElement.classList.toggle(
+  'dark',
+  localStorage.theme === 'dark' ||
+    (!('theme' in localStorage) &&
+     window.matchMedia('(prefers-color-scheme: dark)').matches)
+);
+```
+
+---
+
+## Animations v4
+
+### Definition dans @theme
+
+Definir l'animation et ses keyframes ensemble :
+
+```css
+@theme {
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+}
+```
+
+### Animations Built-in
+
+| Classe | Animation |
+|--------|-----------|
+| `animate-spin` | Rotation continue |
+| `animate-ping` | Effet ping/pulse |
+| `animate-pulse` | Opacite pulsante |
+| `animate-bounce` | Rebond vertical |
+
+### Transitions Recommandees
+
+| Propriete | Performance |
+|-----------|-------------|
+| `transform` | GPU-acceleree |
+| `opacity` | GPU-acceleree |
+| `filter` | GPU-acceleree |
+| `background-color` | Moyenne |
+| `width/height` | Eviter (layout shift) |
+
+### @starting-style (v4)
+
+Animations d'entree sans JavaScript :
+
+```html
+<div popover class="transition-discrete starting:open:opacity-0 open:opacity-100">
+```
+
+---
+
+## Utilities Custom
+
+### @utility Directive
+
+Creer des utilities avec support variants :
+
+```css
+@utility tab-4 {
+  tab-size: 4;
+}
+```
+
+Usage : `tab-4`, `hover:tab-4`, `lg:tab-4`
+
+### @layer components
+
+Pour des composants overridables :
+
+```css
+@layer components {
+  .card {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-6);
+  }
+}
+```
+
+Override avec utilities : `<div class="card rounded-none">`
+
+### Fonction cn() Standard
+
+```typescript
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+---
+
+## Class Variance Authority (CVA)
+
+### Structure de Base
+
+```typescript
+import { cva, type VariantProps } from 'class-variance-authority';
+
+const button = cva(
+  // Classes de base
+  'rounded-lg font-medium transition-colors',
+  {
+    variants: {
+      intent: {
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+      },
+      size: {
+        sm: 'h-8 px-3 text-sm',
+        md: 'h-10 px-4 text-base',
+        lg: 'h-12 px-6 text-lg',
+      },
+    },
+    defaultVariants: {
+      intent: 'primary',
+      size: 'md',
+    },
+  }
+);
+```
+
+### Integration avec cn()
+
+```typescript
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof button> {}
+
+export function Button({ className, intent, size, ...props }: ButtonProps) {
+  return (
+    <button className={cn(button({ intent, size }), className)} {...props} />
+  );
+}
+```
+
+---
+
+## Accessibilite CSS
+
+### Contrastes Minimum (WCAG 2.1)
+
+| Niveau | Ratio | Usage |
+|--------|-------|-------|
+| AA | 4.5:1 | Texte normal |
+| AA | 3:1 | Texte large (18px+) |
+| AAA | 7:1 | Texte normal |
+| AAA | 4.5:1 | Texte large |
+
+### Focus Visible
+
+```css
+/* Pattern recommande */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+}
+```
+
+### Reduced Motion
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+Classes Tailwind : `motion-safe:animate-bounce`, `motion-reduce:transition-none`
+
+---
+
+## Performance
+
+### Optimisations Lightning CSS
+
+| Avantage | Gain v3 → v4 |
+|----------|--------------|
+| Full builds | 3.78x plus rapide |
+| Incremental (new CSS) | 8.8x plus rapide |
+| Incremental (no CSS) | 182x plus rapide |
+
+### Best Practices
+
+| Pratique | Raison |
+|----------|--------|
+| Eviter `@apply` excessif | Augmente le CSS output |
+| Utiliser @layer components | Meilleur tree-shaking |
+| Preferer gap a space-* | Plus performant, moderne |
+| CSS variables dans @theme | Evaluees une fois |
+| Limiter les arbitrary values | Genere du CSS unique |
+
+### Analyse du Bundle
+
+```bash
+# Voir la taille CSS generee
+npx tailwindcss -i app/globals.css -o output.css --minify
+wc -c output.css
+```
+
+---
+
+## Migration v3 vers v4
+
+### Outil Automatique
+
+```bash
+npx @tailwindcss/upgrade
+```
+
+Necessite Node.js 20+
+
+### Checklist Manuelle
+
+| Etape | Action |
+|-------|--------|
+| 1 | Mettre a jour dependencies (`tailwindcss@4`, `@tailwindcss/postcss@4`) |
+| 2 | Supprimer `postcss-import` et `autoprefixer` (built-in) |
+| 3 | Remplacer `@tailwind` par `@import "tailwindcss"` |
+| 4 | Migrer `tailwind.config.js` vers `@theme` |
+| 5 | Configurer dark mode avec `@custom-variant` |
+| 6 | Renommer classes (shadow-sm → shadow-xs) |
+| 7 | Convertir space-* vers gap |
+| 8 | Mettre important en fin (flex!) |
+| 9 | Convertir arbitrary vars (parentheses) |
+
+---
+
+## Ressources Officielles
+
+### Documentation
+
+| Sujet | URL |
+|-------|-----|
+| Getting Started | tailwindcss.com/docs/installation |
+| Theme Variables | tailwindcss.com/docs/theme |
+| Functions & Directives | tailwindcss.com/docs/functions-and-directives |
+| Dark Mode | tailwindcss.com/docs/dark-mode |
+| Responsive Design | tailwindcss.com/docs/responsive-design |
+| Animations | tailwindcss.com/docs/animation |
+| Upgrade Guide | tailwindcss.com/docs/upgrade-guide |
+
+### Blog & Releases
+
+| Article | Contenu |
+|---------|---------|
+| v4.0 Release | tailwindcss.com/blog/tailwindcss-v4 |
+| v4.1 Release | tailwindcss.com/blog/tailwindcss-v4-1 |
+
+### Outils Externes
+
+| Outil | Usage |
+|-------|-------|
+| Tailwind Play | play.tailwindcss.com (sandbox) |
+| OKLCH Picker | oklch.com (conversion couleurs) |
+| Realtime Colors | realtimecolors.com (palettes) |
+
+---
+
+## FAQ
+
+### Comment ajouter un breakpoint custom ?
+
+Definir dans @theme :
+```css
+@theme {
+  --breakpoint-xs: 26.25rem;
+}
+```
+Usage : `xs:flex`, `xs:hidden`
+
+### Comment creer une utility avec variants ?
+
+Utiliser @utility :
+```css
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+```
+Usage : `scrollbar-hide`, `hover:scrollbar-hide`
+
+### Pourquoi mes classes custom ne fonctionnent pas avec dark: ?
+
+S'assurer que :
+1. `@custom-variant dark` est configure
+2. Les classes sont dans `@layer components` ou `@utility`
+3. La classe `.dark` est sur `<html>` ou le parent
+
+### Comment utiliser des variables CSS dynamiques ?
+
+Utiliser `@theme inline` :
+```css
+@theme inline {
+  --color-brand: var(--brand);
+}
+```
+Puis definir `--brand` dans `:root` ou un scope.
+
+### Comment migrer theme() vers CSS variables ?
+
+| Avant (v3) | Apres (v4) |
+|------------|------------|
+| `color: theme('colors.blue.500')` | `color: var(--color-blue-500)` |
+| `padding: theme('spacing.4')` | `padding: var(--spacing-4)` |
