@@ -76,6 +76,21 @@ Récupère le contenu complet d'un agent.
 
 ### Prompts basiques
 
+#### `list_agents`
+
+Liste compacte des agents disponibles, groupés par catégorie.
+
+**Paramètres :**
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `category` | string (optionnel) | Filtrer par catégorie |
+
+```
+> Utilise le prompt list_agents du MCP Horus
+```
+
+---
+
 #### `activate_agent`
 
 Active un agent unique en chargeant son SKILL comme contexte système.
@@ -194,7 +209,7 @@ Analyse responsive complète avec **8 agents** : `tw-mobile-first-expert`, `tw-b
 Dans Claude Code, une fois le serveur MCP configuré :
 
 ```
-> Utilise le prompt advanced_architecture_analysis pour analyser ce projet
+> Utilise le prompt advanced_architecture_analysis du MCP Horus pour analyser ce projet
 ```
 
 Claude Code chargera automatiquement les 10 agents et générera le fichier `ARCHI_OPTI_PLAN.md` avec les recommandations priorisées.

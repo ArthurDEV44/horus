@@ -1,4 +1,5 @@
 import type { McpServerInstance } from '../types';
+import { registerListAgentsPrompt } from './list-agents';
 import { registerActivateAgentPrompt } from './activate-agent';
 import { registerMultiAgentPrompt } from './multi-agent';
 import { registerArchitectureAuditPrompt } from './architecture-audit';
@@ -13,6 +14,7 @@ import { registerAdvancedTailwindResponsiveAnalysisPrompt } from './advanced-tai
  */
 export function registerPrompts(server: McpServerInstance) {
   // Basic prompts
+  registerListAgentsPrompt(server);
   registerActivateAgentPrompt(server);
   registerMultiAgentPrompt(server);
 
