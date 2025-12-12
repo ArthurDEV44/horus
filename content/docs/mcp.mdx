@@ -9,17 +9,41 @@ Horus expose un serveur **MCP (Model Context Protocol)** permettant d'accéder a
 
 ## Configuration
 
-Ajoutez Horus à votre configuration MCP dans `~/.claude/settings.json` ou `.mcp.json` :
+### Option 1 : Via CLI (recommandé)
+
+```bash
+claude mcp add --transport http horus https://horus-code.com/api/mcp
+```
+
+### Option 2 : Via fichier de configuration
+
+Créez ou modifiez le fichier `.mcp.json` à la racine de votre projet :
 
 ```json
 {
   "mcpServers": {
     "horus": {
+      "type": "http",
       "url": "https://horus-code.com/api/mcp"
     }
   }
 }
 ```
+
+Pour une configuration globale (tous vos projets), utilisez `~/.claude.json`.
+
+> [!WARNING]
+> Le fichier `settings.local.json` est réservé aux permissions. Les serveurs MCP doivent être configurés dans `.mcp.json` ou `~/.claude.json`.
+
+### Vérification
+
+Après configuration, redémarrez Claude Code puis vérifiez avec :
+
+```bash
+claude mcp list
+```
+
+Vous devriez voir `horus` dans la liste des serveurs MCP actifs.
 
 ## Tools disponibles
 
