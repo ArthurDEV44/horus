@@ -1,155 +1,309 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Stars, AdaptiveDpr, Preload } from '@react-three/drei';
+import { useRef, useMemo, useEffect, useState } from 'react';
+import * as THREE from 'three';
 
-// Positions des étoiles pré-générées statiquement pour éviter les erreurs d'hydratation
-const stars: Array<{ top: string; left: string; size: number; opacity: number; delay: number; duration: number }> = [
-  { top: '12%', left: '8%', size: 2, opacity: 0.35, delay: 0.2, duration: 3.5 },
-  { top: '5%', left: '25%', size: 1, opacity: 0.2, delay: 1.8, duration: 4.2 },
-  { top: '18%', left: '42%', size: 2, opacity: 0.45, delay: 0.5, duration: 2.8 },
-  { top: '8%', left: '67%', size: 1, opacity: 0.3, delay: 2.5, duration: 3.9 },
-  { top: '22%', left: '85%', size: 2, opacity: 0.25, delay: 1.2, duration: 4.5 },
-  { top: '15%', left: '92%', size: 1, opacity: 0.4, delay: 3.1, duration: 2.5 },
-  { top: '32%', left: '5%', size: 1, opacity: 0.55, delay: 0.8, duration: 3.2 },
-  { top: '28%', left: '18%', size: 2, opacity: 0.15, delay: 4.2, duration: 4.8 },
-  { top: '35%', left: '38%', size: 1, opacity: 0.35, delay: 1.5, duration: 3.1 },
-  { top: '42%', left: '72%', size: 2, opacity: 0.28, delay: 2.8, duration: 4.0 },
-  { top: '38%', left: '95%', size: 1, opacity: 0.42, delay: 0.3, duration: 2.9 },
-  { top: '55%', left: '3%', size: 2, opacity: 0.22, delay: 3.5, duration: 3.7 },
-  { top: '48%', left: '15%', size: 1, opacity: 0.38, delay: 1.0, duration: 4.3 },
-  { top: '62%', left: '28%', size: 2, opacity: 0.5, delay: 2.2, duration: 2.6 },
-  { top: '58%', left: '82%', size: 1, opacity: 0.18, delay: 4.0, duration: 3.4 },
-  { top: '52%', left: '90%', size: 2, opacity: 0.32, delay: 0.7, duration: 4.1 },
-  { top: '72%', left: '7%', size: 1, opacity: 0.48, delay: 2.0, duration: 3.0 },
-  { top: '68%', left: '22%', size: 2, opacity: 0.25, delay: 3.8, duration: 4.6 },
-  { top: '75%', left: '55%', size: 1, opacity: 0.42, delay: 1.3, duration: 2.7 },
-  { top: '78%', left: '78%', size: 2, opacity: 0.3, delay: 0.1, duration: 3.8 },
-  { top: '65%', left: '88%', size: 1, opacity: 0.55, delay: 2.6, duration: 4.4 },
-  { top: '85%', left: '12%', size: 2, opacity: 0.2, delay: 4.5, duration: 3.3 },
-  { top: '88%', left: '35%', size: 1, opacity: 0.38, delay: 1.7, duration: 2.4 },
-  { top: '92%', left: '58%', size: 2, opacity: 0.45, delay: 0.9, duration: 4.7 },
-  { top: '82%', left: '72%', size: 1, opacity: 0.28, delay: 3.2, duration: 3.6 },
-  { top: '95%', left: '92%', size: 2, opacity: 0.52, delay: 2.4, duration: 2.3 },
-  { top: '3%', left: '48%', size: 1, opacity: 0.18, delay: 4.8, duration: 4.9 },
-  { top: '25%', left: '62%', size: 2, opacity: 0.4, delay: 0.4, duration: 3.0 },
-  { top: '45%', left: '48%', size: 1, opacity: 0.33, delay: 1.9, duration: 4.2 },
-  { top: '58%', left: '42%', size: 2, opacity: 0.22, delay: 3.6, duration: 2.8 },
-  { top: '70%', left: '38%', size: 1, opacity: 0.48, delay: 0.6, duration: 3.5 },
-  { top: '88%', left: '8%', size: 2, opacity: 0.35, delay: 2.1, duration: 4.0 },
-  { top: '10%', left: '78%', size: 1, opacity: 0.28, delay: 4.3, duration: 3.2 },
-  { top: '40%', left: '8%', size: 2, opacity: 0.42, delay: 1.1, duration: 2.6 },
-  { top: '60%', left: '65%', size: 1, opacity: 0.15, delay: 3.0, duration: 4.5 },
-  { top: '30%', left: '75%', size: 2, opacity: 0.5, delay: 0.0, duration: 3.9 },
-  { top: '50%', left: '25%', size: 1, opacity: 0.38, delay: 2.7, duration: 2.2 },
-  { top: '80%', left: '52%', size: 2, opacity: 0.25, delay: 4.1, duration: 4.3 },
-  { top: '15%', left: '58%', size: 1, opacity: 0.45, delay: 1.4, duration: 3.1 },
-  { top: '98%', left: '42%', size: 2, opacity: 0.32, delay: 3.4, duration: 2.9 },
-];
+// Couleurs du thème
+const TECH_ACCENT = new THREE.Color('#22d3ee');
+const TECH_BLACK = '#050505';
 
-const CosmicBackground = () => {
-  const shouldReduceMotion = useReducedMotion();
+// Shader pour gradient conic (disque d'accrétion)
+const conicGradientShader = {
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uOpacity;
+    uniform float uStartAngle;
+    uniform float uSpread;
+    uniform vec3 uColor;
+    uniform float uBlur;
+    varying vec2 vUv;
 
-  // Animations conditionnelles basées sur les préférences utilisateur
-  const rotateAnimation = shouldReduceMotion ? {} : { rotate: 360 };
-  const rotateReverseAnimation = shouldReduceMotion ? {} : { rotate: -360 };
-  const infiniteTransition = (duration: number) =>
-    shouldReduceMotion ? {} : { duration, repeat: Infinity, ease: 'linear' as const };
+    void main() {
+      vec2 center = vUv - 0.5;
+      float angle = atan(center.y, center.x);
+      float dist = length(center);
+
+      // Normaliser l'angle de -PI à PI vers 0 à 1
+      float normalizedAngle = (angle + 3.14159) / (2.0 * 3.14159);
+
+      // Créer le gradient conic avec spread
+      float gradientStart = mod(uStartAngle / (2.0 * 3.14159), 1.0);
+      float diff = mod(normalizedAngle - gradientStart + 1.0, 1.0);
+      float gradient = smoothstep(0.0, uSpread, diff) * (1.0 - smoothstep(uSpread, uSpread + 0.1, diff));
+
+      // Falloff radial pour le blur
+      float radialFalloff = smoothstep(0.5, 0.5 - uBlur, dist);
+
+      // Combiner
+      float alpha = gradient * radialFalloff * uOpacity;
+
+      gl_FragColor = vec4(uColor, alpha);
+    }
+  `,
+};
+
+// Composant pour un disque d'accrétion
+interface VortexRingProps {
+  radius: number;
+  opacity: number;
+  speed: number;
+  blur: number;
+  startAngle?: number;
+  spread?: number;
+  color?: THREE.Color;
+  reverse?: boolean;
+  reducedMotion: boolean;
+}
+
+function VortexRing({
+  radius,
+  opacity,
+  speed,
+  blur,
+  startAngle = 0,
+  spread = 0.4,
+  color = TECH_ACCENT,
+  reverse = false,
+  reducedMotion,
+}: VortexRingProps) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+
+  const uniforms = useMemo(
+    () => ({
+      uOpacity: { value: opacity },
+      uStartAngle: { value: startAngle },
+      uSpread: { value: spread },
+      uColor: { value: color },
+      uBlur: { value: blur },
+    }),
+    [opacity, startAngle, spread, color, blur]
+  );
+
+  useFrame((_, delta) => {
+    if (reducedMotion) return;
+    if (meshRef.current) {
+      const direction = reverse ? -1 : 1;
+      meshRef.current.rotation.z += delta * speed * direction;
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} position={[0, 0, 0]}>
+      <planeGeometry args={[radius * 2, radius * 2]} />
+      <shaderMaterial
+        ref={materialRef}
+        vertexShader={conicGradientShader.vertexShader}
+        fragmentShader={conicGradientShader.fragmentShader}
+        uniforms={uniforms}
+        transparent
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+// Composant pour le trou noir central
+function BlackHole({ radius }: { radius: number }) {
+  return (
+    <mesh position={[0, 0, 0.1]}>
+      <circleGeometry args={[radius, 64]} />
+      <meshBasicMaterial color="#000000" />
+    </mesh>
+  );
+}
+
+// Composant pour la trainée de flare diagonale
+function FlareTrail({ reducedMotion }: { reducedMotion: boolean }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useFrame(() => {
+    if (reducedMotion) return;
+    if (meshRef.current && meshRef.current.material) {
+      const mat = meshRef.current.material as THREE.MeshBasicMaterial;
+      // Légère pulsation
+      mat.opacity = 0.15 + Math.sin(Date.now() * 0.001) * 0.05;
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} rotation={[0, 0, Math.PI / 4]} position={[0, 0, -0.1]}>
+      <planeGeometry args={[20, 0.02]} />
+      <meshBasicMaterial
+        color={TECH_ACCENT}
+        transparent
+        opacity={0.2}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+// Composant principal de la scène
+interface VortexSceneProps {
+  reducedMotion: boolean;
+  isMobile: boolean;
+}
+
+function VortexScene({ reducedMotion, isMobile }: VortexSceneProps) {
+  const { invalidate } = useThree();
+
+  // Forcer le re-render pour les animations
+  useFrame(() => {
+    if (!reducedMotion) {
+      invalidate();
+    }
+  });
+
+  return (
+    <>
+      {/* Fond */}
+      <color attach="background" args={[TECH_BLACK]} />
+
+      {/* Étoiles - réduites sur mobile */}
+      <Stars
+        radius={100}
+        depth={50}
+        count={isMobile ? 1500 : 3000}
+        factor={3}
+        saturation={0}
+        fade
+        speed={reducedMotion ? 0 : 0.5}
+      />
+
+      {/* Groupe du vortex centré */}
+      <group position={[0, 0, 0]}>
+        {/* Disque externe - Poussière diffuse */}
+        <VortexRing
+          radius={6}
+          opacity={0.08}
+          speed={0.1}
+          blur={0.3}
+          spread={0.35}
+          reducedMotion={reducedMotion}
+        />
+
+        {/* Disque intermédiaire - La Lueur (contre-rotation) */}
+        <VortexRing
+          radius={4.8}
+          opacity={0.15}
+          speed={0.14}
+          blur={0.25}
+          spread={0.45}
+          reverse
+          reducedMotion={reducedMotion}
+        />
+
+        {/* Horizon des événements interne */}
+        <VortexRing
+          radius={2.4}
+          opacity={0.4}
+          speed={0.2}
+          blur={0.15}
+          spread={0.5}
+          color={new THREE.Color('#ffffff')}
+          reducedMotion={reducedMotion}
+        />
+
+        {/* Bord interne en contre-rotation */}
+        <VortexRing
+          radius={2.5}
+          opacity={0.25}
+          speed={0.18}
+          blur={0.12}
+          spread={0.3}
+          startAngle={Math.PI}
+          reverse
+          reducedMotion={reducedMotion}
+        />
+
+        {/* Trou noir central */}
+        <BlackHole radius={1.5} />
+
+        {/* Trainée de flare diagonale */}
+        <FlareTrail reducedMotion={reducedMotion} />
+      </group>
+
+      {/* Optimisations */}
+      <AdaptiveDpr pixelated />
+      <Preload all />
+    </>
+  );
+}
+
+// Hook pour détecter prefers-reduced-motion
+function useReducedMotion(): boolean {
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  return reducedMotion;
+}
+
+// Hook pour détecter mobile
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+      window.innerWidth < 768
+    );
+  });
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+          window.innerWidth < 768
+      );
+    };
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
+// Composant exporté
+export default function CosmicBackground() {
+  const reducedMotion = useReducedMotion();
+  const isMobile = useIsMobile();
 
   return (
     <div
       className="absolute inset-0 z-0 overflow-hidden bg-tech-black pointer-events-none"
       aria-hidden="true"
     >
-      {/* 1. Couche d'étoiles */}
-      <div className="absolute inset-0 z-0">
-        {stars.map((star, index) => (
-          <motion.div
-            key={index}
-            className="absolute bg-white rounded-full"
-            style={{
-              top: star.top,
-              left: star.left,
-              width: star.size,
-              height: star.size,
-              opacity: star.opacity,
-            }}
-            animate={
-              shouldReduceMotion
-                ? {}
-                : { opacity: [star.opacity, star.opacity * 2, star.opacity] }
-            }
-            transition={
-              shouldReduceMotion
-                ? {}
-                : {
-                    duration: star.duration,
-                    repeat: Infinity,
-                    delay: star.delay,
-                    ease: 'easeInOut',
-                  }
-            }
-          />
-        ))}
-      </div>
-
-      {/* 2. La Singularité (Vortex Central) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] sm:w-[1200px] sm:h-[1200px] flex items-center justify-center opacity-60">
-        {/* Disque d'accrétion externe (Poussière diffuse) */}
-        <motion.div
-          animate={rotateAnimation}
-          transition={infiniteTransition(60)}
-          className="absolute inset-0 rounded-full mix-blend-screen"
-          style={{
-            background:
-              'conic-gradient(from 0deg, transparent 0deg, rgba(34, 211, 238, 0.05) 120deg, transparent 360deg)',
-            filter: 'blur(60px)',
-          }}
-        />
-
-        {/* Disque d'accrétion intermédiaire (La Lueur) */}
-        <motion.div
-          animate={rotateReverseAnimation}
-          transition={infiniteTransition(45)}
-          className="absolute w-[80%] h-[80%] rounded-full mix-blend-screen opacity-50"
-          style={{
-            background:
-              'conic-gradient(from 180deg, transparent 0deg, rgba(34, 211, 238, 0.2) 160deg, transparent 360deg)',
-            filter: 'blur(30px)',
-          }}
-        />
-
-        {/* Horizon des événements interne (Bord net) */}
-        <motion.div
-          animate={rotateAnimation}
-          transition={infiniteTransition(30)}
-          className="absolute w-[40%] h-[40%] rounded-full"
-          style={{
-            background:
-              'conic-gradient(from 90deg, transparent 0%, rgba(34, 211, 238, 0.6) 50%, #ffffff 95%, transparent 100%)',
-            filter: 'blur(12px)',
-          }}
-        />
-
-        {/* Bord interne en contre-rotation pour la turbulence */}
-        <motion.div
-          animate={rotateReverseAnimation}
-          transition={infiniteTransition(35)}
-          className="absolute w-[42%] h-[42%] rounded-full opacity-70"
-          style={{
-            background:
-              'conic-gradient(from 270deg, transparent 0%, rgba(34, 211, 238, 0.4) 30%, transparent 100%)',
-            filter: 'blur(8px)',
-          }}
-        />
-
-        {/* Le Vide (Trou noir) */}
-        <div className="absolute w-[30%] h-[30%] bg-black rounded-full shadow-[0_0_100px_rgba(0,0,0,1)] z-10" />
-
-        {/* Trainee de flare / Jet */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-px bg-linear-to-r from-transparent via-tech-accent/20 to-transparent blur-sm rotate-45" />
-      </div>
+      <Canvas
+        frameloop={reducedMotion ? 'demand' : 'always'}
+        dpr={[1, isMobile ? 1.5 : 2]}
+        gl={{
+          antialias: false,
+          powerPreference: 'high-performance',
+          alpha: false,
+        }}
+        camera={{ position: [0, 0, 10], fov: 50 }}
+      >
+        <VortexScene reducedMotion={reducedMotion} isMobile={isMobile} />
+      </Canvas>
     </div>
   );
-};
-
-export default CosmicBackground;
+}
