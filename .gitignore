@@ -46,6 +46,7 @@ next-env.d.ts
 # local config
 .mcp.json
 .claude
+/.claude-plugin
 
 # temp docs
 /docs/

@@ -1,0 +1,86 @@
+{
+  "name": "horus",
+  "version": "1.0.0",
+  "description": "30 agents optimisés pour Claude Code - Architecture, SEO, Tailwind Responsive, Experts techniques. Inclut 3 audits automatisés.",
+  "author": {
+    "name": "Horus Team",
+    "url": "https://horus-code.com",
+    "email": "contact@horus-code.com"
+  },
+  "homepage": "https://horus-code.com",
+  "repository": "https://github.com/horus-team/horus",
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "seo",
+    "tailwind",
+    "responsive",
+    "react",
+    "nextjs",
+    "typescript",
+    "solid",
+    "patterns",
+    "performance",
+    "agents",
+    "claude-code"
+  ],
+  "engines": {
+    "claude-code": ">=1.0.0"
+  },
+  "categories": {
+    "architecture": {
+      "name": "Architecture",
+      "description": "8 agents pour l'architecture logicielle",
+      "agents": [
+        "structure-expert",
+        "solid-expert",
+        "patterns-expert",
+        "coupling-expert",
+        "modularity-expert",
+        "debt-expert",
+        "state-expert",
+        "types-expert"
+      ]
+    },
+    "seo": {
+      "name": "SEO",
+      "description": "7 agents pour l'optimisation SEO",
+      "agents": [
+        "seo-metadata-expert",
+        "seo-schema-expert",
+        "seo-crawl-expert",
+        "seo-performance-expert",
+        "seo-content-expert",
+        "seo-rendering-expert",
+        "seo-image-expert"
+      ]
+    },
+    "tailwind-responsive": {
+      "name": "Tailwind Responsive",
+      "description": "8 agents pour le design responsive avec Tailwind",
+      "agents": [
+        "tw-mobile-first-expert",
+        "tw-breakpoints-expert",
+        "tw-layout-expert",
+        "tw-spacing-expert",
+        "tw-typography-expert",
+        "tw-images-expert",
+        "tw-container-queries-expert",
+        "tw-accessibility-expert"
+      ]
+    },
+    "experts": {
+      "name": "Experts",
+      "description": "7 agents experts techniques",
+      "agents": [
+        "react-expert",
+        "nextjs-expert",
+        "tailwind-expert",
+        "clerk-expert",
+        "security-expert",
+        "techwatch-expert",
+        "architect-expert"
+      ]
+    }
+  }
+}

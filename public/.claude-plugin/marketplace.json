@@ -1,0 +1,38 @@
+{
+  "name": "horus-marketplace",
+  "owner": {
+    "name": "Horus Team",
+    "email": "contact@horus-code.com",
+    "url": "https://horus-code.com"
+  },
+  "metadata": {
+    "description": "30 agents optimisés pour Claude Code - Architecture, SEO, Tailwind Responsive, Experts techniques",
+    "version": "1.0.0",
+    "homepage": "https://horus-code.com"
+  },
+  "plugins": [
+    {
+      "name": "horus",
+      "source": "https://horus-code.com/plugins/horus",
+      "description": "30 agents spécialisés pour Claude Code : Architecture (8), SEO (7), Tailwind Responsive (8), Experts (7). Inclut 3 audits automatisés.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Horus Team",
+        "url": "https://horus-code.com"
+      },
+      "tags": [
+        "architecture",
+        "seo",
+        "tailwind",
+        "responsive",
+        "react",
+        "nextjs",
+        "typescript",
+        "solid",
+        "patterns",
+        "performance"
+      ],
+      "category": "development"
+    }
+  ]
+}

@@ -1,21 +1,34 @@
 ---
 title: MCP
-description: Utiliser le serveur MCP Horus pour accéder aux agents depuis Claude Code
+description: Utiliser le serveur MCP Horus pour accéder aux agents depuis Claude Code, Cursor, Windsurf et autres clients MCP
 ---
 
 # Serveur MCP
 
-Horus expose un serveur **MCP (Model Context Protocol)** permettant d'accéder aux agents directement depuis Claude Code ou tout client compatible MCP.
+Horus expose un serveur **MCP (Model Context Protocol)** permettant d'accéder aux agents depuis tout client compatible MCP.
 
-## Configuration
+## Clients supportés
 
-### Option 1 : Via CLI (recommandé)
+| Client | Transport | Statut |
+|--------|-----------|--------|
+| Claude Code | HTTP | Supporté |
+| Cursor | HTTP | Supporté |
+| Windsurf | HTTP | Supporté |
+| Autres clients MCP | HTTP | Compatible |
+
+---
+
+## Configuration par client
+
+### Claude Code
+
+#### Option 1 : Via CLI (recommandé)
 
 ```bash
-claude mcp add --transport http horus https://horus-code.com/api/mcp
+claude mcp add --transport http horus https://horus.strivex.fr/api/mcp
 ```
 
-### Option 2 : Via fichier de configuration
+#### Option 2 : Via fichier de configuration
 
 Créez ou modifiez le fichier `.mcp.json` à la racine de votre projet :
 
@@ -24,7 +37,7 @@ Créez ou modifiez le fichier `.mcp.json` à la racine de votre projet :
   "mcpServers": {
     "horus": {
       "type": "http",
-      "url": "https://horus-code.com/api/mcp"
+      "url": "https://horus.strivex.fr/api/mcp"
     }
   }
 }
@@ -32,47 +45,278 @@ Créez ou modifiez le fichier `.mcp.json` à la racine de votre projet :
 
 Pour une configuration globale (tous vos projets), utilisez `~/.claude.json`.
 
-> [!WARNING]
-> Le fichier `settings.local.json` est réservé aux permissions. Les serveurs MCP doivent être configurés dans `.mcp.json` ou `~/.claude.json`.
-
-### Vérification
-
-Après configuration, redémarrez Claude Code puis vérifiez avec :
+#### Vérification
 
 ```bash
 claude mcp list
 ```
 
-Vous devriez voir `horus` dans la liste des serveurs MCP actifs.
+---
+
+### Cursor
+
+#### Option 1 : Configuration globale
+
+Créez ou modifiez le fichier `~/.cursor/mcp.json` :
+
+```json
+{
+  "mcpServers": {
+    "horus": {
+      "type": "http",
+      "url": "https://horus.strivex.fr/api/mcp"
+    }
+  }
+}
+```
+
+#### Option 2 : Configuration par projet
+
+Créez le fichier `.cursor/mcp.json` à la racine de votre projet :
+
+```json
+{
+  "mcpServers": {
+    "horus": {
+      "type": "http",
+      "url": "https://horus.strivex.fr/api/mcp"
+    }
+  }
+}
+```
+
+#### Vérification
+
+1. Ouvrez Cursor
+2. `Ctrl+Shift+P` → "Cursor Settings"
+3. Naviguez vers la section **MCP**
+4. Cliquez sur **Refresh** pour charger le serveur
+5. Vérifiez que `horus` apparaît avec ses tools
+
+---
+
+### Windsurf
+
+Créez ou modifiez le fichier `~/.codeium/windsurf/mcp_config.json` :
+
+```json
+{
+  "mcpServers": {
+    "horus": {
+      "type": "http",
+      "url": "https://horus.strivex.fr/api/mcp"
+    }
+  }
+}
+```
+
+#### Vérification
+
+1. Ouvrez Windsurf
+2. Ouvrez les Settings → Cascade → Plugins
+3. Vérifiez que `horus` est listé
+
+---
 
 ## Tools disponibles
+
+### `list_categories`
+
+Liste toutes les catégories d'agents avec leurs descriptions.
+
+**Paramètres :** aucun
+
+---
 
 ### `list_agents`
 
 Liste tous les agents disponibles par catégorie.
 
-**Paramètres :** aucun
-
-**Retourne :** Liste des agents avec leur slug, nom, description et catégorie.
-
----
-
-### `get_agent`
-
-Récupère le contenu complet d'un agent.
-
 **Paramètres :**
+
 | Paramètre | Type | Description |
 |-----------|------|-------------|
-| `category` | string | Catégorie de l'agent (`architecture`, `seo`, `tailwind-responsive`, `experts`) |
-| `agent` | string | Slug de l'agent |
-| `content` | string | Type de contenu (`skill`, `reference`, `workflows`, `all`) |
-
-**Retourne :** Contenu markdown de l'agent demandé.
+| `category` | string (optionnel) | Filtrer par catégorie (`architecture`, `seo`, `tailwind-responsive`, `experts`) |
 
 ---
 
-## Prompts disponibles
+### `search_agents`
+
+Recherche des agents par nom, slug ou catégorie.
+
+**Paramètres :**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `query` | string | Terme de recherche |
+
+---
+
+### `get_agent_skill`
+
+Récupère le document SKILL d'un agent (capacités et expertise).
+
+**Paramètres :**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `category` | string | Catégorie de l'agent |
+| `agent` | string | Slug de l'agent (ex: `react-expert`) |
+
+---
+
+### `get_agent_reference`
+
+Récupère le document REFERENCE d'un agent (documentation technique).
+
+**Paramètres :**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `category` | string | Catégorie de l'agent |
+| `agent` | string | Slug de l'agent |
+
+---
+
+### `get_agent_workflows`
+
+Récupère le document WORKFLOWS d'un agent (cas d'usage et exemples).
+
+**Paramètres :**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `category` | string | Catégorie de l'agent |
+| `agent` | string | Slug de l'agent |
+
+---
+
+### `activate_agent`
+
+**Le tool principal pour Cursor et Windsurf.**
+
+Active un agent en injectant son contexte complet comme prompt système. L'IA "devient" l'agent spécialisé avec son expertise, ses workflows et ses directives.
+
+**Paramètres :**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `category` | string | Catégorie de l'agent |
+| `agent` | string | Slug de l'agent (ex: `react-expert`) |
+| `include_reference` | boolean (optionnel) | Inclure la documentation technique détaillée (défaut: `false`) |
+
+**Retourne :** Un prompt d'activation formaté contenant :
+- Header d'activation
+- SKILL complet de l'agent
+- REFERENCE (si demandée)
+- Instructions d'application
+
+---
+
+## Exemples d'utilisation
+
+### Cursor / Windsurf
+
+En mode Agent, demandez simplement :
+
+```
+Utilise le tool activate_agent avec category="experts" et agent="react-expert"
+puis aide-moi à optimiser ce composant
+```
+
+Ou plus naturellement :
+
+```
+Active l'agent react-expert de Horus et aide-moi avec ce composant
+```
+
+L'IA appelera automatiquement `activate_agent` et appliquera l'expertise de l'agent.
+
+### Workflow recommandé
+
+1. **Découvrir les agents disponibles**
+   ```
+   Liste les agents Horus disponibles dans la catégorie experts
+   ```
+
+2. **Activer l'agent approprié**
+   ```
+   Active l'agent nextjs-expert de Horus
+   ```
+
+3. **Travailler avec l'expertise**
+   ```
+   Analyse cette route API et suggère des améliorations
+   ```
+
+### Combiner plusieurs agents
+
+Pour des tâches complexes, activez plusieurs agents successivement :
+
+```
+1. Active l'agent react-expert pour analyser les composants
+2. Puis active l'agent tw-layout-expert pour le responsive
+```
+
+---
+
+## Agents disponibles
+
+### Architecture (8 agents)
+
+| Slug | Description |
+|------|-------------|
+| `structure-expert` | Organisation projet, Clean Architecture |
+| `solid-expert` | Principes SOLID |
+| `patterns-expert` | Design patterns React et backend |
+| `coupling-expert` | Dépendances circulaires, couplage/cohésion |
+| `modularity-expert` | Architecture modulaire, encapsulation |
+| `debt-expert` | Dette technique, code smells |
+| `state-expert` | Gestion d'état React |
+| `types-expert` | Typage TypeScript avancé |
+
+### SEO (7 agents)
+
+| Slug | Description |
+|------|-------------|
+| `seo-metadata-expert` | Meta tags, Open Graph, Twitter Cards |
+| `seo-schema-expert` | Schema.org, JSON-LD |
+| `seo-crawl-expert` | Crawl budget, indexation |
+| `seo-performance-expert` | Core Web Vitals, TTFB |
+| `seo-content-expert` | Optimisation sémantique, E-E-A-T |
+| `seo-rendering-expert` | SSR/SSG/ISR, hydration |
+| `seo-image-expert` | Optimisation images, LCP |
+
+### Tailwind Responsive (8 agents)
+
+| Slug | Description |
+|------|-------------|
+| `tw-mobile-first-expert` | Mobile-first responsive design |
+| `tw-breakpoints-expert` | Système de breakpoints |
+| `tw-layout-expert` | Flexbox, Grid, containers |
+| `tw-spacing-expert` | Padding, margin, gap |
+| `tw-typography-expert` | Typographie responsive |
+| `tw-images-expert` | Images responsives, aspect-ratio |
+| `tw-container-queries-expert` | Container queries v4 |
+| `tw-accessibility-expert` | Accessibilité Tailwind |
+
+### Experts (6 agents)
+
+| Slug | Description |
+|------|-------------|
+| `react-expert` | React 19+, Server Components, hooks |
+| `nextjs-expert` | Next.js 15+, App Router, Server Actions |
+| `tailwind-expert` | TailwindCSS v4+, CSS-first config |
+| `clerk-expert` | Authentification Clerk |
+| `security-expert` | Cybersécurité, OWASP Top 10 |
+| `techwatch-expert` | Veille technologique |
+
+---
+
+## Prompts disponibles (Claude Code)
+
+> [!NOTE]
+> Les prompts MCP sont principalement utilisés avec Claude Code. Cursor et Windsurf utilisent plutôt les **tools** directement.
 
 ### Prompts basiques
 
@@ -80,38 +324,27 @@ Récupère le contenu complet d'un agent.
 
 Liste compacte des agents disponibles, groupés par catégorie.
 
-**Paramètres :**
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `category` | string (optionnel) | Filtrer par catégorie |
-
-```
-> Utilise le prompt list_agents du MCP Horus
-```
-
----
-
 #### `activate_agent`
 
 Active un agent unique en chargeant son SKILL comme contexte système.
 
 **Paramètres :**
+
 | Paramètre | Type | Description |
 |-----------|------|-------------|
 | `category` | string | Catégorie de l'agent |
 | `agent` | string | Slug de l'agent |
 | `task` | string (optionnel) | Tâche à exécuter |
 
----
-
 #### `multi_agent`
 
-Combine plusieurs agents pour une tâche complexe nécessitant diverses expertises.
+Combine plusieurs agents pour une tâche complexe.
 
 **Paramètres :**
+
 | Paramètre | Type | Description |
 |-----------|------|-------------|
-| `agents` | string | Liste d'agents séparés par des virgules (ex: `react-expert,nextjs-expert`) |
+| `agents` | string | Liste d'agents séparés par virgules |
 | `task` | string (optionnel) | Tâche à exécuter |
 
 ---
@@ -120,96 +353,46 @@ Combine plusieurs agents pour une tâche complexe nécessitant diverses expertis
 
 #### `architecture_audit`
 
-Audit d'architecture combinant 4 agents : `patterns-expert`, `solid-expert`, `coupling-expert`, `structure-expert`.
-
-**Paramètres :**
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `context` | string (optionnel) | Description du codebase ou préoccupations |
-
----
+Audit combinant : `patterns-expert`, `solid-expert`, `coupling-expert`, `structure-expert`.
 
 #### `seo_analysis`
 
-Analyse SEO combinant 3 agents : `seo-metadata-expert`, `seo-performance-expert`, `seo-schema-expert`.
-
-**Paramètres :**
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `url` | string (optionnel) | URL à analyser |
-| `framework` | string (optionnel) | Framework utilisé |
-
----
+Analyse combinant : `seo-metadata-expert`, `seo-performance-expert`, `seo-schema-expert`.
 
 #### `tailwind_responsive_audit`
 
-Audit responsive combinant 4 agents : `tw-mobile-first-expert`, `tw-breakpoints-expert`, `tw-layout-expert`, `tw-accessibility-expert`.
-
-**Paramètres :**
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `context` | string (optionnel) | Description des composants à auditer |
+Audit combinant : `tw-mobile-first-expert`, `tw-breakpoints-expert`, `tw-layout-expert`, `tw-accessibility-expert`.
 
 ---
 
 ### Analyses avancées
 
-Ces prompts effectuent une analyse complète avec recherche web des best practices officielles et génèrent un fichier de plan d'optimisation.
+Ces prompts effectuent une analyse complète et génèrent un fichier de plan d'optimisation.
 
 #### `advanced_architecture_analysis`
 
-Analyse d'architecture complète avec **10 agents** : `structure-expert`, `solid-expert`, `patterns-expert`, `coupling-expert`, `state-expert`, `types-expert`, `modularity-expert`, `debt-expert`, `nextjs-expert`, `react-expert`.
-
-**Génère :** `ARCHI_OPTI_PLAN.md`
-
-**Paramètres :**
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `context` | string (optionnel) | Description du codebase |
-
-**Types d'issues :** `[STRUCT]` · `[SOLID]` · `[PATTERN]` · `[COUPLING]` · `[STATE]` · `[TYPE]` · `[MODULE]` · `[DEBT]`
-
----
+10 agents → Génère `ARCHI_OPTI_PLAN.md`
 
 #### `advanced_seo_analysis`
 
-Analyse SEO complète avec **7 agents** : `seo-metadata-expert`, `seo-schema-expert`, `seo-crawl-expert`, `seo-performance-expert`, `seo-content-expert`, `seo-rendering-expert`, `seo-image-expert`.
-
-**Génère :** `SEO_OPTI_PLAN.md`
-
-**Paramètres :**
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `url` | string (optionnel) | URL à analyser |
-| `framework` | string (optionnel) | Framework utilisé |
-| `context` | string (optionnel) | Contexte additionnel |
-
-**Types d'issues :** `[META]` · `[SCHEMA]` · `[CWV]` · `[CRAWL]` · `[SEM]` · `[IMG]` · `[URL]` · `[RENDER]`
-
----
+7 agents → Génère `SEO_OPTI_PLAN.md`
 
 #### `advanced_tailwind_responsive_analysis`
 
-Analyse responsive complète avec **8 agents** : `tw-mobile-first-expert`, `tw-breakpoints-expert`, `tw-layout-expert`, `tw-spacing-expert`, `tw-typography-expert`, `tw-images-expert`, `tw-container-queries-expert`, `tw-accessibility-expert`.
-
-**Génère :** `RESPONSIVE_OPTI_PLAN.md`
-
-**Paramètres :**
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `tailwindVersion` | `v3` \| `v4` (optionnel) | Version de TailwindCSS |
-| `context` | string (optionnel) | Contexte additionnel |
-
-**Types d'issues :** `[MOBILE]` · `[BREAKPOINT]` · `[LAYOUT]` · `[SPACING]` · `[TYPO]` · `[IMAGE]` · `[CONTAINER]` · `[A11Y]` · `[PERF]` · `[OVERFLOW]`
+8 agents → Génère `RESPONSIVE_OPTI_PLAN.md`
 
 ---
 
-## Exemple d'utilisation
+## Différences Claude Code vs Cursor/Windsurf
 
-Dans Claude Code, une fois le serveur MCP configuré :
+| Fonctionnalité | Claude Code | Cursor/Windsurf |
+|----------------|-------------|-----------------|
+| **Subagents** | Oui (via slash commands) | Non |
+| **Tools MCP** | Oui | Oui |
+| **Prompts MCP** | Oui | Limité |
+| **activate_agent** | Utile | **Essentiel** |
+| **Audits automatisés** | Oui (slash commands) | Via tools manuels |
 
-```
-> Utilise le prompt advanced_architecture_analysis du MCP Horus pour analyser ce projet
-```
-
-Claude Code chargera automatiquement les 10 agents et générera le fichier `ARCHI_OPTI_PLAN.md` avec les recommandations priorisées.
+**Recommandation :**
+- **Claude Code** : Utilisez les slash commands (`/horus:*`) pour les audits complets
+- **Cursor/Windsurf** : Utilisez le tool `activate_agent` pour bénéficier de l'expertise des agents

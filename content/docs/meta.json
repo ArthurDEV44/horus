@@ -1,7 +1,9 @@
 {
   "pages": [
+    "---Installation---",
+    "slash-commands",
     "mcp",
-    "---Agents Claude Code---",
+    "---Agents---",
     "architecture",
     "seo",
     "tailwind-responsive",

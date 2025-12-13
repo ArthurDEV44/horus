@@ -1,0 +1,343 @@
+---
+title: Slash Commands
+description: Installer et utiliser les slash commands Horus dans Claude Code pour des audits automatisés
+---
+
+# Slash Commands
+
+Les **slash commands** Horus permettent de lancer des audits complets directement dans Claude Code. Chaque commande active plusieurs agents spécialisés en parallèle pour une analyse approfondie.
+
+## Commandes disponibles
+
+| Commande | Agents | Output |
+|----------|--------|--------|
+| `/horus:architecture-audit` | 10 agents | `ARCHI_OPTI_PLAN.md` |
+| `/horus:seo-audit` | 7 agents | `SEO_OPTI_PLAN.md` |
+| `/horus:tailwind-audit` | 8 agents | `RESPONSIVE_OPTI_PLAN.md` |
+
+---
+
+## Installation
+
+### Via la Marketplace Horus (recommandé)
+
+Dans Claude Code, exécutez ces deux commandes :
+
+```bash
+# 1. Ajouter la marketplace Horus
+/plugin marketplace add https://horus-code.com/.claude-plugin/marketplace.json
+
+# 2. Installer le plugin Horus
+/plugin install horus@horus-marketplace
+```
+
+C'est tout ! Les 30 agents et les 3 slash commands sont maintenant disponibles.
+
+### Vérification
+
+Après installation, vérifiez que le plugin est actif :
+
+```bash
+/plugin list
+```
+
+Vous devriez voir `horus@horus-marketplace` dans la liste.
+
+### Mise à jour
+
+Pour mettre à jour vers la dernière version :
+
+```bash
+/plugin update horus@horus-marketplace
+```
+
+### Désinstallation
+
+```bash
+/plugin uninstall horus@horus-marketplace
+```
+
+---
+
+## Utilisation
+
+Dans Claude Code, tapez simplement :
+
+```
+/horus:architecture-audit
+```
+
+Claude Code va :
+1. Charger la commande et activer les agents spécialisés
+2. Lancer les agents en **parallèle** pour analyser votre codebase
+3. Effectuer des recherches web sur les best practices officielles
+4. Générer un fichier de plan d'optimisation à la racine
+
+---
+
+## Architecture Audit
+
+```
+/horus:architecture-audit
+```
+
+### Agents activés (10)
+
+| Agent | Responsabilité |
+|-------|----------------|
+| `horus:structure-expert` | Organisation dossiers, Clean Architecture |
+| `horus:solid-expert` | Principes SOLID (SRP, OCP, LSP, ISP, DIP) |
+| `horus:patterns-expert` | Design patterns React et backend |
+| `horus:coupling-expert` | Dépendances circulaires, couplage/cohésion |
+| `horus:state-expert` | Gestion d'état, prop drilling, re-renders |
+| `horus:types-expert` | Typage TypeScript avancé |
+| `horus:modularity-expert` | Architecture modulaire, encapsulation |
+| `horus:debt-expert` | Dette technique, code smells |
+| `horus:nextjs-expert` | App Router, Server Components |
+| `horus:react-expert` | React 19+, hooks modernes |
+
+### Output : `ARCHI_OPTI_PLAN.md`
+
+```markdown
+# Plan d'Optimisation Architecture - Codebase
+
+**Agents consultés** : [liste des 10 agents]
+**Date** : [DATE]
+**Score maintenabilité estimé** : [SCORE]/100
+
+---
+
+## Critiques (bloquent la scalabilité)
+
+1. [SOLID] Violation SRP dans UserService
+   - **Agent** : solid-expert
+   - **Principe violé** : Single Responsibility
+   - **Fichier(s)** : `src/services/user.ts:45`
+   - **Refacto** : Extraire la logique email dans EmailService
+   - **Temps** : 2h
+
+## Importants (dette technique active)
+...
+
+## Améliorations (optimisations)
+...
+
+## Métriques Architecture
+
+- [ ] Dépendances circulaires : 3 -> objectif 0
+- [ ] Types `any` : 12 -> objectif 0
+- [ ] Fichiers >300 LOC : 5 -> objectif 0
+```
+
+### Types de tâches
+
+`[STRUCT]` `[SOLID]` `[PATTERN]` `[COUPLING]` `[STATE]` `[TYPE]` `[MODULE]` `[DEBT]` `[NEXTJS]` `[REACT]`
+
+---
+
+## SEO Audit
+
+```
+/horus:seo-audit
+```
+
+### Agents activés (7)
+
+| Agent | Responsabilité |
+|-------|----------------|
+| `horus:seo-metadata-expert` | Titles, descriptions, OpenGraph, Twitter Cards |
+| `horus:seo-schema-expert` | JSON-LD, données structurées Schema.org |
+| `horus:seo-crawl-expert` | Sitemap, robots.txt, indexation |
+| `horus:seo-performance-expert` | Core Web Vitals (LCP, INP, CLS) |
+| `horus:seo-content-expert` | Headings, alt text, semantic HTML |
+| `horus:seo-rendering-expert` | SSR/SSG/ISR, stratégie de rendu |
+| `horus:seo-image-expert` | next/image, formats WebP/AVIF |
+
+### Output : `SEO_OPTI_PLAN.md`
+
+```markdown
+# Plan d'Optimisation SEO - Codebase
+
+**Agents consultés** : [liste des 7 agents]
+**Date** : [DATE]
+**Score Lighthouse estimé** : [SCORE]/100
+
+---
+
+## Critiques (bloquent l'indexation)
+
+1. [CRAWL] robots.txt bloque /api/*
+   - **Agent** : seo-crawl-expert
+   - **Impact SEO** : Pages API non indexables
+   - **Fichier** : `public/robots.txt:3`
+   - **Fix** : Autoriser les routes publiques
+   - **Temps** : 0.5h
+
+## Checklist Core Web Vitals
+
+- [ ] LCP : 3.2s -> objectif <= 2.5s
+- [ ] INP : 180ms -> objectif <= 200ms
+- [ ] CLS : 0.15 -> objectif < 0.1
+```
+
+### Types de tâches
+
+`[META]` `[SCHEMA]` `[CWV]` `[CRAWL]` `[SEM]` `[IMG]` `[URL]` `[RENDER]`
+
+---
+
+## Tailwind Responsive Audit
+
+```
+/horus:tailwind-audit
+```
+
+### Agents activés (8)
+
+| Agent | Responsabilité |
+|-------|----------------|
+| `horus:tw-mobile-first-expert` | Approche mobile-first, breakpoints |
+| `horus:tw-breakpoints-expert` | Système sm/md/lg/xl/2xl, custom breakpoints |
+| `horus:tw-layout-expert` | Flexbox, Grid, containers |
+| `horus:tw-spacing-expert` | Padding, margin, gap, fluid spacing |
+| `horus:tw-typography-expert` | Tailles responsives, fluid typography |
+| `horus:tw-images-expert` | Aspect-ratio, object-fit, lazy loading |
+| `horus:tw-container-queries-expert` | Container queries v4 |
+| `horus:tw-accessibility-expert` | Touch targets, focus, contraste |
+
+### Output : `RESPONSIVE_OPTI_PLAN.md`
+
+```markdown
+# Plan d'Optimisation Responsive - Codebase
+
+**Agents consultés** : [liste des 8 agents]
+**Date** : [DATE]
+**Version Tailwind** : v4.x
+**Score responsive estimé** : [SCORE]/100
+
+---
+
+## Critiques (cassent sur mobile)
+
+1. [OVERFLOW] Scroll horizontal sur Hero
+   - **Agent** : tw-mobile-first-expert
+   - **Breakpoint** : < sm (mobile)
+   - **Fichier** : `src/components/Hero.tsx:12`
+   - **Fix** : `overflow-x-hidden` + `max-w-full`
+   - **Temps** : 0.5h
+
+## Checklist Responsive
+
+- [ ] Touch targets >= 44px
+- [ ] Images avec aspect-ratio
+- [ ] Texte >= 16px sur mobile
+- [ ] Pas de scroll horizontal
+```
+
+### Types de tâches
+
+`[MOBILE]` `[BREAKPOINT]` `[LAYOUT]` `[SPACING]` `[TYPO]` `[IMAGE]` `[CONTAINER]` `[A11Y]` `[PERF]` `[OVERFLOW]`
+
+---
+
+## Personnalisation
+
+### Ajouter du contexte
+
+Vous pouvez ajouter du contexte après la commande :
+
+```
+/horus:architecture-audit
+
+Focus particulier sur le module de paiement dans src/features/checkout/
+```
+
+---
+
+## Bonnes pratiques
+
+### Quand utiliser chaque audit
+
+| Situation | Commande recommandée |
+|-----------|---------------------|
+| Nouveau projet / onboarding | `/horus:architecture-audit` |
+| Avant mise en production | `/horus:seo-audit` |
+| Refonte UI / nouveau design | `/horus:tailwind-audit` |
+| Review trimestrielle | Les 3 audits |
+| Performance dégradée | `/horus:seo-audit` (Core Web Vitals) |
+| Dette technique accumulée | `/horus:architecture-audit` |
+
+### Workflow recommandé
+
+1. **Lancer l'audit** approprié
+2. **Examiner le plan** généré (`*_OPTI_PLAN.md`)
+3. **Prioriser** les tâches critiques
+4. **Implémenter** par ordre de priorité
+5. **Relancer l'audit** pour valider les corrections
+
+---
+
+## Configuration pour les équipes
+
+Pour pré-configurer Horus pour toute votre équipe, ajoutez à `.claude/settings.json` :
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "horus": {
+      "source": {
+        "source": "url",
+        "url": "https://horus-code.com/.claude-plugin/marketplace.json"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "horus@horus-marketplace": true
+  }
+}
+```
+
+Chaque membre de l'équipe aura automatiquement accès au plugin Horus.
+
+---
+
+## Différences avec le MCP
+
+| Aspect | Plugin (Slash Commands) | MCP |
+|--------|------------------------|-----|
+| **Client** | Claude Code uniquement | Claude Code, Cursor, Windsurf |
+| **Installation** | `/plugin install` | Configuration MCP |
+| **Mode** | Subagents parallèles | Tools individuels |
+| **Output** | Fichier `.md` généré | Réponse inline |
+| **Mise à jour** | `/plugin update` | Automatique |
+
+**Recommandation** :
+- **Claude Code** : Utilisez le plugin (slash commands) pour les audits complets
+- **Cursor/Windsurf** : Utilisez le MCP avec le tool `activate_agent`
+
+---
+
+## Dépannage
+
+### La commande n'apparaît pas
+
+1. Vérifiez que le plugin est installé : `/plugin list`
+2. Réinstallez si nécessaire : `/plugin install horus@horus-marketplace`
+3. Redémarrez Claude Code
+
+### Erreur "marketplace not found"
+
+Réajoutez la marketplace :
+```bash
+/plugin marketplace add https://horus-code.com/.claude-plugin/marketplace.json
+```
+
+### L'audit est trop long
+
+Les agents s'exécutent en parallèle, mais l'analyse peut prendre du temps sur de grosses codebases. Pour accélérer :
+- Limitez le scope avec du contexte additionnel
+- Focusez sur un dossier spécifique
+
+### Le fichier n'est pas généré
+
+Vérifiez que Claude Code a les permissions d'écriture à la racine du projet. Le fichier devrait apparaître après la fin de l'analyse.

@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:agents": "bun run scripts/generate-plugin-agents.ts",
+    "plugin:build": "bun run generate:agents && bun run build",
+    "plugin:install": "claude plugin install ."
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
@@ -34,7 +37,6 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.182.0",
-    "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.1",
     "eslint-config-next": "16.0.8",
     "tailwindcss": "^4.1.18",

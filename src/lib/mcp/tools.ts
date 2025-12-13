@@ -6,6 +6,8 @@ import {
   listAgents,
   getAgentContent,
   searchAgents,
+  getFullAgentContent,
+  slugToName,
   type Category,
 } from './agents';
 
@@ -109,6 +111,70 @@ export function registerTools(server: McpServerInstance) {
           ? JSON.stringify(results, null, 2)
           : `No agents found matching "${query}"`
       );
+    }
+  );
+
+  // Tool: Activate agent (inject agent context as system prompt)
+  server.tool(
+    'activate_agent',
+    'Activate an agent by injecting its full context as a system prompt. Use this to "become" a specialized agent with its expertise, workflows, and guidelines.',
+    {
+      category: z.enum(CATEGORIES).describe('Agent category'),
+      agent: z.string().describe('Agent slug (e.g., "react-expert", "nextjs-expert")'),
+      include_reference: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe('Include the reference document for deeper technical details'),
+    },
+    async (args: { category: Category; agent: string; include_reference?: boolean }) => {
+      const { category, agent, include_reference } = args;
+      const content = await getFullAgentContent(category, agent);
+
+      if (!content.skill) {
+        return toolResult(`Agent "${agent}" not found in category "${category}"`, true);
+      }
+
+      const agentName = slugToName(agent);
+      const sections: string[] = [];
+
+      // Header
+      sections.push(`# Agent Activation: ${agentName}`);
+      sections.push('');
+      sections.push('You are now operating as a specialized Horus agent. Follow the expertise, workflows, and guidelines below.');
+      sections.push('');
+
+      // Skill (always included)
+      sections.push('---');
+      sections.push('## SKILL (Capabilities & Expertise)');
+      sections.push('');
+      sections.push(content.skill);
+
+      // Reference (optional, for deeper context)
+      if (include_reference && content.reference) {
+        sections.push('');
+        sections.push('---');
+        sections.push('## REFERENCE (Technical Documentation)');
+        sections.push('');
+        sections.push(content.reference);
+      }
+
+      // Workflows summary hint
+      if (content.workflows) {
+        sections.push('');
+        sections.push('---');
+        sections.push('## WORKFLOWS AVAILABLE');
+        sections.push('');
+        sections.push('This agent has detailed workflow documentation. Use `get_agent_workflows` to access specific use cases and step-by-step guides when needed.');
+      }
+
+      // Footer
+      sections.push('');
+      sections.push('---');
+      sections.push('');
+      sections.push('**Instructions:** Apply this agent\'s expertise to assist the user. Follow the workflows and quality guidelines defined above.');
+
+      return toolResult(sections.join('\n'));
     }
   );
 }
