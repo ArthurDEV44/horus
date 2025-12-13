@@ -1,0 +1,27 @@
+{
+  "name": "horus",
+  "version": "1.0.0",
+  "description": "30 agents optimisés pour Claude Code - Architecture, SEO, Tailwind Responsive, Experts techniques. Inclut 3 audits automatisés.",
+  "author": {
+    "name": "Horus Team",
+    "url": "https://horus-code.com",
+    "email": "contact@horus-code.com"
+  },
+  "homepage": "https://horus-code.com",
+  "repository": "https://github.com/horus-team/horus",
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "seo",
+    "tailwind",
+    "responsive",
+    "react",
+    "nextjs",
+    "typescript",
+    "solid",
+    "patterns",
+    "performance",
+    "agents",
+    "claude-code"
+  ]
+}
