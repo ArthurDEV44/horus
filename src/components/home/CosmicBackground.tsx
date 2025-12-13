@@ -122,6 +122,134 @@ function BlackHole({ radius }: { radius: number }) {
   );
 }
 
+// Composant pour les étoiles attirées par le trou noir
+interface AttractedStarsProps {
+  count: number;
+  blackHoleRadius: number;
+  attractionRadius: number;
+  reducedMotion: boolean;
+}
+
+function AttractedStars({
+  count,
+  blackHoleRadius,
+  attractionRadius,
+  reducedMotion,
+}: AttractedStarsProps) {
+  const pointsRef = useRef<THREE.Points>(null);
+  const dataRef = useRef<{
+    velocities: Float32Array;
+    initialized: boolean;
+  }>({
+    velocities: new Float32Array(count * 3),
+    initialized: false,
+  });
+
+  useFrame((_, delta) => {
+    if (reducedMotion) return;
+    if (!pointsRef.current) return;
+
+    const posAttr = pointsRef.current.geometry.attributes
+      .position as THREE.BufferAttribute;
+    const posArray = posAttr.array as Float32Array;
+    const { velocities } = dataRef.current;
+
+    // Initialiser les positions au premier frame
+    if (!dataRef.current.initialized) {
+      dataRef.current.initialized = true;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance =
+          blackHoleRadius +
+          0.5 +
+          Math.random() * (attractionRadius - blackHoleRadius);
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
+        const z = (Math.random() - 0.5) * 2;
+
+        posArray[i * 3] = x;
+        posArray[i * 3 + 1] = y;
+        posArray[i * 3 + 2] = z;
+
+        // Vélocité orbitale initiale (lente pour effet subtil)
+        const orbitalSpeed = 0.12 / Math.sqrt(distance);
+        velocities[i * 3] = -Math.sin(angle) * orbitalSpeed;
+        velocities[i * 3 + 1] = Math.cos(angle) * orbitalSpeed;
+        velocities[i * 3 + 2] = 0;
+      }
+      posAttr.needsUpdate = true;
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const ix = i * 3;
+      const iy = i * 3 + 1;
+      const iz = i * 3 + 2;
+
+      const x = posArray[ix];
+      const y = posArray[iy];
+
+      const distance = Math.sqrt(x * x + y * y);
+
+      // Force gravitationnelle vers le centre (réduite pour effet subtil)
+      if (distance > 0.1) {
+        const gravityStrength = 0.15 / (distance * distance);
+        const dirX = -x / distance;
+        const dirY = -y / distance;
+
+        velocities[ix] += dirX * gravityStrength * delta;
+        velocities[iy] += dirY * gravityStrength * delta;
+      }
+
+      // Appliquer la vélocité
+      posArray[ix] += velocities[ix] * delta;
+      posArray[iy] += velocities[iy] * delta;
+      posArray[iz] += velocities[iz] * delta;
+
+      // Si l'étoile est aspirée (trop proche), la respawn
+      const newDistance = Math.sqrt(
+        posArray[ix] * posArray[ix] + posArray[iy] * posArray[iy]
+      );
+      if (newDistance < blackHoleRadius * 0.8) {
+        // Respawn à la périphérie
+        const newAngle = Math.random() * Math.PI * 2;
+        const newDist = attractionRadius * (0.7 + Math.random() * 0.3);
+        posArray[ix] = Math.cos(newAngle) * newDist;
+        posArray[iy] = Math.sin(newAngle) * newDist;
+        posArray[iz] = (Math.random() - 0.5) * 2;
+
+        // Nouvelle vélocité orbitale (lente pour effet subtil)
+        const orbitalSpeed = 0.12 / Math.sqrt(newDist);
+        velocities[ix] = -Math.sin(newAngle) * orbitalSpeed;
+        velocities[iy] = Math.cos(newAngle) * orbitalSpeed;
+        velocities[iz] = 0;
+      }
+    }
+
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[new Float32Array(count * 3), 3]}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        color={TECH_ACCENT}
+        size={0.04}
+        transparent
+        opacity={0.8}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        sizeAttenuation
+      />
+    </points>
+  );
+}
+
 // Composant pour la trainée de flare diagonale
 function FlareTrail({ reducedMotion }: { reducedMotion: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -229,6 +357,14 @@ function VortexScene({ reducedMotion, isMobile }: VortexSceneProps) {
 
         {/* Trou noir central */}
         <BlackHole radius={1.5} />
+
+        {/* Étoiles attirées par le trou noir */}
+        <AttractedStars
+          count={isMobile ? 80 : 150}
+          blackHoleRadius={1.5}
+          attractionRadius={8}
+          reducedMotion={reducedMotion}
+        />
 
         {/* Trainée de flare diagonale */}
         <FlareTrail reducedMotion={reducedMotion} />
